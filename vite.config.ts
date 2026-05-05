@@ -10,6 +10,10 @@ export default defineConfig({
       devOptions: {
         enabled: true
       },
+      workbox: {
+        globIgnores: ['**/node_modules/**/*', 'sw.js', 'workbox-*.js'],
+        maximumFileSizeToCacheInBytes: 5000000,
+      },
       includeAssets: ['favicon.png', 'apple-touch-icon.png', 'bsc.ico'],
       manifest: {
         name: 'BSC Packing List',

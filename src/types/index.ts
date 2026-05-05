@@ -2,7 +2,6 @@ export interface PackItem {
   id: string;
   name: string;
   description?: string;
-  imageUrl?: string;
   qty?: number;
   captainOnly?: boolean;
   defaultBag?: string;
@@ -24,7 +23,6 @@ export interface Luggage {
   id: string;
   name: string;
   description?: string;
-  imageUrl?: string;
 }
 
 export interface AppSnapshot {

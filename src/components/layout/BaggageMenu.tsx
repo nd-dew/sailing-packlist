@@ -28,7 +28,6 @@ export const BaggageMenu: React.FC = () => {
                   <h4><span className={`luggage-badge bag-color-${idx + 1}`}>{idx + 1}</span> {lug.name}</h4>
                   <button className="btn-small-action">✎ Edit</button>
                 </div>
-                {lug.imageUrl && <div className="luggage-img-preview"><img src={lug.imageUrl} alt={lug.name} /></div>}
                 {lug.description && <p className="luggage-desc-preview">{lug.description}</p>}
                 {packedItems.length === 0 ? <p className="empty-luggage">No items assigned yet.</p> : <ul className="luggage-contents">{packedItems.map(pi => {
                     const isBaseItem = (pi.id.startsWith('base_') && (pi.id.includes('underwear') || pi.id.includes('socks') || pi.id.includes('tshirt')));

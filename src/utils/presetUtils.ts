@@ -2,7 +2,7 @@ import { parse } from 'yaml';
 import type { PackItem, Category } from '../types';
 
 // Dynamically import all .yaml files in the presets directory
-const rawPresets = import.meta.glob('../presets/*.yaml', { as: 'raw', eager: true });
+const rawPresets = import.meta.glob('../presets/*.yaml', { query: '?raw', eager: true });
 
 export const PRESETS: Record<string, any> = {};
 

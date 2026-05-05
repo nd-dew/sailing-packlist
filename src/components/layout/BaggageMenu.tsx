@@ -1,21 +1,18 @@
 import React from 'react';
 import { usePacklist } from '../../context/PacklistContext';
 
-interface BaggageMenuProps {
-  style?: React.CSSProperties;
-  isSwiping?: boolean;
-}
-
-export const BaggageMenu: React.FC<BaggageMenuProps> = ({ style, isSwiping }) => {
+export const BaggageMenu: React.FC = () => {
   const { 
     activeMenu, setActiveMenu, luggages, categories, itemLuggage, checkedItems, 
-    setSelectedItemId, setSelectedLuggageId, newLuggageName, setNewLuggageName, handleAddLuggage, changes
+    setSelectedItemId, setSelectedLuggageId, newLuggageName, setNewLuggageName, handleAddLuggage, changes,
+    getMenuStyles
   } = usePacklist();
 
+  const { rightMenuStyle, isMenuSwiping } = getMenuStyles();
   const baseSetQty = changes;
 
   return (
-    <div className={`side-menu right-menu ${activeMenu === 'baggage' ? 'open' : ''} ${isSwiping ? 'is-swiping' : ''}`} style={style}>
+    <div className={`side-menu right-menu ${activeMenu === 'baggage' ? 'open' : ''} ${isMenuSwiping ? 'is-swiping' : ''}`} style={rightMenuStyle}>
       <div className="menu-header">
         <h2>Luggage</h2>
         <button className="btn-close-menu" onClick={() => setActiveMenu('main')}>✕</button>

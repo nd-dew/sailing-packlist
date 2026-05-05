@@ -66,6 +66,10 @@ interface PacklistContextType {
   triggerConfirm: (message: string, actionId: string, onConfirm: () => void) => void;
   activeToastId: string | null;
   showPriorityToast: (catId: string) => void;
+  handleGlobalTouchStart: (e: React.TouchEvent) => void;
+  handleGlobalTouchMove: (e: React.TouchEvent) => void;
+  handleGlobalTouchEnd: (e: React.TouchEvent) => void;
+  getMenuStyles: () => { leftMenuStyle: React.CSSProperties, rightMenuStyle: React.CSSProperties, isMenuSwiping: boolean };
 }
 
 const PacklistContext = createContext<PacklistContextType | undefined>(undefined);
@@ -144,6 +148,52 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [filter, setFilter] = useState<'all' | 'must-have' | 'should-have' | 'nice-to-have'>('all');
   const [activeMenu, setActiveMenu] = useState<'main' | 'settings' | 'baggage'>('main');
   const [activeToastId, setActiveToastId] = useState<string | null>(null);
+
+  // Global Swipe detection for menus
+  const [menuTouchStart, setMenuTouchStart] = useState<{x: number, y: number} | null>(null);
+  const [menuSwipeOffset, setMenuSwipeOffset] = useState<number>(0);
+
+  const handleGlobalTouchStart = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest('.list-item') || (e.target as HTMLElement).closest('.modal-content') || (e.target as HTMLElement).closest('.item-card-modal')) return;
+    setMenuTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+    setMenuSwipeOffset(0);
+  };
+
+  const handleGlobalTouchMove = (e: React.TouchEvent) => {
+    if (!menuTouchStart) return;
+    const dx = e.touches[0].clientX - menuTouchStart.x;
+    setMenuSwipeOffset(dx);
+  };
+
+  const handleGlobalTouchEnd = (e: React.TouchEvent) => {
+    if (!menuTouchStart) return;
+    const dx = e.changedTouches[0].clientX - menuTouchStart.x;
+    if (dx < -75) {
+      if (activeMenu === 'main') setActiveMenu('baggage');
+      else if (activeMenu === 'settings') setActiveMenu('main');
+    } else if (dx > 75) {
+      if (activeMenu === 'main') setActiveMenu('settings');
+      else if (activeMenu === 'baggage') setActiveMenu('main');
+    }
+    setMenuTouchStart(null);
+    setMenuSwipeOffset(0);
+  };
+
+  const getMenuStyles = () => {
+    let leftMenuStyle: React.CSSProperties = {};
+    let rightMenuStyle: React.CSSProperties = {};
+    if (menuTouchStart) {
+      if (activeMenu === 'main') {
+        if (menuSwipeOffset > 0) leftMenuStyle.transform = `translateX(calc(-105% + ${menuSwipeOffset}px))`;
+        if (menuSwipeOffset < 0) rightMenuStyle.transform = `translateX(calc(105% + ${menuSwipeOffset}px))`;
+      } else if (activeMenu === 'settings') {
+        if (menuSwipeOffset < 0) leftMenuStyle.transform = `translateX(${menuSwipeOffset}px)`;
+      } else if (activeMenu === 'baggage') {
+        if (menuSwipeOffset > 0) rightMenuStyle.transform = `translateX(${menuSwipeOffset}px)`;
+      }
+    }
+    return { leftMenuStyle, rightMenuStyle, isMenuSwiping: !!menuTouchStart };
+  };
 
   const [confirmToast, setConfirmToast] = useState<{message: string, actionId: string} | null>(null);
   const confirmTimeout = useRef<any>(null);
@@ -402,7 +452,8 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       filter, setFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, hideItem,
       unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, applyPreset, resetAll, handleCreateItem,
       updateItem, moveItemCategory, updateLuggage, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
-      confirmToast, triggerConfirm, activeToastId, showPriorityToast
+      confirmToast, triggerConfirm, activeToastId, showPriorityToast,
+      handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles
     }}>
       {children}
     </PacklistContext.Provider>

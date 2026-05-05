@@ -2,22 +2,19 @@ import React, { useState } from 'react';
 import { usePacklist } from '../../context/PacklistContext';
 import { PRESETS } from '../../utils/presetUtils';
 
-interface SettingsMenuProps {
-  style?: React.CSSProperties;
-  isSwiping?: boolean;
-}
-
-export const SettingsMenu: React.FC<SettingsMenuProps> = ({ style, isSwiping }) => {
+export const SettingsMenu: React.FC = () => {
   const { 
     activeMenu, setActiveMenu, changes, updateChanges, filter, setFilter, 
-    getMissingCount, applyPreset, deferredPrompt, handleInstallClick, resetAll, past
+    getMissingCount, applyPreset, deferredPrompt, handleInstallClick, resetAll, past,
+    getMenuStyles
   } = usePacklist();
 
+  const { leftMenuStyle, isMenuSwiping } = getMenuStyles();
   const [presetCruise, setPresetCruise] = useState(Object.keys(PRESETS)[0] || '');
   const baseSetQty = changes;
 
   return (
-    <div className={`side-menu left-menu ${activeMenu === 'settings' ? 'open' : ''} ${isSwiping ? 'is-swiping' : ''}`} style={style}>
+    <div className={`side-menu left-menu ${activeMenu === 'settings' ? 'open' : ''} ${isMenuSwiping ? 'is-swiping' : ''}`} style={leftMenuStyle}>
       <div className="menu-header">
         <h2>Settings</h2>
         <button className="btn-close-menu" onClick={() => setActiveMenu('main')}>✕</button>
@@ -75,8 +72,21 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({ style, isSwiping }) 
           )}
         </div>
 
-        <div className="menu-section global-actions-menu">
-          <button onClick={() => { resetAll(); setActiveMenu('main'); }} className="btn-reset">Factory Reset List</button>
+        <div className="menu-section">
+          <label>Contribute</label>
+          <p className="controls-desc">This is an open-source project. You can contribute new packing lists or improve the app on GitHub.</p>
+          <a 
+            href="https://github.com/nd-dew/sailing-packlist" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="btn-preset" 
+            style={{ display: 'block', textAlign: 'center', textDecoration: 'none', marginTop: '10px' }}
+          >
+            💻 View on GitHub
+          </a>
+        </div>
+
+        <div className="menu-section global-actions-menu">          <button onClick={() => { resetAll(); setActiveMenu('main'); }} className="btn-reset">Factory Reset List</button>
         </div>
 
         <div className="menu-section history-section">

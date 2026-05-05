@@ -1,0 +1,416 @@
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import type { ReactNode } from 'react';
+import type { 
+  PackItem, 
+  Category, 
+  Warning, 
+  Luggage, 
+  AppSnapshot, 
+  HistoryEntry 
+} from '../types';
+import { 
+  PRESETS,
+  getPresetData, 
+  getInitialLuggageAssignments, 
+  getPresetCategories 
+} from '../utils/presetUtils';
+
+interface PacklistContextType {
+  changes: number;
+  updateChanges: (newVal: number) => void;
+  showHeader: boolean;
+  categories: Category[];
+  setCategories: React.Dispatch<React.SetStateAction<Category[]>>;
+  warnings: Warning[];
+  checkedItems: Record<string, boolean>;
+  setCheckedItems: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  hiddenItems: Record<string, boolean>;
+  luggages: Luggage[];
+  setLuggages: React.Dispatch<React.SetStateAction<Luggage[]>>;
+  itemLuggage: Record<string, string>;
+  setItemLuggage: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  selectedItemId: string | null;
+  setSelectedItemId: (id: string | null) => void;
+  selectedLuggageId: string | null;
+  setSelectedLuggageId: (id: string | null) => void;
+  newLuggageName: string;
+  setNewLuggageName: (name: string) => void;
+  showHiddenCats: Record<string, boolean>;
+  toggleCatHidden: (catId: string) => void;
+  filter: 'all' | 'must-have' | 'should-have' | 'nice-to-have';
+  setFilter: (filter: 'all' | 'must-have' | 'should-have' | 'nice-to-have') => void;
+  activeMenu: 'main' | 'settings' | 'baggage';
+  setActiveMenu: (menu: 'main' | 'settings' | 'baggage') => void;
+  past: HistoryEntry[];
+  future: HistoryEntry[];
+  undo: () => void;
+  redo: () => void;
+  commitAction: (message: string) => void;
+  toggleCheck: (id: string) => void;
+  hideItem: (id: string) => void;
+  unhideItem: (id: string) => void;
+  unhideAllInCategory: (catId: string) => void;
+  cycleLuggage: (itemId: string, direction: 1 | -1) => void;
+  getNextLuggageHint: (itemId: string, direction: 1 | -1) => string;
+  applyPreset: (cruise: string, role: 'crew' | 'captain') => void;
+  resetAll: () => void;
+  handleCreateItem: (categoryId: string) => void;
+  updateItem: (id: string, updates: Partial<PackItem>) => void;
+  moveItemCategory: (itemId: string, newCategoryId: string) => void;
+  updateLuggage: (id: string, updates: Partial<Luggage>) => void;
+  handleAddLuggage: () => void;
+  getMissingCount: (priority: string) => number;
+  deferredPrompt: any;
+  handleInstallClick: () => Promise<void>;
+  confirmToast: {message: string, actionId: string} | null;
+  triggerConfirm: (message: string, actionId: string, onConfirm: () => void) => void;
+  activeToastId: string | null;
+  showPriorityToast: (catId: string) => void;
+}
+
+const PacklistContext = createContext<PacklistContextType | undefined>(undefined);
+
+export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const defaultPresetId = Object.keys(PRESETS)[0] || '';
+
+  const [changes, setChanges] = useState<number>(() => {
+    const saved = localStorage.getItem('sailingPacklist_showers_v16');
+    return saved ? parseInt(saved) : (getPresetData(defaultPresetId).showers || 3);
+  });
+  
+  const [showHeader, setShowHeader] = useState(true);
+
+  useEffect(() => {
+    localStorage.setItem('sailingPacklist_showers_v16', changes.toString());
+  }, [changes]);
+
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    const updateScrollDir = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY <= 0) {
+        setShowHeader(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setShowHeader(false);
+      } else if (currentScrollY < lastScrollY) {
+        setShowHeader(true);
+      }
+      lastScrollY = currentScrollY > 0 ? currentScrollY : 0;
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateScrollDir);
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const [categories, setCategories] = useState<Category[]>(() => {
+    const saved = localStorage.getItem('sailingPacklist_structure_v16');
+    return saved ? JSON.parse(saved) : getPresetCategories(defaultPresetId, 'crew');
+  });
+  const [warnings, setWarnings] = useState<Warning[]>(() => {
+    const saved = localStorage.getItem('sailingPacklist_warnings_v16');
+    return saved ? JSON.parse(saved) : getPresetData(defaultPresetId).warnings || [];
+  });
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem('sailingPacklist_checked_v16');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [hiddenItems, setHiddenItems] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem('sailingPacklist_hidden_v16');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [luggages, setLuggages] = useState<Luggage[]>(() => {
+    const saved = localStorage.getItem('sailingPacklist_luggages_v16');
+    return saved ? JSON.parse(saved) : getPresetData(defaultPresetId).luggages || [];
+  });
+  const [itemLuggage, setItemLuggage] = useState<Record<string, string>>(() => {
+    const saved = localStorage.getItem('sailingPacklist_itemLuggage_v16');
+    return saved ? JSON.parse(saved) : getInitialLuggageAssignments(defaultPresetId);
+  });
+
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedLuggageId, setSelectedLuggageId] = useState<string | null>(null);
+  const [newLuggageName, setNewLuggageName] = useState('');
+  const [showHiddenCats, setShowHiddenCats] = useState<Record<string, boolean>>({});
+  const [filter, setFilter] = useState<'all' | 'must-have' | 'should-have' | 'nice-to-have'>('all');
+  const [activeMenu, setActiveMenu] = useState<'main' | 'settings' | 'baggage'>('main');
+  const [activeToastId, setActiveToastId] = useState<string | null>(null);
+
+  const [confirmToast, setConfirmToast] = useState<{message: string, actionId: string} | null>(null);
+  const confirmTimeout = useRef<any>(null);
+
+  const triggerConfirm = (message: string, actionId: string, onConfirm: () => void) => {
+    if (confirmToast?.actionId === actionId) {
+      onConfirm();
+      setConfirmToast(null);
+      if (confirmTimeout.current) clearTimeout(confirmTimeout.current);
+    } else {
+      setConfirmToast({ message, actionId });
+      if (confirmTimeout.current) clearTimeout(confirmTimeout.current);
+      confirmTimeout.current = setTimeout(() => setConfirmToast(null), 3000);
+    }
+  };
+
+  useEffect(() => {
+    setConfirmToast(null);
+  }, [activeMenu, selectedItemId]);
+
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
+
+  const [past, setPast] = useState<HistoryEntry[]>([]);
+  const [future, setFuture] = useState<HistoryEntry[]>([]);
+
+  const commitAction = useCallback((message: string) => {
+    const snapshot: AppSnapshot = { changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage };
+    setPast(prev => [...prev.slice(-29), { id: Date.now().toString(), message, timestamp: Date.now(), snapshot }]);
+    setFuture([]);
+  }, [changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage]);
+
+  const redo = useCallback(() => {
+    if (future.length === 0) return;
+    const next = future[0];
+    const currentSnapshot: AppSnapshot = { changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage };
+    setPast(prev => [...prev, { id: Date.now().toString(), message: next.message, timestamp: Date.now(), snapshot: currentSnapshot }]);
+    setChanges(next.snapshot.changes);
+    setCategories(next.snapshot.categories);
+    setWarnings(next.snapshot.warnings);
+    setCheckedItems(next.snapshot.checkedItems);
+    setHiddenItems(next.snapshot.hiddenItems);
+    setLuggages(next.snapshot.luggages);
+    setItemLuggage(next.snapshot.itemLuggage);
+    setFuture(prev => prev.slice(1));
+  }, [future, changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage]);
+
+  const undo = useCallback(() => {
+    if (past.length === 0) return;
+    const last = past[past.length - 1];
+    const currentSnapshot: AppSnapshot = { changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage };
+    setFuture(prev => [{ id: Date.now().toString(), message: last.message, timestamp: Date.now(), snapshot: currentSnapshot }, ...prev]);
+    setChanges(last.snapshot.changes);
+    setCategories(last.snapshot.categories);
+    setWarnings(last.snapshot.warnings);
+    setCheckedItems(last.snapshot.checkedItems);
+    setHiddenItems(last.snapshot.hiddenItems);
+    setLuggages(last.snapshot.luggages);
+    setItemLuggage(last.snapshot.itemLuggage);
+    setPast(prev => prev.slice(0, -1));
+  }, [past, changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
+
+  useEffect(() => { localStorage.setItem('sailingPacklist_structure_v16', JSON.stringify(categories)); }, [categories]);
+  useEffect(() => { localStorage.setItem('sailingPacklist_warnings_v16', JSON.stringify(warnings)); }, [warnings]);
+  useEffect(() => { localStorage.setItem('sailingPacklist_checked_v16', JSON.stringify(checkedItems)); }, [checkedItems]);
+  useEffect(() => { localStorage.setItem('sailingPacklist_hidden_v16', JSON.stringify(hiddenItems)); }, [hiddenItems]);
+  useEffect(() => { localStorage.setItem('sailingPacklist_luggages_v16', JSON.stringify(luggages)); }, [luggages]);
+  useEffect(() => { localStorage.setItem('sailingPacklist_itemLuggage_v16', JSON.stringify(itemLuggage)); }, [itemLuggage]);
+
+  const updateChanges = (newVal: number) => {
+    commitAction(`Changed showers to ${newVal}`);
+    setChanges(newVal);
+  };
+
+  const toggleCheck = (id: string) => {
+    const item = categories.flatMap(c => c.items).find(i => i.id === id);
+    commitAction(checkedItems[id] ? `Unchecked ${item?.name || 'item'}` : `Checked ${item?.name || 'item'}`);
+    setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+  
+  const hideItem = (id: string) => {
+    const item = categories.flatMap(c => c.items).find(i => i.id === id);
+    commitAction(`Hid ${item?.name || 'item'}`);
+    setHiddenItems(prev => ({ ...prev, [id]: true }));
+  };
+  
+  const unhideItem = (id: string) => {
+    const item = categories.flatMap(c => c.items).find(i => i.id === id);
+    commitAction(`Restored ${item?.name || 'item'}`);
+    setHiddenItems(prev => { const next = {...prev}; delete next[id]; return next; });
+  };
+  
+  const toggleCatHidden = (catId: string) => setShowHiddenCats(prev => ({ ...prev, [catId]: !prev[catId] }));
+
+  const unhideAllInCategory = (catId: string) => {
+    const cat = categories.find(c => c.id === catId);
+    if (!cat) return;
+    commitAction(`Restored all items in ${cat.title}`);
+    setHiddenItems(prev => {
+      const next = { ...prev };
+      cat.items.forEach(item => delete next[item.id]);
+      return next;
+    });
+    setShowHiddenCats(prev => ({ ...prev, [catId]: false }));
+  };
+
+  const cycleLuggage = (itemId: string, direction: 1 | -1) => {
+    const item = categories.flatMap(c => c.items).find(i => i.id === itemId);
+    commitAction(`Changed bag for ${item?.name || 'item'}`);
+    setItemLuggage(prev => {
+      const currentLugId = prev[itemId];
+      const currentIndex = luggages.findIndex(l => l.id === currentLugId);
+      const total = luggages.length + 1;
+      let virtIndex = currentIndex === -1 ? 0 : currentIndex + 1;
+      let nextVirt = (virtIndex + direction) % total;
+      if (nextVirt < 0) nextVirt += total;
+      const nextState = { ...prev };
+      if (nextVirt === 0) delete nextState[itemId];
+      else nextState[itemId] = luggages[nextVirt - 1].id;
+      return nextState;
+    });
+  };
+
+  const getNextLuggageHint = (itemId: string, direction: 1 | -1) => {
+    const currentLugId = itemLuggage[itemId];
+    const currentIndex = luggages.findIndex(l => l.id === currentLugId);
+    const total = luggages.length + 1;
+    let virtIndex = currentIndex === -1 ? 0 : currentIndex + 1;
+    let nextVirt = (virtIndex + direction) % total;
+    if (nextVirt < 0) nextVirt += total;
+    if (nextVirt === 0) return 'Unassign luggage';
+    return `Put in ${luggages[nextVirt - 1]?.name}` || 'Unassign luggage';
+  };
+
+  const applyPreset = (cruise: string, role: 'crew' | 'captain') => {
+    if (confirm(`WARNING: This will completely factory reset your list to the ${role.toUpperCase()} preset for this cruise. ALL custom items, bag assignments, and packing progress will be permanently lost! Are you sure?`)) {
+      setCategories(getPresetCategories(cruise, role));
+      setWarnings(getPresetData(cruise).warnings || []);
+      setHiddenItems({});
+      setCheckedItems({});
+      setItemLuggage(getInitialLuggageAssignments(cruise));
+      setLuggages(getPresetData(cruise).luggages || []);
+      setActiveMenu('main');
+    }
+  };
+
+  const resetAll = () => {
+    if (confirm("Reset everything to default?")) {
+      setCategories(getPresetCategories(defaultPresetId, 'crew'));
+      setWarnings(getPresetData(defaultPresetId).warnings || []);
+      setHiddenItems({});
+      setCheckedItems({});
+      setItemLuggage(getInitialLuggageAssignments(defaultPresetId));
+      setLuggages(getPresetData(defaultPresetId).luggages || []);
+      localStorage.clear();
+      window.location.reload();
+    }
+  };
+
+  const handleCreateItem = (categoryId: string) => {
+    commitAction('Created new custom item');
+    const newId = `custom_${Date.now()}`;
+    setCategories(prev => prev.map(cat => (cat.id === categoryId ? { ...cat, items: [...cat.items, { id: newId, name: '' }] } : cat)));
+    setSelectedItemId(newId);
+  };
+
+  const updateItem = (id: string, updates: Partial<PackItem>) => {
+    setCategories(prev => prev.map(cat => ({
+      ...cat,
+      items: cat.items.map(item => item.id === id ? { ...item, ...updates } : item)
+    })));
+  };
+
+  const moveItemCategory = (itemId: string, newCategoryId: string) => {
+    const item = categories.flatMap(c => c.items).find(i => i.id === itemId);
+    const newCat = categories.find(c => c.id === newCategoryId);
+    commitAction(`Moved ${item?.name || 'item'} to ${newCat?.title || 'new category'}`);
+    setCategories(prev => {
+      let movedItem: PackItem | undefined;
+      const removedFromPrev = prev.map(cat => {
+        const itemIndex = cat.items.findIndex(i => i.id === itemId);
+        if (itemIndex > -1) {
+          movedItem = cat.items[itemIndex];
+          const newItems = [...cat.items];
+          newItems.splice(itemIndex, 1);
+          return { ...cat, items: newItems };
+        }
+        return cat;
+      });
+      if (!movedItem) return prev;
+      return removedFromPrev.map(cat => {
+        if (cat.id === newCategoryId) {
+          return { ...cat, items: [...cat.items, movedItem!] };
+        }
+        return cat;
+      });
+    });
+  };
+
+  const updateLuggage = (id: string, updates: Partial<Luggage>) => {
+    setLuggages(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
+  };
+
+  const handleAddLuggage = () => {
+    if (!newLuggageName.trim()) return;
+    commitAction(`Added bag: ${newLuggageName}`);
+    setLuggages(prev => [...prev, { id: `lug_${Date.now()}`, name: newLuggageName.trim() }]);
+    setNewLuggageName('');
+  };
+
+  const getMissingCount = (priority: string) => {
+    return categories
+      .filter(c => priority === 'all' || c.priority === priority)
+      .flatMap(c => c.items)
+      .filter(i => !hiddenItems[i.id] && !checkedItems[i.id])
+      .length;
+  };
+
+  const showPriorityToast = (catId: string) => {
+    setActiveToastId(catId);
+    setTimeout(() => {
+      setActiveToastId(prev => prev === catId ? null : prev);
+    }, 2000);
+  };
+
+  return (
+    <PacklistContext.Provider value={{
+      changes, updateChanges, showHeader, categories, setCategories, warnings, checkedItems, setCheckedItems,
+      hiddenItems, luggages, setLuggages, itemLuggage, setItemLuggage, selectedItemId, setSelectedItemId,
+      selectedLuggageId, setSelectedLuggageId, newLuggageName, setNewLuggageName, showHiddenCats, toggleCatHidden,
+      filter, setFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, hideItem,
+      unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, applyPreset, resetAll, handleCreateItem,
+      updateItem, moveItemCategory, updateLuggage, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
+      confirmToast, triggerConfirm, activeToastId, showPriorityToast
+    }}>
+      {children}
+    </PacklistContext.Provider>
+  );
+};
+
+export const usePacklist = () => {
+  const context = useContext(PacklistContext);
+  if (!context) throw new Error('usePacklist must be used within a PacklistProvider');
+  return context;
+};

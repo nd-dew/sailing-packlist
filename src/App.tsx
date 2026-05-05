@@ -54,7 +54,7 @@ const AppContent: React.FC = () => {
 
       <footer className="app-footer">
         <a href="https://www.sailingcommunity.be/" target="_blank" rel="noopener noreferrer">
-          <img src="/bsc.ico" alt="BSC" style={{ width: '20px', height: '20px', marginRight: '8px' }} />
+          <img src={`${import.meta.env.BASE_URL}bsc.ico`} alt="BSC" style={{ width: '20px', height: '20px', marginRight: '8px' }} />
           Belgian Sailing Community
         </a>
         <span style={{ margin: '0 10px', color: '#ccc' }}>|</span>

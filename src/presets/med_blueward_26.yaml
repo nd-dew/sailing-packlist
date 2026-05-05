@@ -6,12 +6,11 @@ warnings:
   - id: "warn_1"
     text: "No Hard Suitcases: Soft bags only! Rigid luggage is impossible to store on a boat. Bring a soft duffel."
   - id: "warn_2"
-    text: "Sleeping Bag: Check with the captain first! Many charters provide bed linen."
+    text: "Water Shoes / Flip-flops: Essential for public showers and protecting your feet from sea urchins when swimming near rocky shores."
 
 luggages:
   - id: "lug_1"
     name: "Main Duffel Bag"
-    description: "Trying to fit in the two carry ons with Ryanair. Dimensions: 55x40x20cm. Duffle is a little bit exceeding them, but since it's a duffle, it's compressible, and nobody cares."
   - id: "lug_2"
     name: "Day Backpack"
 
@@ -22,6 +21,10 @@ categories:
     items:
       - id: "docs_passport"
         name: "ID Card / Passport"
+        defaultBag: "lug_2"
+      - id: "docs_health_insurance"
+        name: "Health Insurance Card (EHIC)"
+        description: "European Health Insurance Card or personal travel/medical insurance details."
         defaultBag: "lug_2"
       - id: "docs_printed"
         name: "Printed Documents"
@@ -53,30 +56,16 @@ categories:
         description: "Many smaller island restaurants and local ports only accept cash."
         defaultBag: "lug_2"
 
-  - id: "base"
-    title: "👕 Get Dressed: Base Layers"
+  - id: "tough"
+    title: "👕 Get Warm"
     priority: "must-have"
     items:
-      - id: "base_underwear"
-        name: "Underwear"
-        qty: 0
-      - id: "base_socks"
-        name: "Socks"
-        qty: 0
-      - id: "base_tshirt"
-        name: "T-Shirts / Tops"
-        qty: 0
       - id: "base_thermal_top"
         name: "Thermal Base Layer (Top)"
         description: "Highly recommended for night watches."
       - id: "base_thermal_bot"
         name: "Thermal Base Layer (Bottom)"
         description: "Highly recommended for cold night watches."
-
-  - id: "tough"
-    title: "👕 Get Dressed: Tough Weather"
-    priority: "must-have"
-    items:
       - id: "out_shoes_tough"
         name: "Tough Weather / Rain Boots"
         description: "For standing in the rain during a night watch. Keep your feet dry to stay warm!"
@@ -93,10 +82,19 @@ categories:
         name: "Windproof / Waterproof Bottoms"
         description: "Keeps your legs dry when sitting on wet decks."
 
-  - id: "outerwear"
-    title: "👕 Get Dressed: General"
-    priority: "should-have"
+  - id: "base"
+    title: "👕 Get Dressed"
+    priority: "must-have"
     items:
+      - id: "base_underwear"
+        name: "Underwear"
+        qty: 0
+      - id: "base_socks"
+        name: "Socks"
+        qty: 0
+      - id: "base_tshirt"
+        name: "T-Shirts / Tops"
+        qty: 0
       - id: "out_shoes_deck"
         name: "Sneakers"
         description: "One pair of sneakers for everything: exploring on land and moving on the boat. Ensure soles are non-marking."

@@ -1,73 +1,48 @@
-# React + TypeScript + Vite
+# ⛵ PackList: The Ultimate Sailing Companion
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A professional, mobile-optimized Progressive Web App (PWA) for sailors to manage their packing lists, driven by customizable YAML presets. Designed for the Belgian Sailing Community and beyond.
 
-Currently, two official plugins are available:
+## 🚀 Features
+- **Offline First:** PWA support means it works at sea without a connection.
+- **Smart History:** Full Undo/Redo (Ctrl+Z/Y) with an action log.
+- **Swipe Gestures:** Right-swipe to pack/hide, Left-swipe to cycle luggage.
+- **YAML Driven:** Fully customizable categories, items, and warnings via simple YAML files.
+- **Luggage Management:** Track multiple bags with visual badges and photo uploads.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🛠️ Architecture
+The project is built with **React (TypeScript) + Vite** and follows a modular architecture:
+- `src/context/`: Global state management and business logic.
+- `src/presets/`: YAML files containing the packing list templates.
+- `src/components/`: Isolated, reusable UI components (Layout, Core, Modals).
+- `src/types/`: Centralized TypeScript interfaces.
 
-## React Compiler
+## 🤝 Contributing New Presets
+We encourage sailors to contribute their own packing lists for different regions (e.g., Caribbean, North Sea, Baltic).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### How to add a new PackList:
+1. Create a new `.yaml` file in `src/presets/` (e.g., `caribbean_cruise.yaml`).
+2. Follow the structure of `med_blueward_26.yaml`:
+   ```yaml
+   id: "my_unique_id"
+   name: "Display Name"
+   showers: 7
+   warnings: [...]
+   luggages: [...]
+   categories: [...]
+   ```
+3. Register your new preset in `src/context/PacklistContext.tsx`:
+   ```typescript
+   import myNewPresetRaw from '../presets/my_new_preset.yaml?raw';
+   // ... add to the PRESETS object
+   ```
+4. Add it to the selection dropdown in `src/components/layout/SettingsMenu.tsx`.
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 📦 Development
+```bash
+npm install
+npm run dev    # Start local development server
+npm run build  # Generate production-ready PWA build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 📜 License
+MIT

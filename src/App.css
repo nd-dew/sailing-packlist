@@ -134,6 +134,13 @@ body {
   transition: all 0.2s;
 }
 
+.header-undo-btn.big-btn {
+  font-size: 1.6em;
+  padding: 6px 14px;
+  min-width: 50px;
+  min-height: 50px;
+}
+
 .header-undo-btn:hover:not(:disabled) {
   background: var(--light-blue);
   border-color: var(--navy);

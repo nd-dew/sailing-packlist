@@ -72,21 +72,8 @@ export const SettingsMenu: React.FC = () => {
           )}
         </div>
 
-        <div className="menu-section">
-          <label>Contribute</label>
-          <p className="controls-desc">This is an open-source project. You can contribute new packing lists or improve the app on GitHub.</p>
-          <a 
-            href="https://github.com/nd-dew/sailing-packlist" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="btn-preset" 
-            style={{ display: 'block', textAlign: 'center', textDecoration: 'none', marginTop: '10px' }}
-          >
-            💻 View on GitHub
-          </a>
-        </div>
-
-        <div className="menu-section global-actions-menu">          <button onClick={() => { resetAll(); setActiveMenu('main'); }} className="btn-reset">Factory Reset List</button>
+        <div className="menu-section global-actions-menu">
+          <button onClick={() => { resetAll(); setActiveMenu('main'); }} className="btn-reset">Factory Reset List</button>
         </div>
 
         <div className="menu-section history-section">

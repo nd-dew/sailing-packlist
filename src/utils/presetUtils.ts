@@ -6,9 +6,11 @@ const rawPresets = import.meta.glob('../presets/*.yaml', { query: '?raw', eager:
 
 export const PRESETS: Record<string, any> = {};
 
-Object.entries(rawPresets).forEach(([path, content]) => {
+Object.entries(rawPresets).forEach(([path, moduleExport]) => {
   const id = path.split('/').pop()?.replace('.yaml', '') || path;
-  PRESETS[id] = parse(content as string);
+  // Vite 8 raw imports return a module object with a default export when used with eager: true
+  const content = typeof moduleExport === 'string' ? moduleExport : (moduleExport as any).default;
+  PRESETS[id] = parse(content);
 });
 
 export const getPresetData = (cruiseId: string) => PRESETS[cruiseId] || Object.values(PRESETS)[0];

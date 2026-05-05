@@ -57,6 +57,10 @@ const AppContent: React.FC = () => {
           <img src="/bsc.ico" alt="BSC" style={{ width: '20px', height: '20px', marginRight: '8px' }} />
           Belgian Sailing Community
         </a>
+        <span style={{ margin: '0 10px', color: '#ccc' }}>|</span>
+        <a href="https://github.com/nd-dew/sailing-packlist" target="_blank" rel="noopener noreferrer" style={{ fontWeight: 'normal', fontSize: '0.9em' }}>
+          GitHub
+        </a>
       </footer>
     </div>
   );

@@ -31,14 +31,14 @@ body {
 /* Confirmation Toast Overlay */
 .confirm-toast-overlay {
   position: fixed;
-  top: 70px;
+  bottom: 40px;
   left: 0;
   right: 0;
   display: flex;
   justify-content: center;
   z-index: 5000;
   pointer-events: none;
-  animation: slideDownToast 0.3s ease-out;
+  animation: slideUpToast 0.3s ease-out;
 }
 
 .confirm-toast {
@@ -52,8 +52,8 @@ body {
   pointer-events: auto;
 }
 
-@keyframes slideDownToast {
-  from { transform: translateY(-20px); opacity: 0; }
+@keyframes slideUpToast {
+  from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 

@@ -903,6 +903,20 @@ body {
   background: var(--navy); color: white; border-color: var(--navy); font-weight: bold;
 }
 
+.cat-pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f0f0f0;
+  color: #999;
+  border-color: #ddd;
+}
+
+.cat-pill.active:disabled {
+  background: var(--navy);
+  color: white;
+  opacity: 0.6;
+}
+
 /* Luggage specific */
 .luggage-card {
   background: white; padding: 12px; border-radius: 8px;

@@ -63,7 +63,7 @@ export const ItemModal: React.FC = () => {
                  onClick={() => setSelectedItemId(parentItem.id)}
                  title="Go back to parent"
                >
-                 <span>↑</span> {parentItem.name}
+                 <span style={{ fontSize: '1.2em', lineHeight: '1' }}>↰</span> {parentItem.name}
                </div>
             )}
             <div className="modal-title-wrapper">
@@ -138,12 +138,14 @@ export const ItemModal: React.FC = () => {
                 <label>Category</label>
                 <div className="category-pills">
                   {categories.map(cat => {
-                    const currentCatId = categories.find(c => c.items.some(i => i.id === selectedItem.id))?.id;
+                    const currentCatId = categories.find(c => c.items.some(i => i.id === selectedItem.id || (i.subItems && i.subItems.some(s => s.id === selectedItem.id))))?.id;
                     return (
                       <button 
                         key={cat.id} 
                         className={`cat-pill ${currentCatId === cat.id ? 'active' : ''}`}
                         onClick={() => moveItemCategory(selectedItem.id, cat.id)}
+                        disabled={!!parentItem}
+                        title={parentItem ? "Sub-items inherit their category from the parent item." : ""}
                       >
                         {cat.title}
                       </button>

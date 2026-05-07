@@ -787,6 +787,18 @@ body {
   .modal-overlay { align-items: flex-start; }
 }
 
+.modal-swipe-bg {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 40px);
+  max-width: 450px;
+  height: 300px;
+  border-radius: 12px;
+  pointer-events: none;
+  z-index: 9998;
+}
+
 .item-card-modal {
   background: white; border-radius: 12px;
   width: 92%; max-width: 450px;

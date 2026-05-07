@@ -60,6 +60,7 @@ interface PacklistContextType {
   handleCreateItem: (categoryId: string) => void;
   handleAddSubItem: (parentId: string) => void;
   updateItem: (id: string, updates: Partial<PackItem>) => void;
+  deleteItem: (id: string, parentId?: string) => void;
   moveItemCategory: (itemId: string, newCategoryId: string) => void;
   updateLuggage: (id: string, updates: Partial<Luggage>) => void;
   handleAddLuggage: () => void;
@@ -139,7 +140,15 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   });
   const [luggages, setLuggages] = useState<Luggage[]>(() => {
     const saved = localStorage.getItem('sailingPacklist_luggages_v16');
-    return saved ? JSON.parse(saved) : getPresetData(defaultPresetId).luggages || [];
+    let loaded = saved ? JSON.parse(saved) : getPresetData(defaultPresetId).luggages || [];
+    // Migrate old emoji icons to new string IDs
+    loaded = loaded.map((lug: Luggage) => {
+      if (lug.icon === '🧳') return { ...lug, icon: 'duffel' };
+      if (lug.icon === '🎒') return { ...lug, icon: 'backpack' };
+      if (lug.icon === '🧍') return { ...lug, icon: 'on_person' };
+      return lug;
+    });
+    return loaded;
   });
   const [itemLuggage, setItemLuggage] = useState<Record<string, string>>(() => {
     const saved = localStorage.getItem('sailingPacklist_itemLuggage_v16');
@@ -426,18 +435,22 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setCategories(prev => prev.map(cat => ({
       ...cat,
       items: cat.items.map(item => {
-        if (item.id === id) {
-          return { ...item, ...updates };
-        }
-        if (item.subItems) {
-          return {
-            ...item,
-            subItems: item.subItems.map(sub => sub.id === id ? { ...sub, ...updates } : sub)
-          };
-        }
+        if (item.id === id) return { ...item, ...updates };
+        if (item.subItems) return { ...item, subItems: item.subItems.map(sub => sub.id === id ? { ...sub, ...updates } : sub) };
         return item;
       })
     })));
+  };
+
+  const deleteItem = (id: string, parentId?: string) => {
+    const item = findItemDeep(id);
+    commitAction(`Deleted ${item?.name || 'item'}`);
+    setCategories(prev => prev.map(c => {
+      if (parentId) {
+        return { ...c, items: c.items.map(i => i.id === parentId ? { ...i, subItems: i.subItems?.filter(s => s.id !== id) } : i) };
+      }
+      return { ...c, items: c.items.filter(i => i.id !== id) };
+    }));
   };
 
   const moveItemCategory = (itemId: string, newCategoryId: string) => {
@@ -530,7 +543,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       selectedLuggageId, setSelectedLuggageId, newLuggageName, setNewLuggageName, showHiddenCats, toggleCatHidden,
       filter, setFilter, itemViewFilter, setItemViewFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, hideItem,
       unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, applyPreset, resetAll, handleCreateItem, handleAddSubItem,
-      updateItem, moveItemCategory, updateLuggage, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
+      updateItem, deleteItem, moveItemCategory, updateLuggage, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles
       }}>

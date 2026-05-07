@@ -15,6 +15,7 @@ export const ItemModal: React.FC = () => {
   const [isSwipingState, setIsSwipingState] = useState(false);
   const touchStart = useRef<{x: number, y: number} | null>(null);
   const isSwipingRef = useRef(false);
+  const wasSwiped = useRef(false);
 
   if (!selectedItemId) return null;
 
@@ -50,6 +51,11 @@ export const ItemModal: React.FC = () => {
     setSelectedItemId(null);
   };
 
+  const handleOverlayClick = () => {
+    if (wasSwiped.current) return;
+    closeItemModal();
+  };
+
   const handleRealDelete = () => {
     if (confirm(`Delete ${selectedItem.name || 'this item'}?`)) {
       deleteItem(selectedItemId, parentItem?.id);
@@ -63,6 +69,7 @@ export const ItemModal: React.FC = () => {
     touchStart.current = { x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY };
     setIsSwipingState(true);
     isSwipingRef.current = false;
+    wasSwiped.current = false;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -72,6 +79,7 @@ export const ItemModal: React.FC = () => {
     const dy = e.targetTouches[0].clientY - touchStart.current.y;
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
       isSwipingRef.current = true;
+      wasSwiped.current = true;
       setSwipeOffset(dx);
     }
   };
@@ -93,24 +101,30 @@ export const ItemModal: React.FC = () => {
 
     setSwipeOffset(0);
     setIsSwipingState(false);
-    setTimeout(() => { isSwipingRef.current = false; touchStart.current = null; }, 50);
+    setTimeout(() => { isSwipingRef.current = false; touchStart.current = null; wasSwiped.current = false; }, 100);
   };
 
   const isHidden = hiddenItems ? !!hiddenItems[selectedItem.id] : false;
 
   return (
-    <div className="modal-overlay" onClick={closeItemModal}>
+    <div 
+      className="modal-overlay" 
+      onClick={handleOverlayClick}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="modal-swipe-container" style={{ position: 'relative', width: '92%', maxWidth: '450px' }} onClick={(e) => e.stopPropagation()}>
-        <div className={`swipe-background modal-swipe-bg ${isSwipingState && swipeOffset > 0 ? 'bg-pack' : isSwipingState && swipeOffset < 0 ? 'bg-cycle' : ''}`}>
+        <div 
+          className={`swipe-background modal-swipe-bg ${isSwipingState && swipeOffset > 0 ? 'bg-pack' : isSwipingState && swipeOffset < 0 ? 'bg-cycle' : ''}`}
+          style={{ opacity: swipeOffset !== 0 ? 1 : 0, transition: 'opacity 0.2s' }}
+        >
            <div className="swipe-hint left">→ Pack & Hide</div>
            <div className="swipe-hint right">{getNextLuggageHint(selectedItem.id, 1)} ←</div>
         </div>
         <div 
           className={`item-card-modal ${checkedItems[selectedItemId] ? 'modal-item-checked' : ''} ${isHidden ? 'modal-item-hidden' : ''}`} 
           style={{ transform: isSwipingState ? `translateX(${swipeOffset}px)` : 'translateX(0px)', transition: isSwipingState ? 'none' : 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)', width: '100%', maxWidth: '100%' }}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
         >
           <div className="modal-header">
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, marginRight: '10px' }}>

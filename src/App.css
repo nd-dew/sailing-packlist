@@ -99,11 +99,11 @@ body {
 }
 
 .filter-glow-frame.packed {
-  box-shadow: inset 0 0 20px 4px rgba(40, 167, 69, 0.4);
+  box-shadow: inset 0 0 10px 1px rgba(40, 167, 69, 0.2);
 }
 
 .filter-glow-frame.unpacked {
-  box-shadow: inset 0 0 20px 4px rgba(255, 65, 54, 0.4);
+  box-shadow: inset 0 0 10px 1px rgba(255, 65, 54, 0.2);
 }
 
 .confirm-toast {

@@ -89,7 +89,7 @@ export const ItemModal: React.FC = () => {
     e.stopPropagation();
     const dx = e.changedTouches[0].clientX - touchStart.current.x;
     
-    if (isSwipingRef.current && Math.abs(dx) > 80) {
+    if (isSwipingRef.current && Math.abs(dx) > 120) {
       if (dx > 0) {
         if (!checkedItems[selectedItem.id]) toggleCheck(selectedItem.id);
         hideItem(selectedItem.id);

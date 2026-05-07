@@ -73,7 +73,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
     if (!touchStart.current) return;
     const dx = e.changedTouches[0].clientX - touchStart.current.x;
     
-    if (isSwipingRef.current && Math.abs(dx) > 60) {
+    if (isSwipingRef.current && Math.abs(dx) > 120) {
       if (dx > 0) {
         // Swipe Right: Pack & Hide
         if (!isItemChecked) {

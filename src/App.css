@@ -879,6 +879,12 @@ button:active,
   margin-bottom: 3px; /* Add tiny space between items */
   border-radius: 8px; /* Give it a card-like appearance */
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  animation: slide-in-item 0.2s ease-out forwards;
+}
+
+@keyframes slide-in-item {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .item-row {

@@ -628,6 +628,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const deleteCategory = (id: string) => {
+    playPopSound('pop');
     commitAction('Deleted category');
     setCategories(prev => prev.filter(c => c.id !== id));
     setSelectedCategoryId(null);
@@ -636,6 +637,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const setCategoryLuggage = (categoryId: string, luggageId: string) => {
     const cat = categories.find(c => c.id === categoryId);
     if (!cat) return;
+    playPopSound('pop');
     commitAction(`Moved ${cat.title} to bag`);
     setItemLuggage(prev => {
       const next = { ...prev };
@@ -653,6 +655,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const packAndHideCategory = (categoryId: string) => {
     const cat = categories.find(c => c.id === categoryId);
     if (!cat) return;
+    playPopSound('click');
     commitAction(`Packed & hid ${cat.title}`);
     setCheckedItems(prevChecked => {
       const nextChecked = { ...prevChecked };
@@ -681,6 +684,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const hideCategoryItemsAction = (categoryId: string) => {
     const cat = categories.find(c => c.id === categoryId);
     if (!cat) return;
+    playPopSound('pop');
     commitAction(`Hid all in ${cat.title}`);
     setHiddenItems(prevHidden => {
       const nextHidden = { ...prevHidden };
@@ -698,6 +702,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const unpackCategoryItemsAction = (categoryId: string) => {
     const cat = categories.find(c => c.id === categoryId);
     if (!cat) return;
+    playPopSound('click');
     commitAction(`Unpacked all in ${cat.title}`);
     setCheckedItems(prevChecked => {
       const nextChecked = { ...prevChecked };
@@ -724,6 +729,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const deleteItem = (id: string, parentId?: string) => {
+    playPopSound('pop');
     const item = findItemDeep(id);
     commitAction(`Deleted ${item?.name || 'item'}`);
     setCategories(prev => prev.map(c => {
@@ -765,6 +771,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const deleteLuggage = (id: string) => {
+    playPopSound('pop');
     const lug = luggages.find(l => l.id === id);
     commitAction(`Deleted bag ${lug?.name || ''}`);
     setLuggages(prev => prev.filter(l => l.id !== id));
@@ -781,6 +788,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const packAndHideLuggageItems = (luggageId: string) => {
     const lug = luggages.find(l => l.id === luggageId);
     if (!lug) return;
+    playPopSound('click');
     commitAction(`Packed & hid bag ${lug.name}`);
     
     const itemsInBag = Object.keys(itemLuggage).filter(itemId => itemLuggage[itemId] === luggageId);
@@ -800,6 +808,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const unpackLuggageItems = (luggageId: string) => {
     const lug = luggages.find(l => l.id === luggageId);
     if (!lug) return;
+    playPopSound('click');
     commitAction(`Unpacked bag ${lug.name}`);
     
     const itemsInBag = Object.keys(itemLuggage).filter(itemId => itemLuggage[itemId] === luggageId);
@@ -813,6 +822,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const hideLuggageItems = (luggageId: string) => {
     const lug = luggages.find(l => l.id === luggageId);
     if (!lug) return;
+    playPopSound('pop');
     commitAction(`Hid bag ${lug.name}`);
     
     const itemsInBag = Object.keys(itemLuggage).filter(itemId => itemLuggage[itemId] === luggageId);

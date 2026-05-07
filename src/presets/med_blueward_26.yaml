@@ -148,16 +148,14 @@ categories:
     title: "🪛 Tech Kit"
     priority: "should-have"
     items:
-      - id: "tech_cables"
-        name: "Charging & Cables"
-        description: |
-          - Laptop Charger
-          - Phone Charger
-          - Watch Charger
-          - Powerbank
-          - USB-A to USB-C adapter (older yachts still have USB-A)
-          - 12V 'car lighter' plug
+      - id: "tech_phone_kit"
+        name: "Phone Kit"
         defaultBag: "lug_2"
+        subItems:
+          - id: "tech_phone"
+            name: "Phone"
+          - id: "tech_phone_charger"
+            name: "Phone Charger"
       - id: "tech_headlamp"
         name: "Headlamp (Must have RED light)"
         description: "Red light preserves night vision for everyone on deck."

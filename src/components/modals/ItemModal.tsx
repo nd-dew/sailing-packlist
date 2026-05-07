@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { usePacklist } from '../../context/PacklistContext';
 
 export const ItemModal: React.FC = () => {
@@ -6,6 +6,8 @@ export const ItemModal: React.FC = () => {
     selectedItemId, setSelectedItemId, categories, updateItem, moveItemCategory, 
     luggages, itemLuggage, setItemLuggage, commitAction, setCategories, checkedItems, toggleCheck
   } = usePacklist();
+  
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   if (!selectedItemId) return null;
 
@@ -37,44 +39,6 @@ export const ItemModal: React.FC = () => {
           <button className="btn-close-modal" onClick={closeItemModal}>✕</button>
         </div>
         <div className="modal-body">
-          <div className="modal-field">
-            <label>Category</label>
-            <div className="category-pills">
-              {categories.map(cat => {
-                const currentCatId = categories.find(c => c.items.some(i => i.id === selectedItem.id))?.id;
-                return (
-                  <button 
-                    key={cat.id} 
-                    className={`cat-pill ${currentCatId === cat.id ? 'active' : ''}`}
-                    onClick={() => moveItemCategory(selectedItem.id, cat.id)}
-                  >
-                    {cat.title}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="modal-field">
-            <label>Assigned Baggage</label>
-            <div className="luggage-toggle-group">
-              <button 
-                className={`luggage-toggle-btn ${!itemLuggage[selectedItem.id] ? 'active' : ''}`} 
-                onClick={() => setItemLuggage(prev => { const next = {...prev}; delete next[selectedItem.id]; return next; })}
-              >
-                Unassigned
-              </button>
-              {luggages.map((lug, idx) => (
-                <button 
-                  key={lug.id} 
-                  className={`luggage-toggle-btn ${itemLuggage[selectedItem.id] === lug.id ? 'active' : ''}`} 
-                  onClick={() => setItemLuggage(prev => ({ ...prev, [selectedItem.id]: lug.id }))}
-                >
-                  [{idx + 1}] {lug.name}
-                </button>
-              ))}
-            </div>
-          </div>
           <div className="modal-field">
             <label>Description / Advice</label>
             <textarea 
@@ -109,6 +73,55 @@ export const ItemModal: React.FC = () => {
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          <div className="modal-advanced-toggle">
+            <button onClick={() => setShowAdvanced(!showAdvanced)}>
+              {showAdvanced ? 'Hide Advanced' : 'Show Advanced...'}
+            </button>
+          </div>
+
+          {showAdvanced && (
+            <div className="modal-advanced-content">
+              <div className="modal-field">
+                <label>Category</label>
+                <div className="category-pills">
+                  {categories.map(cat => {
+                    const currentCatId = categories.find(c => c.items.some(i => i.id === selectedItem.id))?.id;
+                    return (
+                      <button 
+                        key={cat.id} 
+                        className={`cat-pill ${currentCatId === cat.id ? 'active' : ''}`}
+                        onClick={() => moveItemCategory(selectedItem.id, cat.id)}
+                      >
+                        {cat.title}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="modal-field">
+                <label>Assigned Baggage</label>
+                <div className="luggage-toggle-group">
+                  <button 
+                    className={`luggage-toggle-btn ${!itemLuggage[selectedItem.id] ? 'active' : ''}`} 
+                    onClick={() => setItemLuggage(prev => { const next = {...prev}; delete next[selectedItem.id]; return next; })}
+                  >
+                    Unassigned
+                  </button>
+                  {luggages.map((lug, idx) => (
+                    <button 
+                      key={lug.id} 
+                      className={`luggage-toggle-btn ${itemLuggage[selectedItem.id] === lug.id ? 'active' : ''}`} 
+                      onClick={() => setItemLuggage(prev => ({ ...prev, [selectedItem.id]: lug.id }))}
+                    >
+                      [{idx + 1}] {lug.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>

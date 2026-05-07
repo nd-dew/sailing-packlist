@@ -711,12 +711,16 @@ body {
 
 .sub-item-stats {
   position: absolute;
-  bottom: 2px;
-  right: 10px;
-  font-size: 0.7em;
+  bottom: 0px;
+  right: 0px;
+  font-size: 0.5em;
   font-weight: bold;
-  opacity: 0.8;
+  opacity: 0.9;
   white-space: nowrap;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 0px 2px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .sub-item-stats span {
@@ -725,12 +729,16 @@ body {
 }
 .sub-item-stats {
   position: absolute;
-  bottom: 2px;
-  right: 10px;
-  font-size: 0.7em;
+  bottom: -4px; /* Adjust as needed */
+  right: -4px; /* Adjust as needed */
+  font-size: 0.6em; /* Make it smaller */
   font-weight: bold;
-  opacity: 0.8;
+  opacity: 0.9; /* Slightly more opaque */
   white-space: nowrap;
+  background-color: rgba(255, 255, 255, 0.8); /* Subtle background */
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .sub-item-stats span {
@@ -746,7 +754,7 @@ body {
   word-wrap: break-word;
   overflow-wrap: break-word;
   white-space: normal;
-  padding-right: 35px; /* Make space for the sub-item-stats */
+  padding-right: 45px; /* Make more space for the sub-item-stats */
 }
   padding-right: 35px; /* Make space for the sub-item-stats */
 }

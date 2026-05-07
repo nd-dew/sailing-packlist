@@ -6,12 +6,34 @@ export const SettingsMenu: React.FC = () => {
   const { 
     activeMenu, setActiveMenu, changes, updateChanges,
     applyPreset, deferredPrompt, handleInstallClick, resetAll, past,
-    getMenuStyles
+    getMenuStyles, categories, luggages, itemLuggage, checkedItems, hiddenItems
   } = usePacklist();
 
   const { leftMenuStyle, isMenuSwiping } = getMenuStyles();
   const [presetCruise, setPresetCruise] = useState(Object.keys(PRESETS)[0] || '');
   const baseSetQty = changes;
+
+  const handleExport = () => {
+    const data = {
+      version: '1.0',
+      timestamp: new Date().toISOString(),
+      changes,
+      categories,
+      luggages,
+      itemLuggage,
+      checkedItems,
+      hiddenItems
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sailing-packlist-export-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className={`side-menu left-menu ${activeMenu === 'settings' ? 'open' : ''} ${isMenuSwiping ? 'is-swiping' : ''}`} style={leftMenuStyle}>
@@ -66,7 +88,9 @@ export const SettingsMenu: React.FC = () => {
         </div>
 
         <div className="menu-section global-actions-menu">
-          <button onClick={() => { resetAll(); setActiveMenu('main'); }} className="btn-reset">Factory Reset List</button>
+          <label>Data Management</label>
+          <button onClick={handleExport} className="btn-preset" style={{ width: '100%', marginBottom: '10px' }}>💾 Export Data (JSON)</button>
+          <button onClick={() => { resetAll(); setActiveMenu('main'); }} className="btn-reset">⚠️ Factory Reset List</button>
         </div>
 
         <div className="menu-section">

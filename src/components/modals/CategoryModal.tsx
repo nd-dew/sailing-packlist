@@ -5,7 +5,7 @@ import { LuggageIcon } from '../core/LuggageIcon';
 export const CategoryModal: React.FC = () => {
   const { 
     selectedCategoryId, setSelectedCategoryId, categories, updateCategory, deleteCategory,
-    setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, luggages
+    setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, unpackCategoryItemsAction, luggages
   } = usePacklist();
 
   if (!selectedCategoryId) return null;
@@ -87,6 +87,12 @@ export const CategoryModal: React.FC = () => {
                 style={{ padding: '10px', background: '#d4edda', border: '1px solid #c3e6cb', borderRadius: '6px', color: '#155724', cursor: 'pointer', fontWeight: 'bold' }}
               >
                 ✓ Pack & Hide All Items
+              </button>
+              <button 
+                onClick={() => { unpackCategoryItemsAction(category.id); closeCategoryModal(); }}
+                style={{ padding: '10px', background: '#fff3cd', border: '1px solid #ffeeba', borderRadius: '6px', color: '#856404', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                ⨯ Unpack All Items
               </button>
               <button 
                 onClick={() => { hideCategoryItemsAction(category.id); closeCategoryModal(); }}

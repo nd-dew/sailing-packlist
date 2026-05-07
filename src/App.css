@@ -768,7 +768,7 @@ body {
 }
 
 .item-card-modal.modal-item-checked {
-  background: #e6ffe6; /* Light green background */
+  background: #f0fff4; /* Lighter green background */
 }
 
 .item-card-modal.modal-item-checked .modal-title-input,

@@ -56,6 +56,16 @@ export const ItemModal: React.FC = () => {
       <div className={`item-card-modal ${checkedItems[selectedItemId] ? 'modal-item-checked' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, marginRight: '10px' }}>
+            {parentItem && (
+               <div 
+                 className="modal-parent-hint" 
+                 style={{ fontSize: '0.65em', opacity: 0.7, marginBottom: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}
+                 onClick={() => setSelectedItemId(parentItem.id)}
+                 title="Go back to parent"
+               >
+                 <span>↑</span> {parentItem.name}
+               </div>
+            )}
             <div className="modal-title-wrapper">
               <input 
                 className="modal-title-input" 
@@ -66,11 +76,6 @@ export const ItemModal: React.FC = () => {
               />
               <span className="edit-icon">✎</span>
             </div>
-            {parentItem && (
-               <div className="modal-parent-hint" style={{ fontSize: '0.75em', opacity: 0.8, marginTop: '5px' }}>
-                 Part of: {parentItem.name}
-               </div>
-            )}
           </div>
           <button className="btn-close-modal" style={{ alignSelf: 'flex-start' }} onClick={closeItemModal}>✕</button>
         </div>
@@ -109,9 +114,9 @@ export const ItemModal: React.FC = () => {
               )}
               <button 
                 onClick={() => handleAddSubItem(selectedItem.id)}
-                style={{ width: '100%', padding: '8px', background: '#f0f4f8', border: '1px dashed var(--navy)', borderRadius: '6px', color: 'var(--navy)', cursor: 'pointer', fontWeight: 'bold' }}
+                style={{ width: '100%', padding: '5px', fontSize: '0.85em', background: 'transparent', border: '1px dashed rgba(0, 31, 63, 0.3)', borderRadius: '6px', color: 'var(--navy)', cursor: 'pointer', opacity: 0.8 }}
               >
-                + Add Sub-item
+                + Add sub-item
               </button>
             </div>
           )}

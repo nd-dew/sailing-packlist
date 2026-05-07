@@ -4,7 +4,7 @@ import { usePacklist } from '../../context/PacklistContext';
 export const ItemModal: React.FC = () => {
   const { 
     selectedItemId, setSelectedItemId, categories, updateItem, moveItemCategory, 
-    luggages, itemLuggage, setItemLuggage, commitAction, setCategories, checkedItems
+    luggages, itemLuggage, setItemLuggage, commitAction, setCategories, checkedItems, toggleCheck
   } = usePacklist();
 
   if (!selectedItemId) return null;
@@ -93,6 +93,24 @@ export const ItemModal: React.FC = () => {
               rows={1}
             />
           </div>
+
+          {selectedItem.subItems && selectedItem.subItems.length > 0 && (
+            <div className="modal-field">
+              <label>Sub-Items</label>
+              <ul className="sub-item-list">
+                {selectedItem.subItems.map(subItem => (
+                  <li key={subItem.id} className={`sub-item-row ${checkedItems[subItem.id] ? 'checked' : ''}`}>
+                    <input 
+                      type="checkbox" 
+                      checked={!!checkedItems[subItem.id]} 
+                      onChange={() => toggleCheck(subItem.id)}
+                    />
+                    <span className="item-name">{subItem.name}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -86,12 +86,26 @@ interface PacklistContextType {
   getMenuStyles: () => { leftMenuStyle: React.CSSProperties, rightMenuStyle: React.CSSProperties, isMenuSwiping: boolean };
   particles: { id: number; x: number; y: number; type: 'to-green' | 'to-red' }[];
   triggerParticle: (x: number, y: number, type: 'to-green' | 'to-red') => void;
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
+  importData: (data: any) => void;
 }
 
 const PacklistContext = createContext<PacklistContextType | undefined>(undefined);
 
 export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const defaultPresetId = Object.keys(PRESETS)[0] || '';
+
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('sailingPacklist_theme_v16');
+    if (saved === 'dark' || saved === 'light') return saved;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('sailingPacklist_theme_v16', theme);
+    document.body.setAttribute('data-theme', theme);
+  }, [theme]);
 
   const [changes, setChanges] = useState<number>(() => {
     const saved = localStorage.getItem('sailingPacklist_showers_v16');
@@ -462,6 +476,23 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
+  const importData = (data: any) => {
+    if (!data || data.version !== '1.0' || !data.categories) {
+      alert('Invalid or incompatible packing list data file.');
+      return;
+    }
+    if (confirm('Importing this data will overwrite your current list. Continue?')) {
+      setChanges(data.changes || 3);
+      setCategories(data.categories || []);
+      setLuggages(data.luggages || []);
+      setItemLuggage(data.itemLuggage || {});
+      setCheckedItems(data.checkedItems || {});
+      setHiddenItems(data.hiddenItems || {});
+      commitAction('Imported list data');
+      setActiveMenu('main');
+    }
+  };
+
   const handleCreateItem = (categoryId: string) => {
     commitAction('Created new custom item');
     const newId = `custom_${Date.now()}`;
@@ -693,7 +724,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       updateItem, deleteItem, moveItemCategory, updateCategory, deleteCategory, setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, unpackCategoryItemsAction, updateLuggage, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles,
-      particles, triggerParticle
+      particles, triggerParticle, theme, setTheme, importData
       }}>
       {children}
     </PacklistContext.Provider>

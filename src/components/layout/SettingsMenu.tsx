@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { usePacklist } from '../../context/PacklistContext';
 import { PRESETS } from '../../utils/presetUtils';
 
@@ -6,11 +6,14 @@ export const SettingsMenu: React.FC = () => {
   const { 
     activeMenu, setActiveMenu, changes, updateChanges,
     applyPreset, deferredPrompt, handleInstallClick, resetAll, past,
-    getMenuStyles, categories, luggages, itemLuggage, checkedItems, hiddenItems
+    getMenuStyles, categories, luggages, itemLuggage, checkedItems, hiddenItems,
+    theme, setTheme, importData
   } = usePacklist();
 
   const { leftMenuStyle, isMenuSwiping } = getMenuStyles();
   const [presetCruise, setPresetCruise] = useState(Object.keys(PRESETS)[0] || '');
+  const [importUrl, setImportUrl] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const baseSetQty = changes;
 
   const handleExport = () => {
@@ -33,6 +36,34 @@ export const SettingsMenu: React.FC = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+        importData(data);
+      } catch (err) {
+        alert('Failed to parse file. Make sure it is a valid JSON export.');
+      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+    reader.readAsText(file);
+  };
+
+  const handleUrlImport = async () => {
+    if (!importUrl) return;
+    try {
+      const res = await fetch(importUrl);
+      const data = await res.json();
+      importData(data);
+      setImportUrl('');
+    } catch (err) {
+      alert('Failed to fetch or parse data from URL. Ensure the URL returns valid JSON.');
+    }
   };
 
   return (
@@ -59,6 +90,26 @@ export const SettingsMenu: React.FC = () => {
               ))}
             </ul>
           )}
+        </div>
+
+        <div className="menu-section">
+          <label>Appearance</label>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+            <button 
+              className={`btn-preset ${theme === 'light' ? 'active' : ''}`} 
+              style={{ flex: 1, background: theme === 'light' ? 'var(--navy)' : 'transparent', color: theme === 'light' ? 'white' : 'var(--text)' }} 
+              onClick={() => setTheme('light')}
+            >
+              ☀️ Light
+            </button>
+            <button 
+              className={`btn-preset ${theme === 'dark' ? 'active' : ''}`} 
+              style={{ flex: 1, background: theme === 'dark' ? 'var(--navy)' : 'transparent', color: theme === 'dark' ? 'white' : 'var(--text)' }} 
+              onClick={() => setTheme('dark')}
+            >
+              🌙 Dark
+            </button>
+          </div>
         </div>
 
         <div className="menu-section">
@@ -90,6 +141,15 @@ export const SettingsMenu: React.FC = () => {
         <div className="menu-section global-actions-menu">
           <label>Data Management</label>
           <button onClick={handleExport} className="btn-preset" style={{ width: '100%', marginBottom: '10px' }}>💾 Export Data (JSON)</button>
+          
+          <input type="file" accept=".json" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileImport} />
+          <button onClick={() => fileInputRef.current?.click()} className="btn-preset" style={{ width: '100%', marginBottom: '10px' }}>📂 Import from File</button>
+          
+          <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
+            <input type="text" className="luggage-add-input" style={{ border: '1px solid var(--border)', borderRadius: '6px' }} placeholder="https://.../list.json" value={importUrl} onChange={e => setImportUrl(e.target.value)} />
+            <button onClick={handleUrlImport} className="btn-luggage-add" style={{ borderRadius: '6px' }}>Import</button>
+          </div>
+
           <button onClick={() => { resetAll(); setActiveMenu('main'); }} className="btn-reset">⚠️ Factory Reset List</button>
         </div>
 

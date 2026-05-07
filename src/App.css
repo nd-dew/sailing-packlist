@@ -225,7 +225,202 @@ body {
   background-color: var(--light-blue);
 }
 
-/* -- Particle Animation -- */
+/* Dark Mode Overrides */
+[data-theme="dark"] {
+  --navy: #66b2ff;
+  --light-blue: #002244;
+  --accent: #ff6b63;
+  --green: #2fb551;
+  --bg: #121212;
+  --text: #e0e0e0;
+  --border: #333;
+}
+
+[data-theme="dark"] body {
+  background-color: var(--bg);
+}
+
+[data-theme="dark"] .item-row,
+[data-theme="dark"] .list-item,
+[data-theme="dark"] .category-block,
+[data-theme="dark"] .menu-section,
+[data-theme="dark"] .item-card-modal,
+[data-theme="dark"] .luggage-card,
+[data-theme="dark"] .btn-preset,
+[data-theme="dark"] .cat-pill,
+[data-theme="dark"] .luggage-toggle-btn,
+[data-theme="dark"] .add-luggage-container,
+[data-theme="dark"] .btn-unhide,
+[data-theme="dark"] .btn-delete,
+[data-theme="dark"] .priority-toast,
+[data-theme="dark"] .history-controls button {
+  background-color: #1e1e1e;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+[data-theme="dark"] .side-menu {
+  background-color: #121212;
+}
+
+[data-theme="dark"] .modal-textarea,
+[data-theme="dark"] .modal-select,
+[data-theme="dark"] .stepper-input,
+[data-theme="dark"] .luggage-add-input,
+[data-theme="dark"] .history-log {
+  background-color: #2a2a2a;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .swipe-background {
+  background-color: #1e1e1e;
+}
+
+[data-theme="dark"] .swipe-background.bg-pack {
+  background-color: #1a4225;
+}
+
+[data-theme="dark"] .swipe-background.bg-pack .swipe-hint.left {
+  color: #55b56b;
+}
+
+[data-theme="dark"] .swipe-background.bg-cycle {
+  background-color: #1a3556;
+}
+
+[data-theme="dark"] .swipe-background.bg-cycle .swipe-hint.right {
+  color: #66b2ff;
+}
+
+[data-theme="dark"] .list-item.checked {
+  background-color: #1a4225;
+}
+
+[data-theme="dark"] .list-item.checked .item-name,
+[data-theme="dark"] .list-item.checked .item-qty {
+  color: var(--green);
+}
+
+[data-theme="dark"] .grayed-out {
+  background-color: #2a2a2a;
+}
+
+[data-theme="dark"] .controls-desc,
+[data-theme="dark"] .subitem-parent-prefix {
+  color: #aaa;
+}
+
+[data-theme="dark"] .log-time {
+  color: #888;
+}
+
+[data-theme="dark"] .log-msg {
+  color: #ccc;
+}
+
+[data-theme="dark"] .history-log li {
+  border-color: #333;
+}
+
+[data-theme="dark"] .btn-close-modal,
+[data-theme="dark"] .btn-close-menu,
+[data-theme="dark"] .btn-add-item-header {
+  background-color: rgba(255,255,255,0.1);
+  color: white;
+}
+
+[data-theme="dark"] .app-header {
+  background-color: var(--bg);
+}
+
+[data-theme="dark"] .menu-header,
+[data-theme="dark"] .category-header {
+  background-color: #002244;
+}
+
+[data-theme="dark"] .category-header.done {
+  background-color: #1a4225;
+}
+
+[data-theme="dark"] .modal-header {
+  background-color: #002244;
+}
+
+[data-theme="dark"] .item-card-modal.modal-item-checked .modal-header {
+  background-color: #1a4225;
+}
+
+[data-theme="dark"] .luggage-badge {
+  background-color: rgba(30, 30, 30, 0.9);
+  color: #aaa;
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .sub-item-stats {
+  background-color: rgba(30, 30, 30, 0.8);
+  border-color: rgba(255,255,255,0.1);
+}
+
+[data-theme="dark"] .sub-item-row {
+  border-bottom-color: #333;
+}
+
+[data-theme="dark"] .stepper-btn:disabled {
+  background: #333;
+  border-color: #444;
+  color: #666;
+}
+
+[data-theme="dark"] .history-controls button:disabled {
+  background: #2a2a2a;
+}
+
+[data-theme="dark"] .cat-pill:disabled {
+  background: #333;
+  color: #777;
+  border-color: #444;
+}
+
+[data-theme="dark"] .btn-reset {
+  background-color: #3d1c1c;
+  border-color: #5c2323;
+  color: var(--accent);
+}
+
+[data-theme="dark"] .btn-delete {
+  background-color: #1e1e1e;
+  border-color: #5c2323;
+  color: var(--accent);
+}
+
+[data-theme="dark"] .btn-delete:hover {
+  background-color: #3d1c1c;
+}
+
+[data-theme="dark"] .item-row:hover {
+  background-color: var(--light-blue);
+}
+
+[data-theme="dark"] .luggage-contents li:hover {
+  background-color: var(--light-blue);
+}
+
+[data-theme="dark"] .cat-pill.active,
+[data-theme="dark"] .luggage-toggle-btn.active,
+[data-theme="dark"] .btn-preset:hover {
+  background-color: var(--navy);
+  color: #121212;
+  border-color: var(--navy);
+}
+
+[data-theme="dark"] .app-footer a {
+  color: #aaa;
+}
+
+[data-theme="dark"] .app-footer a:hover {
+  color: var(--navy);
+}
 .flow-particle {
   position: fixed;
   width: 20px;

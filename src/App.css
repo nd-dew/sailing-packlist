@@ -47,9 +47,8 @@
 }
 
 @keyframes pop-stat-anim {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.3); }
 }
 
 .stat-number.done { color: var(--green); }
@@ -645,6 +644,9 @@ body {
   position: relative;
   overflow: hidden;
   background: white;
+  margin-bottom: 5px; /* Add small space between items */
+  border-radius: 8px; /* Give it a card-like appearance */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .item-row {
@@ -711,52 +713,32 @@ body {
 
 .sub-item-stats {
   position: absolute;
-  bottom: -2px;
-  right: -2px;
-  font-size: 8px; /* Extremely small font size */
+  bottom: -5px;
+  right: -5px;
+  font-size: 4px; /* Extremely small font size */
   font-weight: bold;
-  opacity: 0.8;
+  opacity: 0.3; /* Very subtle opacity */
   white-space: nowrap;
-  background-color: rgba(255, 255, 255, 0.7);
-  padding: 0 2px;
-  border-radius: 2px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  line-height: 1.2;
-}
-
-.sub-item-stats span {
-  display: inline-block;
-}
-.sub-item-stats {
-  position: absolute;
-  bottom: -4px; /* Adjust as needed */
-  right: -4px; /* Adjust as needed */
-  font-size: 0.6em; /* Make it smaller */
-  font-weight: bold;
-  opacity: 0.9; /* Slightly more opaque */
-  white-space: nowrap;
-  background-color: rgba(255, 255, 255, 0.8); /* Subtle background */
-  padding: 1px 4px;
-  border-radius: 3px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.sub-item-stats span {
-  display: inline-block;
+  background-color: transparent; /* No background */
+  padding: 0; /* No padding */
+  border-radius: 0;
+  border: none; /* No border */
   line-height: 1;
 }
 
-.item-name { 
-  flex: 1; 
-  font-size: 1.05em; 
-  line-height: 1.3; 
-  text-align: left; 
+.sub-item-stats span {
+  display: inline-block;
+}
+
+.item-name {
+  flex: 1;
+  font-size: 1.05em;
+  line-height: 1.3;
+  text-align: left;
   word-wrap: break-word;
   overflow-wrap: break-word;
   white-space: normal;
-  padding-right: 45px; /* Make more space for the sub-item-stats */
-}
-  padding-right: 35px; /* Make space for the sub-item-stats */
+  padding-right: 10px; /* Adjusted to accommodate super small stats */
 }
 
 .btn-hide {
@@ -1009,19 +991,6 @@ body {
 }
 
 .app-footer a {
-  display: inline-flex;
-  align-items: center;
-  color: #666;
-  text-decoration: none;
-  font-size: 0.9em;
-  font-weight: bold;
-  transition: color 0.2s;
-}
-
-.app-footer a:hover {
-  color: var(--navy);
-}
-er a {
   display: inline-flex;
   align-items: center;
   color: #666;

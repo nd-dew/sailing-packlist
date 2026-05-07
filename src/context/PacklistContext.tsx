@@ -50,6 +50,7 @@ interface PacklistContextType {
   redo: () => void;
   commitAction: (message: string) => void;
   toggleCheck: (id: string, e?: React.MouseEvent | React.TouchEvent | Event) => void;
+  toggleParentItem: (id: string, willBeChecked: boolean, e?: React.MouseEvent | React.TouchEvent | Event) => void;
   hideItem: (id: string) => void;
   unhideItem: (id: string) => void;
   unhideAllInCategory: (catId: string) => void;
@@ -445,6 +446,60 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     setCheckedItems(prev => ({ ...prev, [id]: willBeChecked }));
   };
+
+  const toggleParentItem = (id: string, willBeChecked: boolean, e?: React.MouseEvent | React.TouchEvent | Event) => {
+    const parent = findItemDeep(id);
+    if (!parent || !parent.subItems) return;
+
+    commitAction(willBeChecked ? `Checked all in ${parent.name}` : `Unchecked all in ${parent.name}`);
+
+    setCheckedItems(prev => {
+      const next = { ...prev };
+      const applyCheck = (items: PackItem[]) => {
+        items.forEach(sub => {
+          next[sub.id] = willBeChecked;
+          if (sub.subItems) applyCheck(sub.subItems);
+        });
+      };
+      applyCheck(parent.subItems!);
+      next[id] = willBeChecked;
+      return next;
+    });
+
+    if (e) {
+      let clientX = 0;
+      let clientY = 0;
+      if ('touches' in e && (e as React.TouchEvent).touches.length > 0) {
+        clientX = (e as React.TouchEvent).touches[0].clientX;
+        clientY = (e as React.TouchEvent).touches[0].clientY;
+      } else if ('changedTouches' in e && (e as React.TouchEvent).changedTouches.length > 0) {
+        clientX = (e as React.TouchEvent).changedTouches[0].clientX;
+        clientY = (e as React.TouchEvent).changedTouches[0].clientY;
+      } else if ('clientX' in e) {
+        clientX = (e as React.MouseEvent).clientX;
+        clientY = (e as React.MouseEvent).clientY;
+      }
+
+      if (clientX > 0 || clientY > 0) {
+        let count = 0;
+        const countItems = (items: PackItem[]) => {
+          items.forEach(sub => {
+            if (sub.subItems) {
+              countItems(sub.subItems);
+            } else {
+              count++;
+              setTimeout(() => {
+                const offsetX = (Math.random() - 0.5) * 60;
+                const offsetY = (Math.random() - 0.5) * 60;
+                triggerParticle(clientX + offsetX, clientY + offsetY, willBeChecked ? 'to-green' : 'to-red');
+              }, count * 50); // 50ms delay per particle for a staggered burst effect
+            }
+          });
+        };
+        countItems(parent.subItems);
+      }
+    }
+  };
   
   const hideItem = (id: string) => {
     const item = findItemDeep(id);
@@ -827,7 +882,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       hiddenItems, luggages, setLuggages, itemLuggage, setItemLuggage, selectedItemId, setSelectedItemId,
       selectedCategoryId, setSelectedCategoryId,
       selectedLuggageId, setSelectedLuggageId, newLuggageName, setNewLuggageName, showHiddenCats, toggleCatHidden,
-      filter, setFilter, itemViewFilter, setItemViewFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, hideItem,
+      filter, setFilter, itemViewFilter, setItemViewFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, toggleParentItem, hideItem,
       unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, applyPreset, resetAll, handleCreateItem, handleAddSubItem,
       updateItem, deleteItem, moveItemCategory, updateCategory, deleteCategory, setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, unpackCategoryItemsAction, updateLuggage, deleteLuggage, packAndHideLuggageItems, unpackLuggageItems, hideLuggageItems, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,

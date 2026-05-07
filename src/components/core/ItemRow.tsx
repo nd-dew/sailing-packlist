@@ -21,7 +21,7 @@ interface ItemRowProps {
 
 export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLuggage, isSubItem, parentName }) => {
   const { 
-    checkedItems, toggleCheck, hideItem, getNextLuggageHint, cycleLuggage, setSelectedItemId, getSubItemCounts, playPopSound
+    checkedItems, toggleCheck, toggleParentItem, hideItem, getNextLuggageHint, cycleLuggage, setSelectedItemId, getSubItemCounts, playPopSound
   } = usePacklist();
 
   const [swipeOffset, setSwipeOffset] = useState(0);
@@ -31,9 +31,10 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
 
   const subItemCounts = item.subItems ? getSubItemCounts(item) : null;
   const isParentChecked = subItemCounts ? subItemCounts.packed === subItemCounts.total && subItemCounts.total > 0 : false;
+  const isItemChecked = item.subItems ? isParentChecked : !!checkedItems[item.id];
 
   const prevLuggageId = usePrevious(assignedLuggage?.id);
-  const prevChecked = usePrevious(checkedItems[item.id]);
+  const prevChecked = usePrevious(isItemChecked);
   const [luggagePop, setLuggagePop] = useState(false);
   const [checkPop, setCheckPop] = useState(false);
 
@@ -46,21 +47,12 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
   }, [assignedLuggage?.id, prevLuggageId]);
 
   useEffect(() => {
-    if (prevChecked !== undefined && !!checkedItems[item.id] !== !!prevChecked) {
+    if (prevChecked !== undefined && !!isItemChecked !== !!prevChecked) {
       setCheckPop(true);
       const t = setTimeout(() => setCheckPop(false), 300);
       return () => clearTimeout(t);
     }
-  }, [checkedItems[item.id], prevChecked]);
-
-  useEffect(() => {
-    if (isParentChecked && !checkedItems[item.id]) {
-      toggleCheck(item.id);
-    } else if (!isParentChecked && checkedItems[item.id] && subItemCounts) {
-      // If parent is checked but not all sub-items, uncheck parent
-      toggleCheck(item.id);
-    }
-  }, [isParentChecked, checkedItems, item.id, toggleCheck, subItemCounts]);
+  }, [isItemChecked, prevChecked]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStart.current = { x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY };
@@ -84,9 +76,13 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
     if (isSwipingRef.current && Math.abs(dx) > 60) {
       if (dx > 0) {
         // Swipe Right: Pack & Hide
-        if (!checkedItems[item.id]) {
+        if (!isItemChecked) {
             playPopSound('click');
-            toggleCheck(item.id, e);
+            if (item.subItems && item.subItems.length > 0) {
+               toggleParentItem(item.id, true, e);
+            } else {
+               toggleCheck(item.id, e);
+            }
         }
         hideItem(item.id);
       } else {
@@ -103,7 +99,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
 
   return (
     <li 
-      className={`list-item ${checkedItems[item.id] ? 'checked' : ''} ${isSwipingState ? 'is-swiping' : ''} ${isSubItem ? 'is-sub-item' : ''} ${checkPop ? 'pop-animate' : ''}`}
+      className={`list-item ${isItemChecked ? 'checked' : ''} ${isSwipingState ? 'is-swiping' : ''} ${isSubItem ? 'is-sub-item' : ''} ${checkPop ? 'pop-animate' : ''}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -126,7 +122,18 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
         style={{ transform: isSwipingState ? `translateX(${swipeOffset}px)` : 'translateX(0px)' }}
       >
         <div className="item-main">
-          <input type="checkbox" checked={!!checkedItems[item.id]} onChange={(e) => { playPopSound('click'); toggleCheck(item.id, e.nativeEvent); }} />
+          <input 
+            type="checkbox" 
+            checked={isItemChecked} 
+            onChange={(e) => { 
+              playPopSound('click'); 
+              if (item.subItems && item.subItems.length > 0) {
+                 toggleParentItem(item.id, !isParentChecked, e.nativeEvent);
+              } else {
+                 toggleCheck(item.id, e.nativeEvent); 
+              }
+            }} 
+          />
           <div 
             className="item-clickable-area" 
             onClick={() => { if(!isSwipingRef.current) setSelectedItemId(item.id); }}

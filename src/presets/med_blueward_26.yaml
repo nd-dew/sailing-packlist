@@ -59,6 +59,10 @@ categories:
         description: "Official radio operator certificate."
         captainOnly: true
         defaultBag: "lug_2"
+      - id: "docs_driving"
+        name: "Driving License"
+        description: "Sometimes you want to rent a car or a scooter while on cruise brrrum!"
+        defaultBag: "lug_2"
       - id: "docs_diving"
         name: "Diving License"
         description: "If you plan to rent scuba gear."

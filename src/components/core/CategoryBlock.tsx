@@ -56,12 +56,40 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
   const isShowingHidden = showHiddenCats[cat.id];
   const baseSetQty = changes;
 
-  if (itemsToRender.length === 0 && hiddenCatItems.length === 0) return null;
-  if (itemsToRender.length === 0 && !isShowingHidden) return null;
+  // Calculate if category is entirely "done"
+  let catTotal = 0;
+  let catPacked = 0;
+  cat.items.forEach(item => {
+    if (item.subItems && item.subItems.length > 0) {
+      const countRecursive = (subItems: PackItem[]) => {
+        subItems.forEach(subItem => {
+          if (subItem.subItems) {
+            countRecursive(subItem.subItems);
+          } else {
+            catTotal++;
+            if (checkedItems[subItem.id]) catPacked++;
+          }
+        });
+      };
+      countRecursive(item.subItems);
+    } else {
+      catTotal++;
+      if (checkedItems[item.id]) catPacked++;
+    }
+  });
+  
+  const isDone = catTotal > 0 && catTotal === catPacked;
+
+  if (cat.items.length === 0) return null; // Only hide completely empty categories
+
+  // Hide the category entirely if we're filtering and there are no matching items
+  if (itemViewFilter !== 'all' && itemsToRender.length === 0) return null;
+  // If not filtering, and there's nothing to render, and no hidden items, hide it
+  if (itemViewFilter === 'all' && itemsToRender.length === 0 && hiddenCatItems.length === 0) return null;
 
   return (
     <div className="category-block">
-      <div className="category-header">
+      <div className={`category-header ${isDone ? 'done' : ''}`}>
         <div className="category-title-area">
           <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
             <h3 onClick={() => setSelectedCategoryId(cat.id)} style={{ cursor: 'pointer' }} title="Edit Category">{cat.title}</h3>

@@ -589,6 +589,11 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px; /* Increased padding */
+  transition: background-color 0.3s;
+}
+
+.category-header.done {
+  background: var(--green);
 }
 
 .category-title-area {

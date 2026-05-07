@@ -18,10 +18,19 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
   if (filter !== 'all' && cat.priority !== filter) return null;
 
   const activeItems = cat.items
-    .filter(item => !hiddenItems[item.id])
     .filter(item => {
-      if (itemViewFilter === 'unpacked') return !checkedItems[item.id];
-      if (itemViewFilter === 'packed') return !!checkedItems[item.id];
+      // If filtering for unpacked items, ignore the hidden status
+      if (itemViewFilter === 'unpacked') {
+        return !checkedItems[item.id];
+      }
+      // For all other filters, respect the hidden status
+      return !hiddenItems[item.id];
+    })
+    .filter(item => {
+      if (itemViewFilter === 'packed') {
+        return !!checkedItems[item.id];
+      }
+      // 'unpacked' is already handled, so just return true for 'all'
       return true;
     });
     

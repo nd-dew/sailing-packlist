@@ -159,8 +159,6 @@ categories:
         subItems:
           - id: "tech_phone"
             name: "Phone"
-          - id: "tech_phone_charger"
-            name: "Phone Charger"
       - id: "tech_headlamp"
         name: "Headlamp (Must have RED light)"
         description: "Red light preserves night vision for everyone on deck."

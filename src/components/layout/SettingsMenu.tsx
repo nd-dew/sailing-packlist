@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { usePacklist } from '../../context/PacklistContext';
 import { PRESETS } from '../../utils/presetUtils';
+import { parse, stringify } from 'yaml';
 
 export const SettingsMenu: React.FC = () => {
   const { 
@@ -27,11 +28,12 @@ export const SettingsMenu: React.FC = () => {
       checkedItems,
       hiddenItems
     };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const yamlStr = stringify(data);
+    const blob = new Blob([yamlStr], { type: 'text/yaml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `sailing-packlist-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `sailing-packlist-export-${new Date().toISOString().slice(0, 10)}.yaml`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -44,10 +46,10 @@ export const SettingsMenu: React.FC = () => {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const data = JSON.parse(event.target?.result as string);
+        const data = parse(event.target?.result as string);
         importData(data);
       } catch (err) {
-        alert('Failed to parse file. Make sure it is a valid JSON export.');
+        alert('Failed to parse file. Make sure it is a valid YAML export.');
       }
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
@@ -58,11 +60,12 @@ export const SettingsMenu: React.FC = () => {
     if (!importUrl) return;
     try {
       const res = await fetch(importUrl);
-      const data = await res.json();
+      const text = await res.text();
+      const data = parse(text);
       importData(data);
       setImportUrl('');
     } catch (err) {
-      alert('Failed to fetch or parse data from URL. Ensure the URL returns valid JSON.');
+      alert('Failed to fetch or parse data from URL. Ensure the URL returns valid YAML.');
     }
   };
 
@@ -140,13 +143,13 @@ export const SettingsMenu: React.FC = () => {
 
         <div className="menu-section global-actions-menu">
           <label>Data Management</label>
-          <button onClick={handleExport} className="btn-preset" style={{ width: '100%', marginBottom: '10px' }}>💾 Export Data (JSON)</button>
+          <button onClick={handleExport} className="btn-preset" style={{ width: '100%', marginBottom: '10px' }}>💾 Export Data (YAML)</button>
           
-          <input type="file" accept=".json" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileImport} />
+          <input type="file" accept=".yaml,.yml" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileImport} />
           <button onClick={() => fileInputRef.current?.click()} className="btn-preset" style={{ width: '100%', marginBottom: '10px' }}>📂 Import from File</button>
           
           <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
-            <input type="text" className="luggage-add-input" style={{ border: '1px solid var(--border)', borderRadius: '6px' }} placeholder="https://.../list.json" value={importUrl} onChange={e => setImportUrl(e.target.value)} />
+            <input type="text" className="luggage-add-input" style={{ border: '1px solid var(--border)', borderRadius: '6px' }} placeholder="https://.../list.yaml" value={importUrl} onChange={e => setImportUrl(e.target.value)} />
             <button onClick={handleUrlImport} className="btn-luggage-add" style={{ borderRadius: '6px' }}>Import</button>
           </div>
 

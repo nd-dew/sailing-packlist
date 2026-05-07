@@ -10,17 +10,19 @@ import './App.css';
 
 const AppContent: React.FC = () => {
   const { 
-    activeMenu, setActiveMenu, confirmToast, categories,
+    activeMenu, setActiveMenu, confirmToast, categories, itemViewFilter,
     handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd
   } = usePacklist();
 
   return (
-    <div 
-      className="app-container" 
-      onTouchStart={handleGlobalTouchStart} 
-      onTouchMove={handleGlobalTouchMove} 
-      onTouchEnd={handleGlobalTouchEnd}
-    >
+    <>
+      <div className={`filter-glow-frame ${itemViewFilter === 'packed' ? 'packed' : itemViewFilter === 'unpacked' ? 'unpacked' : ''}`} />
+      <div 
+        className="app-container" 
+        onTouchStart={handleGlobalTouchStart} 
+        onTouchMove={handleGlobalTouchMove} 
+        onTouchEnd={handleGlobalTouchEnd}
+      >
       <Header />
       
       {activeMenu !== 'main' && <div className="menu-overlay" onClick={() => setActiveMenu('main')} />}
@@ -63,6 +65,7 @@ const AppContent: React.FC = () => {
         </a>
       </footer>
     </div>
+    </>
   );
 };
 

@@ -88,6 +88,24 @@ body {
   animation: slideUpToast 0.3s ease-out;
 }
 
+/* Global Filter Glow Frame */
+.filter-glow-frame {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 9000; /* High enough to be over content but below modals */
+  transition: box-shadow 0.3s ease-in-out;
+  box-shadow: inset 0 0 0 0 transparent;
+}
+
+.filter-glow-frame.packed {
+  box-shadow: inset 0 0 20px 4px rgba(40, 167, 69, 0.4);
+}
+
+.filter-glow-frame.unpacked {
+  box-shadow: inset 0 0 20px 4px rgba(255, 65, 54, 0.4);
+}
+
 .confirm-toast {
   background: var(--accent);
   color: white;

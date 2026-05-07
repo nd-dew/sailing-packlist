@@ -472,8 +472,16 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const handleAddLuggage = () => {
     if (!newLuggageName.trim()) return;
+    const icons = ['🧳', '🎒', '👜', '💼', '📦', '🛍️', ' sack'];
+    const colors = ['#0074D9', '#FF851B', '#B10DC9', '#39CCCC', '#F012BE', '#85144b', '#3D9970'];
+    const newIndex = luggages.length;
     commitAction(`Added bag: ${newLuggageName}`);
-    setLuggages(prev => [...prev, { id: `lug_${Date.now()}`, name: newLuggageName.trim() }]);
+    setLuggages(prev => [...prev, { 
+      id: `lug_${Date.now()}`, 
+      name: newLuggageName.trim(),
+      icon: icons[newIndex % icons.length],
+      color: colors[newIndex % colors.length]
+    }]);
     setNewLuggageName('');
   };
 

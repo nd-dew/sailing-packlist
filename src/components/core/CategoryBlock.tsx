@@ -104,14 +104,14 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
         {itemsToRender.map(({ item, isSubItem, parentName }) => {
           const isBaseItem = item.id.startsWith('base_') && (item.id.includes('underwear') || item.id.includes('socks') || item.id.includes('tshirt'));
           const displayQty = isBaseItem ? baseSetQty : item.qty;
-          const assignedLugIdx = luggages.findIndex(l => l.id === itemLuggage[item.id]);
+          const assignedLuggage = luggages.find(l => l.id === itemLuggage[item.id]);
 
           return (
             <ItemRow 
               key={item.id} 
               item={item} 
               displayQty={displayQty} 
-              assignedLugIdx={assignedLugIdx}
+              assignedLuggage={assignedLuggage}
               isSubItem={isSubItem}
               parentName={parentName}
             />

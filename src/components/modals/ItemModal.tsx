@@ -111,7 +111,7 @@ export const ItemModal: React.FC = () => {
                     <ItemRow 
                       key={subItem.id} 
                       item={subItem} 
-                      assignedLugIdx={luggages.findIndex(l => l.id === itemLuggage[subItem.id])} 
+                      assignedLuggage={luggages.find(l => l.id === itemLuggage[subItem.id])} 
                       isSubItem={true}
                     />
                   ))}
@@ -163,13 +163,14 @@ export const ItemModal: React.FC = () => {
                   >
                     Unassigned
                   </button>
-                  {luggages.map((lug, idx) => (
+                  {luggages.map((lug) => (
                     <button 
                       key={lug.id} 
                       className={`luggage-toggle-btn ${itemLuggage[selectedItem.id] === lug.id ? 'active' : ''}`} 
                       onClick={() => setItemLuggage(prev => ({ ...prev, [selectedItem.id]: lug.id }))}
+                      style={itemLuggage[selectedItem.id] === lug.id && lug.color ? { backgroundColor: lug.color, borderColor: lug.color } : {}}
                     >
-                      [{idx + 1}] {lug.name}
+                      {lug.icon && <span style={{marginRight: '4px'}}>{lug.icon}</span>} {lug.name}
                     </button>
                   ))}
                 </div>

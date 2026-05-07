@@ -769,13 +769,10 @@ body {
   color: #666; border: 1px solid #ddd;
   border-top: none; border-right: none;
   border-radius: 0 0 0 5px;
-  font-size: 9px; width: 13px; height: 13px;
+  font-size: 11px; width: 18px; height: 18px; /* Slightly larger for icons */
   display: inline-flex; align-items: center; justify-content: center;
   font-weight: bold; z-index: 100;
 }
-
-.bag-color-1 { border-color: rgba(0, 116, 217, 0.4); color: #0074D9; }
-.bag-color-2 { border-color: rgba(255, 133, 27, 0.4); color: #FF851B; }
 
 /* Modals */
 .modal-overlay {

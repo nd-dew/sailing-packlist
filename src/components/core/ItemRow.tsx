@@ -1,16 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { usePacklist } from '../../context/PacklistContext';
-import type { PackItem } from '../../types';
+import type { PackItem, Luggage } from '../../types';
 
 interface ItemRowProps {
   item: PackItem;
   displayQty?: number;
-  assignedLugIdx: number;
+  assignedLuggage?: Luggage;
   isSubItem?: boolean;
   parentName?: string;
 }
 
-export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugIdx, isSubItem, parentName }) => {
+export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLuggage, isSubItem, parentName }) => {
   const { 
     checkedItems, toggleCheck, hideItem, getNextLuggageHint, cycleLuggage, setSelectedItemId, getSubItemCounts
   } = usePacklist();
@@ -76,7 +76,15 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugI
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {assignedLugIdx !== -1 && <span className={`luggage-badge bag-color-${assignedLugIdx + 1}`}>{assignedLugIdx + 1}</span>}
+      {assignedLuggage && (
+        <span 
+          className="luggage-badge"
+          style={{ borderColor: `${assignedLuggage.color || '#999'}66`, color: assignedLuggage.color || '#666' }}
+          title={assignedLuggage.name}
+        >
+          {assignedLuggage.icon || '💼'}
+        </span>
+      )}
       <div className={`swipe-background ${isSwipingState && swipeOffset > 0 ? 'bg-pack' : ''}`}>
          <div className="swipe-hint left">→ Pack & Hide</div>
          <div className="swipe-hint right">{getNextLuggageHint(item.id, 1)} ←</div>

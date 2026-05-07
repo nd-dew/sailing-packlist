@@ -26,6 +26,8 @@ export interface Luggage {
   id: string;
   name: string;
   description?: string;
+  icon?: string;
+  color?: string;
 }
 
 export interface AppSnapshot {

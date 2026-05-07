@@ -20,12 +20,20 @@ export const BaggageMenu: React.FC = () => {
       <div className="menu-content">
         <p className="controls-desc" style={{color: '#b30000', marginBottom: '15px'}}><strong>⚠️ No Hard Suitcases:</strong> Soft bags only! Rigid luggage is impossible to store on a boat. Bring a soft duffel.</p>
         <div className="luggage-lists">
-          {luggages.map((lug, idx) => {
+          {luggages.map((lug) => {
             const packedItems = categories.flatMap(c => c.items).filter(i => itemLuggage[i.id] === lug.id);
             return (
               <div key={lug.id} className="luggage-card">
                 <div className="luggage-card-header" onClick={() => setSelectedLuggageId(lug.id)}>
-                  <h4><span className={`luggage-badge bag-color-${idx + 1}`}>{idx + 1}</span> {lug.name}</h4>
+                  <h4>
+                    <span 
+                      className="luggage-badge" 
+                      style={{ borderColor: `${lug.color || '#999'}66`, color: lug.color || '#666', position: 'relative', top: '0', right: '0', display: 'inline-flex', marginRight: '8px' }}
+                    >
+                      {lug.icon || '💼'}
+                    </span> 
+                    {lug.name}
+                  </h4>
                   <button className="btn-small-action">✎ Edit</button>
                 </div>
                 {lug.description && <p className="luggage-desc-preview">{lug.description}</p>}

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { usePacklist } from '../../context/PacklistContext';
+import { ItemRow } from '../core/ItemRow';
 
 export const ItemModal: React.FC = () => {
   const { 
     selectedItemId, setSelectedItemId, categories, updateItem, moveItemCategory, 
-    luggages, itemLuggage, setItemLuggage, commitAction, setCategories, checkedItems, toggleCheck
+    luggages, itemLuggage, setItemLuggage, commitAction, setCategories, checkedItems
   } = usePacklist();
   
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -40,7 +41,6 @@ export const ItemModal: React.FC = () => {
         </div>
         <div className="modal-body">
           <div className="modal-field">
-            <label>Description / Advice</label>
             <textarea 
               className="modal-textarea auto-expand"
               value={selectedItem.description || ''} 
@@ -60,17 +60,13 @@ export const ItemModal: React.FC = () => {
 
           {selectedItem.subItems && selectedItem.subItems.length > 0 && (
             <div className="modal-field">
-              <label>Sub-Items</label>
               <ul className="sub-item-list">
                 {selectedItem.subItems.map(subItem => (
-                  <li key={subItem.id} className={`sub-item-row ${checkedItems[subItem.id] ? 'checked' : ''}`}>
-                    <input 
-                      type="checkbox" 
-                      checked={!!checkedItems[subItem.id]} 
-                      onChange={() => toggleCheck(subItem.id)}
-                    />
-                    <span className="item-name">{subItem.name}</span>
-                  </li>
+                  <ItemRow 
+                    key={subItem.id} 
+                    item={subItem} 
+                    assignedLugIdx={luggages.findIndex(l => l.id === itemLuggage[subItem.id])} 
+                  />
                 ))}
               </ul>
             </div>

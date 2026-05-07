@@ -86,13 +86,13 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
           <LuggageIcon type={assignedLuggage.icon || 'default'} color={assignedLuggage.color || '#666'} size={12} />
         </span>
       )}
-      <div className={`swipe-background ${isSwipingState && swipeOffset > 0 ? 'bg-pack' : ''}`}>
+      <div className={`swipe-background ${isSwipingState && swipeOffset > 0 ? 'bg-pack' : isSwipingState && swipeOffset < 0 ? 'bg-cycle' : ''}`}>
          <div className="swipe-hint left">→ Pack & Hide</div>
          <div className="swipe-hint right">{getNextLuggageHint(item.id, 1)} ←</div>
       </div>
       <div 
         className="item-row"
-        style={{ transform: isSwipingState ? `translateX(${swipeOffset}px)` : 'none' }}
+        style={{ transform: isSwipingState ? `translateX(${swipeOffset}px)` : 'translateX(0px)' }}
       >
         <div className="item-main">
           <input type="checkbox" checked={!!checkedItems[item.id]} onChange={() => toggleCheck(item.id)} />

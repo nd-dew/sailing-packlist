@@ -101,13 +101,13 @@ export const ItemModal: React.FC = () => {
   return (
     <div className="modal-overlay" onClick={closeItemModal}>
       <div className="modal-swipe-container" style={{ position: 'relative', width: '92%', maxWidth: '450px' }} onClick={(e) => e.stopPropagation()}>
-        <div className={`swipe-background modal-swipe-bg ${isSwipingState && swipeOffset > 0 ? 'bg-pack' : ''}`}>
+        <div className={`swipe-background modal-swipe-bg ${isSwipingState && swipeOffset > 0 ? 'bg-pack' : isSwipingState && swipeOffset < 0 ? 'bg-cycle' : ''}`}>
            <div className="swipe-hint left">→ Pack & Hide</div>
            <div className="swipe-hint right">{getNextLuggageHint(selectedItem.id, 1)} ←</div>
         </div>
         <div 
           className={`item-card-modal ${checkedItems[selectedItemId] ? 'modal-item-checked' : ''} ${isHidden ? 'modal-item-hidden' : ''}`} 
-          style={{ transform: isSwipingState ? `translateX(${swipeOffset}px)` : 'none', transition: isSwipingState ? 'none' : 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)', width: '100%', maxWidth: '100%' }}
+          style={{ transform: isSwipingState ? `translateX(${swipeOffset}px)` : 'translateX(0px)', transition: isSwipingState ? 'none' : 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)', width: '100%', maxWidth: '100%' }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}

@@ -228,8 +228,8 @@ body {
 /* -- Particle Animation -- */
 .flow-particle {
   position: fixed;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   z-index: 9999;
   pointer-events: none;
@@ -247,13 +247,13 @@ body {
 }
 
 @keyframes dyn-to-green {
-  0% { transform: translate(var(--start-x), var(--start-y)) scale(1); opacity: 1; }
-  100% { transform: translate(calc(50vw - 35px), 25px) scale(0.2); opacity: 0; }
+  0% { transform: translate(var(--start-x), var(--start-y)) scale(1.5); opacity: 1; }
+  100% { transform: translate(calc(50vw - 35px), 25px) scale(0); opacity: 1; }
 }
 
 @keyframes dyn-to-red {
-  0% { transform: translate(var(--start-x), var(--start-y)) scale(1); opacity: 1; }
-  100% { transform: translate(calc(50vw + 35px), 25px) scale(0.2); opacity: 0; }
+  0% { transform: translate(var(--start-x), var(--start-y)) scale(1.5); opacity: 1; }
+  100% { transform: translate(calc(50vw + 35px), 25px) scale(0); opacity: 1; }
 }
 
 /* -- Pop effect -- */

@@ -73,7 +73,7 @@ categories:
         defaultBag: "lug_2"
 
   - id: "tough"
-    title: "👕 Get Warm"
+    title: "⚡ Get Warm"
     priority: "must-have"
     items:
       - id: "base_thermal_top"
@@ -97,6 +97,9 @@ categories:
       - id: "out_wind_pants"
         name: "Windproof / Waterproof Bottoms"
         description: "Keeps your legs dry when sitting on wet decks."
+      - id: "out_hat_warm"
+        name: "Warm Beanie Hat"
+        description: "Crucial for keeping body heat in during night watches."
 
   - id: "base"
     title: "👕 Get Dressed"
@@ -119,9 +122,6 @@ categories:
       - id: "out_swim"
         name: "Swimwear"
         description: "Check the water temperature here: https://www.seatemperature.org/ to see if you need a shorty or just standard trunks."
-      - id: "out_hat_warm"
-        name: "Warm Beanie Hat"
-        description: "Crucial for keeping body heat in during night watches."
       - id: "out_buff"
         name: "Buff / Neck Gaiter"
         description: "Round piece of material that can be made into a scarf or cap to warm yourself."

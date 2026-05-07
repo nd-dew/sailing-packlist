@@ -711,21 +711,21 @@ body {
 
 .sub-item-stats {
   position: absolute;
-  bottom: 0px;
-  right: 0px;
-  font-size: 0.5em;
+  bottom: -2px;
+  right: -2px;
+  font-size: 8px; /* Extremely small font size */
   font-weight: bold;
-  opacity: 0.9;
+  opacity: 0.8;
   white-space: nowrap;
-  background-color: rgba(255, 255, 255, 0.8);
-  padding: 0px 2px;
-  border-radius: 3px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 0 2px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  line-height: 1.2;
 }
 
 .sub-item-stats span {
   display: inline-block;
-  line-height: 1;
 }
 .sub-item-stats {
   position: absolute;

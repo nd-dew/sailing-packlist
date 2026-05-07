@@ -41,8 +41,8 @@ export const Header: React.FC = () => {
         setTimeout(() => setPop('red'), 400);
       }
       
-      const animTimer = setTimeout(() => setAnimation(null), 600);
-      const popTimer = setTimeout(() => setPop(null), 700);
+      const animTimer = setTimeout(() => setAnimation(null), 400);
+      const popTimer = setTimeout(() => setPop(null), 500);
 
       return () => {
         clearTimeout(animTimer);

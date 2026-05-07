@@ -302,7 +302,7 @@ body {
   color: var(--green);
 }
 
-[data-theme="dark"] .grayed-out {
+[data-theme="dark"] .grayed-out:not(.checked) {
   background-color: #2a2a2a;
 }
 
@@ -1250,7 +1250,8 @@ button:active,
 
 .badge-hidden.active { background: white; color: var(--navy); }
 
-.grayed-out { opacity: 0.5; background: #eee; }
+.grayed-out { opacity: 0.5; }
+.grayed-out:not(.checked) { background: #eee; }
 .hidden-actions { display: flex; gap: 8px; align-items: center; }
 .btn-unhide, .btn-delete { background: white; border: 1px solid #ccc; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 1.1em; font-weight: bold; }
 .btn-delete { color: #b30000; border-color: #ff9999; }

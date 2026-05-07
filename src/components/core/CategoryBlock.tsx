@@ -146,7 +146,7 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
           );
         })}
         {isShowingHidden && hiddenCatItems.map(item => (
-          <li key={item.id} className="list-item grayed-out clickable" onClick={() => setSelectedItemId(item.id)}>
+          <li key={item.id} className={`list-item grayed-out clickable ${checkedItems[item.id] ? 'checked' : ''}`} onClick={() => setSelectedItemId(item.id)}>
             <div className="item-row">
               <div className="item-main" style={{ cursor: 'pointer' }}>
                 <span className="item-name" style={{ textDecoration: 'none' }}>{item.name}</span>

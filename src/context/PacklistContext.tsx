@@ -298,20 +298,33 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setChanges(newVal);
   };
 
+  const findItemDeep = (id: string): PackItem | undefined => {
+    for (const cat of categories) {
+      for (const item of cat.items) {
+        if (item.id === id) return item;
+        if (item.subItems) {
+          const sub = item.subItems.find(s => s.id === id);
+          if (sub) return sub;
+        }
+      }
+    }
+    return undefined;
+  };
+
   const toggleCheck = (id: string) => {
-    const item = categories.flatMap(c => c.items).find(i => i.id === id);
+    const item = findItemDeep(id);
     commitAction(checkedItems[id] ? `Unchecked ${item?.name || 'item'}` : `Checked ${item?.name || 'item'}`);
     setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
   };
   
   const hideItem = (id: string) => {
-    const item = categories.flatMap(c => c.items).find(i => i.id === id);
+    const item = findItemDeep(id);
     commitAction(`Hid ${item?.name || 'item'}`);
     setHiddenItems(prev => ({ ...prev, [id]: true }));
   };
   
   const unhideItem = (id: string) => {
-    const item = categories.flatMap(c => c.items).find(i => i.id === id);
+    const item = findItemDeep(id);
     commitAction(`Restored ${item?.name || 'item'}`);
     setHiddenItems(prev => { const next = {...prev}; delete next[id]; return next; });
   };
@@ -331,7 +344,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const cycleLuggage = (itemId: string, direction: 1 | -1) => {
-    const item = categories.flatMap(c => c.items).find(i => i.id === itemId);
+    const item = findItemDeep(itemId);
     commitAction(`Changed bag for ${item?.name || 'item'}`);
     setItemLuggage(prev => {
       const currentLugId = prev[itemId];
@@ -393,7 +406,18 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const updateItem = (id: string, updates: Partial<PackItem>) => {
     setCategories(prev => prev.map(cat => ({
       ...cat,
-      items: cat.items.map(item => item.id === id ? { ...item, ...updates } : item)
+      items: cat.items.map(item => {
+        if (item.id === id) {
+          return { ...item, ...updates };
+        }
+        if (item.subItems) {
+          return {
+            ...item,
+            subItems: item.subItems.map(sub => sub.id === id ? { ...sub, ...updates } : sub)
+          };
+        }
+        return item;
+      })
     })));
   };
 

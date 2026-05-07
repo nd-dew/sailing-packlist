@@ -12,7 +12,27 @@ export const ItemModal: React.FC = () => {
 
   if (!selectedItemId) return null;
 
-  const selectedItem = categories.flatMap(c => c.items).find(i => i.id === selectedItemId);
+  let selectedItem = undefined;
+  let parentItem = undefined;
+
+  for (const cat of categories) {
+    for (const item of cat.items) {
+      if (item.id === selectedItemId) {
+        selectedItem = item;
+        break;
+      }
+      if (item.subItems) {
+        const foundSub = item.subItems.find(s => s.id === selectedItemId);
+        if (foundSub) {
+          selectedItem = foundSub;
+          parentItem = item;
+          break;
+        }
+      }
+    }
+    if (selectedItem) break;
+  }
+
   if (!selectedItem) return null;
 
   const closeItemModal = () => {
@@ -27,17 +47,24 @@ export const ItemModal: React.FC = () => {
     <div className="modal-overlay" onClick={closeItemModal}>
       <div className={`item-card-modal ${checkedItems[selectedItemId] ? 'modal-item-checked' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <div className="modal-title-wrapper">
-            <input 
-              className="modal-title-input" 
-              autoFocus 
-              placeholder="Item Name..." 
-              value={selectedItem.name} 
-              onChange={(e) => updateItem(selectedItem.id, { name: e.target.value })} 
-            />
-            <span className="edit-icon">✎</span>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, marginRight: '10px' }}>
+            <div className="modal-title-wrapper">
+              <input 
+                className="modal-title-input" 
+                autoFocus 
+                placeholder="Item Name..." 
+                value={selectedItem.name} 
+                onChange={(e) => updateItem(selectedItem.id, { name: e.target.value })} 
+              />
+              <span className="edit-icon">✎</span>
+            </div>
+            {parentItem && (
+               <div className="modal-parent-hint" style={{ fontSize: '0.75em', opacity: 0.8, marginTop: '5px' }}>
+                 Part of: {parentItem.name}
+               </div>
+            )}
           </div>
-          <button className="btn-close-modal" onClick={closeItemModal}>✕</button>
+          <button className="btn-close-modal" style={{ alignSelf: 'flex-start' }} onClick={closeItemModal}>✕</button>
         </div>
         <div className="modal-body">
           <div className="modal-field">

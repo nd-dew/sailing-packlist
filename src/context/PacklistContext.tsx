@@ -73,6 +73,7 @@ interface PacklistContextType {
   handleGlobalTouchMove: (e: React.TouchEvent) => void;
   handleGlobalTouchEnd: (e: React.TouchEvent) => void;
   getMenuStyles: () => { leftMenuStyle: React.CSSProperties, rightMenuStyle: React.CSSProperties, isMenuSwiping: boolean };
+  getSubItemCounts: (item: PackItem) => { packed: number, total: number };
 }
 
 const PacklistContext = createContext<PacklistContextType | undefined>(undefined);
@@ -448,6 +449,29 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     }, 2000);
   };
 
+  const getSubItemCounts = useCallback((item: PackItem) => {
+    let packed = 0;
+    let total = 0;
+
+    const countRecursive = (items: PackItem[]) => {
+      items.forEach(subItem => {
+        if (subItem.subItems) {
+          countRecursive(subItem.subItems);
+        } else {
+          total++;
+          if (checkedItems[subItem.id]) {
+            packed++;
+          }
+        }
+      });
+    };
+
+    if (item.subItems) {
+      countRecursive(item.subItems);
+    }
+    return { packed, total };
+  }, [checkedItems]);
+
   return (
     <PacklistContext.Provider value={{
       changes, updateChanges, showHeader, categories, setCategories, warnings, checkedItems, setCheckedItems,
@@ -456,7 +480,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       filter, setFilter, itemViewFilter, setItemViewFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, hideItem,
       unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, applyPreset, resetAll, handleCreateItem,
       updateItem, moveItemCategory, updateLuggage, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
-      confirmToast, triggerConfirm, activeToastId, showPriorityToast,
+      confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles
       }}>
       {children}

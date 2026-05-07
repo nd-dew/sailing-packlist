@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { usePacklist } from '../../context/PacklistContext';
 import type { PackItem } from '../../types';
 
@@ -10,13 +10,25 @@ interface ItemRowProps {
 
 export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugIdx }) => {
   const { 
-    checkedItems, toggleCheck, hideItem, getNextLuggageHint, cycleLuggage, setSelectedItemId
+    checkedItems, toggleCheck, hideItem, getNextLuggageHint, cycleLuggage, setSelectedItemId, getSubItemCounts
   } = usePacklist();
 
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isSwipingState, setIsSwipingState] = useState(false);
   const touchStart = useRef<{x: number, y: number} | null>(null);
   const isSwipingRef = useRef(false);
+
+  const subItemCounts = item.subItems ? getSubItemCounts(item) : null;
+  const isParentChecked = subItemCounts ? subItemCounts.packed === subItemCounts.total && subItemCounts.total > 0 : false;
+
+  useEffect(() => {
+    if (isParentChecked && !checkedItems[item.id]) {
+      toggleCheck(item.id);
+    } else if (!isParentChecked && checkedItems[item.id] && subItemCounts) {
+      // If parent is checked but not all sub-items, uncheck parent
+      toggleCheck(item.id);
+    }
+  }, [isParentChecked, checkedItems, item.id, toggleCheck, subItemCounts]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStart.current = { x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY };
@@ -81,6 +93,12 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugI
             <span className="item-name">{item.name}</span>
           </div>
         </div>
+        {subItemCounts && (
+          <span className="sub-item-stats">
+            <span style={{ color: 'var(--green)' }}>{subItemCounts.packed}</span>&nbsp;
+            <span style={{ color: 'var(--accent)' }}>{subItemCounts.total - subItemCounts.packed}</span>
+          </span>
+        )}
         <button className="btn-hide" onClick={() => hideItem(item.id)}>✕</button>
       </div>
     </li>

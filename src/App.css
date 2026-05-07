@@ -709,6 +709,35 @@ body {
   font-weight: bold; color: var(--navy); margin-right: 6px; white-space: nowrap;
 }
 
+.sub-item-stats {
+  position: absolute;
+  bottom: 2px;
+  right: 10px;
+  font-size: 0.7em;
+  font-weight: bold;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.sub-item-stats span {
+  display: inline-block;
+  line-height: 1;
+}
+.sub-item-stats {
+  position: absolute;
+  bottom: 2px;
+  right: 10px;
+  font-size: 0.7em;
+  font-weight: bold;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.sub-item-stats span {
+  display: inline-block;
+  line-height: 1;
+}
+
 .item-name { 
   flex: 1; 
   font-size: 1.05em; 
@@ -717,6 +746,9 @@ body {
   word-wrap: break-word;
   overflow-wrap: break-word;
   white-space: normal;
+  padding-right: 35px; /* Make space for the sub-item-stats */
+}
+  padding-right: 35px; /* Make space for the sub-item-stats */
 }
 
 .btn-hide {
@@ -969,6 +1001,19 @@ body {
 }
 
 .app-footer a {
+  display: inline-flex;
+  align-items: center;
+  color: #666;
+  text-decoration: none;
+  font-size: 0.9em;
+  font-weight: bold;
+  transition: color 0.2s;
+}
+
+.app-footer a:hover {
+  color: var(--navy);
+}
+er a {
   display: inline-flex;
   align-items: center;
   color: #666;

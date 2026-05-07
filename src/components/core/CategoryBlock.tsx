@@ -28,28 +28,24 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
       }
     } else { // 'packed' or 'unpacked'
       if (item.subItems && item.subItems.length > 0) {
-        const hasMatchingSubItems = item.subItems.some(subItem => {
+        // Unroll sub-items when a filter is active
+        item.subItems.forEach(subItem => {
           const isSubItemPacked = !!checkedItems[subItem.id];
-          return (itemViewFilter === 'packed' && isSubItemPacked) || (itemViewFilter === 'unpacked' && !isSubItemPacked);
-        });
+          const subItemMatchesFilter = 
+            (itemViewFilter === 'packed' && isSubItemPacked && !hiddenItems[subItem.id]) ||
+            (itemViewFilter === 'unpacked' && !isSubItemPacked);
 
-        if (hasMatchingSubItems) {
-          item.subItems.forEach(subItem => {
-            const isSubItemPacked = !!checkedItems[subItem.id];
-            if (
-              (itemViewFilter === 'packed' && isSubItemPacked) ||
-              (itemViewFilter === 'unpacked' && !isSubItemPacked)
-            ) {
-              itemsToRender.push({ item: subItem, isSubItem: true, parentName: item.name });
-            }
-          });
-        }
-      } else { // Regular item
+          if (subItemMatchesFilter) {
+            itemsToRender.push({ item: subItem, isSubItem: true, parentName: item.name });
+          }
+        });
+      } else { // Regular item (no sub-items)
         const isPacked = !!checkedItems[item.id];
-        if (
+        const regularItemMatchesFilter = 
           (itemViewFilter === 'packed' && isPacked && !isHidden) ||
-          (itemViewFilter === 'unpacked' && !isPacked)
-        ) {
+          (itemViewFilter === 'unpacked' && !isPacked);
+
+        if (regularItemMatchesFilter) {
           itemsToRender.push({ item, isSubItem: false });
         }
       }

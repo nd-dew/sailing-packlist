@@ -1,6 +1,6 @@
 import React from 'react';
 import { usePacklist } from '../../context/PacklistContext';
-import type { Category } from '../../types';
+import type { Category, PackItem } from '../../types';
 import { ItemRow } from './ItemRow';
 
 interface CategoryBlockProps {
@@ -17,23 +17,39 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
 
   if (filter !== 'all' && cat.priority !== filter) return null;
 
-  const activeItems = cat.items
-    .filter(item => {
-      // If filtering for unpacked items, ignore the hidden status
-      if (itemViewFilter === 'unpacked') {
-        return !checkedItems[item.id];
+  const getFilteredItems = () => {
+    let items: PackItem[] = [];
+    cat.items.forEach(item => {
+      const isUnpacked = !checkedItems[item.id];
+      const isPacked = !!checkedItems[item.id];
+      const isHidden = hiddenItems[item.id];
+
+      if (itemViewFilter === 'all') {
+        if (!isHidden) {
+          items.push(item);
+        }
+      } else if (itemViewFilter === 'unpacked') {
+        if (item.subItems) {
+          if (!isPacked) { // Show parent if it's not fully packed
+            items.push(item);
+          }
+        } else if (isUnpacked) {
+          items.push(item);
+        }
+      } else if (itemViewFilter === 'packed') {
+        if (item.subItems) {
+          if (isPacked) {
+            items.push(item);
+          }
+        } else if (isPacked && !isHidden) {
+          items.push(item);
+        }
       }
-      // For all other filters, respect the hidden status
-      return !hiddenItems[item.id];
-    })
-    .filter(item => {
-      if (itemViewFilter === 'packed') {
-        return !!checkedItems[item.id];
-      }
-      // 'unpacked' is already handled, so just return true for 'all'
-      return true;
     });
-    
+    return items;
+  };
+
+  const activeItems = getFilteredItems();
   const hiddenCatItems = cat.items.filter(item => hiddenItems[item.id]);
   const isShowingHidden = showHiddenCats[cat.id];
   const baseSetQty = changes;

@@ -63,7 +63,7 @@ export const ItemModal: React.FC = () => {
                  onClick={() => setSelectedItemId(parentItem.id)}
                  title="Go back to parent"
                >
-                 <span style={{ fontSize: '1.2em', lineHeight: '1' }}>↰</span> {parentItem.name}
+                 <span style={{ fontSize: '1.2em', lineHeight: '1' }}>↱</span> {parentItem.name}
                </div>
             )}
             <div className="modal-title-wrapper">

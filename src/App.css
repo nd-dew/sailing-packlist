@@ -729,7 +729,7 @@ body {
 }
 .list-item.checked .item-name, .list-item.checked .item-qty {
   color: var(--green); /* Green text color */
-  text-decoration: line-through;
+  
 }
 
 .luggage-badge {
@@ -853,7 +853,7 @@ body {
 .luggage-contents { list-style: none; padding: 0; margin: 0; font-size: 0.85em; }
 .luggage-contents li { padding: 6px 8px; border-radius: 4px; display: flex; align-items: center; cursor: pointer; }
 .luggage-contents li:hover { background: var(--light-blue); }
-.luggage-contents li.packed { color: #999; text-decoration: line-through; }
+.luggage-contents li.packed { color: #999;  }
 
 .add-luggage-container {
   display: flex; background: white; border-radius: 8px; border: 1px solid var(--border);

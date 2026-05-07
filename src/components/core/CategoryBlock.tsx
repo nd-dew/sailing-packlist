@@ -12,7 +12,7 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
     filter, hiddenItems, showHiddenCats, handleCreateItem, showPriorityToast, 
     activeToastId, triggerConfirm, unhideAllInCategory, toggleCatHidden, 
     changes, luggages, itemLuggage, unhideItem, commitAction, setCategories,
-    itemViewFilter, checkedItems
+    itemViewFilter, checkedItems, setSelectedItemId
   } = usePacklist();
 
   if (filter !== 'all' && cat.priority !== filter) return null;
@@ -118,10 +118,12 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
           );
         })}
         {isShowingHidden && hiddenCatItems.map(item => (
-          <li key={item.id} className="list-item grayed-out">
+          <li key={item.id} className="list-item grayed-out clickable" onClick={() => setSelectedItemId(item.id)}>
             <div className="item-row">
-              <div className="item-main"><span className="item-name" style={{ textDecoration: 'none', cursor: 'default' }}>{item.name}</span></div>
-              <div className="hidden-actions">
+              <div className="item-main" style={{ cursor: 'pointer' }}>
+                <span className="item-name" style={{ textDecoration: 'none' }}>{item.name}</span>
+              </div>
+              <div className="hidden-actions" onClick={(e) => e.stopPropagation()}>
                 <button className="btn-unhide" onClick={() => unhideItem(item.id)}>↺</button>
                 <button 
                   className="btn-delete" 

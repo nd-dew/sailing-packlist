@@ -169,7 +169,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [menuSwipeOffset, setMenuSwipeOffset] = useState<number>(0);
 
   const handleGlobalTouchStart = (e: React.TouchEvent) => {
-    if ((e.target as HTMLElement).closest('.list-item') || (e.target as HTMLElement).closest('.modal-content') || (e.target as HTMLElement).closest('.item-card-modal')) return;
+    if ((e.target as HTMLElement).closest('.list-item') || (e.target as HTMLElement).closest('.modal-content') || (e.target as HTMLElement).closest('.modal-swipe-container') || (e.target as HTMLElement).closest('.item-card-modal')) return;
     setMenuTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
     setMenuSwipeOffset(0);
   };

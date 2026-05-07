@@ -10,9 +10,11 @@ warnings:
 
 luggages:
   - id: "lug_1"
-    name: "Main Duffel Bag"
+    name: "Duffel"
   - id: "lug_2"
-    name: "Day Backpack"
+    name: "Backpack"
+  - id: "lug_3"
+    name: "On Person"
 
 categories:
   - id: "docs"
@@ -153,12 +155,9 @@ categories:
     title: "🪛 Tech Kit"
     priority: "should-have"
     items:
-      - id: "tech_phone_kit"
+      - id: "tech_phone"
         name: "Phone Kit"
         defaultBag: "lug_2"
-        subItems:
-          - id: "tech_phone"
-            name: "Phone"
       - id: "tech_headlamp"
         name: "Headlamp (Must have RED light)"
         description: "Red light preserves night vision for everyone on deck."

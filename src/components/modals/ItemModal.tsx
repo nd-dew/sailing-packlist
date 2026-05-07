@@ -155,7 +155,7 @@ export const ItemModal: React.FC = () => {
               </div>
 
               <div className="modal-field">
-                <label>Assigned Baggage</label>
+                <label>Packed In</label>
                 <div className="luggage-toggle-group">
                   <button 
                     className={`luggage-toggle-btn ${!itemLuggage[selectedItem.id] ? 'active' : ''}`} 

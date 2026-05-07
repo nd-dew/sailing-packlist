@@ -80,7 +80,7 @@ export const ItemModal: React.FC = () => {
           <button className="btn-close-modal" style={{ alignSelf: 'flex-start' }} onClick={closeItemModal}>✕</button>
         </div>
         <div className="modal-body">
-          <div className="modal-field">
+          <div className="modal-field" style={{ marginBottom: selectedItem.description ? '15px' : '5px' }}>
             <textarea 
               className="modal-textarea auto-expand"
               value={selectedItem.description || ''} 
@@ -93,8 +93,13 @@ export const ItemModal: React.FC = () => {
                 e.target.style.height = 'auto';
                 e.target.style.height = e.target.scrollHeight + 'px';
               }}
-              placeholder="Add advice..."
+              placeholder="Describe..."
               rows={1}
+              style={{
+                minHeight: selectedItem.description ? '40px' : '26px',
+                padding: selectedItem.description ? '8px 10px' : '4px 10px',
+                transition: 'all 0.2s ease-in-out'
+              }}
             />
           </div>
 

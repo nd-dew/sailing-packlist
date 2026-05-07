@@ -180,7 +180,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setParticles(prev => [...prev, { id, x, y, type }]);
     setTimeout(() => {
       setParticles(prev => prev.filter(p => p.id !== id));
-    }, 600); // slightly longer than animation
+    }, 800); // slightly longer than animation
   };
 
   // Global Swipe detection for menus

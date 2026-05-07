@@ -33,11 +33,11 @@ export const Header: React.FC = () => {
   useEffect(() => {
     if (prevPacked !== undefined) {
       if (packedItems > (prevPacked as number)) {
-        setTimeout(() => setPop('green'), 300); 
+        setTimeout(() => setPop('green'), 450); 
       } else if (packedItems < (prevPacked as number)) {
-        setTimeout(() => setPop('red'), 300);
+        setTimeout(() => setPop('red'), 450);
       }
-      const popTimer = setTimeout(() => setPop(null), 600);
+      const popTimer = setTimeout(() => setPop(null), 850);
       return () => clearTimeout(popTimer);
     }
   }, [packedItems, prevPacked]);

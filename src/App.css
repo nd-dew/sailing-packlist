@@ -228,31 +228,32 @@ body {
 /* -- Particle Animation -- */
 .flow-particle {
   position: fixed;
-  width: 12px;
-  height: 12px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   z-index: 9999;
   pointer-events: none;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 .anim-to-green-dyn {
-  background-color: var(--accent);
-  animation: dyn-to-green 0.4s cubic-bezier(0.25, 0.1, 0.25, 1.0) forwards;
+  background-color: var(--green);
+  animation: dyn-to-green 0.6s cubic-bezier(0.25, 0.1, 0.25, 1.0) forwards;
 }
 
 .anim-to-red-dyn {
-  background-color: var(--green);
-  animation: dyn-to-red 0.4s cubic-bezier(0.25, 0.1, 0.25, 1.0) forwards;
+  background-color: var(--accent);
+  animation: dyn-to-red 0.6s cubic-bezier(0.25, 0.1, 0.25, 1.0) forwards;
 }
 
 @keyframes dyn-to-green {
-  0% { transform: translate(var(--start-x), var(--start-y)) scale(1.2); opacity: 1; }
-  100% { transform: translate(calc(50vw - 35px), 25px) scale(0); opacity: 0; }
+  0% { transform: translate(var(--start-x), var(--start-y)) scale(1); opacity: 1; }
+  100% { transform: translate(calc(50vw - 35px), 25px) scale(0.2); opacity: 0; }
 }
 
 @keyframes dyn-to-red {
-  0% { transform: translate(var(--start-x), var(--start-y)) scale(1.2); opacity: 1; }
-  100% { transform: translate(calc(50vw + 35px), 25px) scale(0); opacity: 0; }
+  0% { transform: translate(var(--start-x), var(--start-y)) scale(1); opacity: 1; }
+  100% { transform: translate(calc(50vw + 35px), 25px) scale(0.2); opacity: 0; }
 }
 
 /* -- Pop effect -- */
@@ -262,7 +263,7 @@ body {
 
 @keyframes pop-stat-anim {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.3); }
+  50% { transform: scale(1.5); }
 }
 
 .fade-in {

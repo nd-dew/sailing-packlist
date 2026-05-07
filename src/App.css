@@ -730,6 +730,15 @@ body {
   display: inline-block;
 }
 
+.is-sub-item .item-row {
+  padding-left: 25px; /* Indent sub-items */
+}
+
+.subitem-parent-prefix {
+  color: #888;
+  font-size: 0.9em;
+}
+
 .item-name {
   flex: 1;
   font-size: 1.05em;

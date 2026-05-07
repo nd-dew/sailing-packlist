@@ -6,9 +6,11 @@ interface ItemRowProps {
   item: PackItem;
   displayQty?: number;
   assignedLugIdx: number;
+  isSubItem?: boolean;
+  parentName?: string;
 }
 
-export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugIdx }) => {
+export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugIdx, isSubItem, parentName }) => {
   const { 
     checkedItems, toggleCheck, hideItem, getNextLuggageHint, cycleLuggage, setSelectedItemId, getSubItemCounts
   } = usePacklist();
@@ -69,7 +71,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugI
 
   return (
     <li 
-      className={`list-item ${checkedItems[item.id] ? 'checked' : ''} ${isSwipingState ? 'is-swiping' : ''}`}
+      className={`list-item ${checkedItems[item.id] ? 'checked' : ''} ${isSwipingState ? 'is-swiping' : ''} ${isSubItem ? 'is-sub-item' : ''}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -90,7 +92,10 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugI
             onClick={() => { if(!isSwipingRef.current) setSelectedItemId(item.id); }}
           >
             {displayQty ? <span className="item-qty">{displayQty}x </span> : null}
-            <span className="item-name">{item.name}</span>
+            <span className="item-name">
+              {isSubItem && parentName && <span className="subitem-parent-prefix">{parentName} / </span>}
+              {item.name}
+            </span>
           </div>
         </div>
         {subItemCounts && (

@@ -17,45 +17,51 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
 
   if (filter !== 'all' && cat.priority !== filter) return null;
 
-  const getFilteredItems = () => {
-    let items: PackItem[] = [];
-    cat.items.forEach(item => {
-      const isUnpacked = !checkedItems[item.id];
-      const isPacked = !!checkedItems[item.id];
-      const isHidden = hiddenItems[item.id];
+  const itemsToRender: { item: PackItem, isSubItem: boolean, parentName?: string }[] = [];
 
-      if (itemViewFilter === 'all') {
-        if (!isHidden) {
-          items.push(item);
+  cat.items.forEach(item => {
+    const isHidden = hiddenItems[item.id];
+
+    if (itemViewFilter === 'all') {
+      if (!isHidden) {
+        itemsToRender.push({ item, isSubItem: false });
+      }
+    } else { // 'packed' or 'unpacked'
+      if (item.subItems && item.subItems.length > 0) {
+        const hasMatchingSubItems = item.subItems.some(subItem => {
+          const isSubItemPacked = !!checkedItems[subItem.id];
+          return (itemViewFilter === 'packed' && isSubItemPacked) || (itemViewFilter === 'unpacked' && !isSubItemPacked);
+        });
+
+        if (hasMatchingSubItems) {
+          item.subItems.forEach(subItem => {
+            const isSubItemPacked = !!checkedItems[subItem.id];
+            if (
+              (itemViewFilter === 'packed' && isSubItemPacked) ||
+              (itemViewFilter === 'unpacked' && !isSubItemPacked)
+            ) {
+              itemsToRender.push({ item: subItem, isSubItem: true, parentName: item.name });
+            }
+          });
         }
-      } else if (itemViewFilter === 'unpacked') {
-        if (item.subItems) {
-          if (!isPacked) { // Show parent if it's not fully packed
-            items.push(item);
-          }
-        } else if (isUnpacked) {
-          items.push(item);
-        }
-      } else if (itemViewFilter === 'packed') {
-        if (item.subItems) {
-          if (isPacked) {
-            items.push(item);
-          }
-        } else if (isPacked && !isHidden) {
-          items.push(item);
+      } else { // Regular item
+        const isPacked = !!checkedItems[item.id];
+        if (
+          (itemViewFilter === 'packed' && isPacked && !isHidden) ||
+          (itemViewFilter === 'unpacked' && !isPacked)
+        ) {
+          itemsToRender.push({ item, isSubItem: false });
         }
       }
-    });
-    return items;
-  };
-
-  const activeItems = getFilteredItems();
+    }
+  });
+    
   const hiddenCatItems = cat.items.filter(item => hiddenItems[item.id]);
   const isShowingHidden = showHiddenCats[cat.id];
   const baseSetQty = changes;
 
-  if (activeItems.length === 0 && hiddenCatItems.length === 0) return null;
-  if (activeItems.length === 0 && !isShowingHidden) return null;
+  if (itemsToRender.length === 0 && hiddenCatItems.length === 0) return null;
+  if (itemsToRender.length === 0 && !isShowingHidden) return null;
 
   return (
     <div className="category-block">
@@ -99,7 +105,7 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
         </div>
       </div>
       <ul>
-        {activeItems.map(item => {
+        {itemsToRender.map(({ item, isSubItem, parentName }) => {
           const isBaseItem = item.id.startsWith('base_') && (item.id.includes('underwear') || item.id.includes('socks') || item.id.includes('tshirt'));
           const displayQty = isBaseItem ? baseSetQty : item.qty;
           const assignedLugIdx = luggages.findIndex(l => l.id === itemLuggage[item.id]);
@@ -109,7 +115,9 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
               key={item.id} 
               item={item} 
               displayQty={displayQty} 
-              assignedLugIdx={assignedLugIdx} 
+              assignedLugIdx={assignedLugIdx}
+              isSubItem={isSubItem}
+              parentName={parentName}
             />
           );
         })}

@@ -32,7 +32,7 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
         item.subItems.forEach(subItem => {
           const isSubItemPacked = !!checkedItems[subItem.id];
           const subItemMatchesFilter = 
-            (itemViewFilter === 'packed' && isSubItemPacked && !hiddenItems[subItem.id]) ||
+            (itemViewFilter === 'packed' && isSubItemPacked) ||
             (itemViewFilter === 'unpacked' && !isSubItemPacked);
 
           if (subItemMatchesFilter) {
@@ -42,7 +42,7 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
       } else { // Regular item (no sub-items)
         const isPacked = !!checkedItems[item.id];
         const regularItemMatchesFilter = 
-          (itemViewFilter === 'packed' && isPacked && !isHidden) ||
+          (itemViewFilter === 'packed' && isPacked) ||
           (itemViewFilter === 'unpacked' && !isPacked);
 
         if (regularItemMatchesFilter) {

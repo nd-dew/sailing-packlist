@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { usePacklist } from '../../context/PacklistContext';
 import { ItemRow } from '../core/ItemRow';
+import { LuggageIcon } from '../core/LuggageIcon';
 
 export const ItemModal: React.FC = () => {
   const { 
@@ -170,7 +171,10 @@ export const ItemModal: React.FC = () => {
                       onClick={() => setItemLuggage(prev => ({ ...prev, [selectedItem.id]: lug.id }))}
                       style={itemLuggage[selectedItem.id] === lug.id && lug.color ? { backgroundColor: lug.color, borderColor: lug.color } : {}}
                     >
-                      {lug.icon && <span style={{marginRight: '4px'}}>{lug.icon}</span>} {lug.name}
+                      <span style={{marginRight: '6px', display: 'flex'}}>
+                        <LuggageIcon type={lug.icon || 'default'} color={itemLuggage[selectedItem.id] === lug.id ? 'white' : (lug.color || '#666')} size={14} />
+                      </span>
+                      {lug.name}
                     </button>
                   ))}
                 </div>

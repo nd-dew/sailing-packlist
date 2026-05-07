@@ -1,5 +1,6 @@
 import React from 'react';
 import { usePacklist } from '../../context/PacklistContext';
+import { LuggageIcon } from '../core/LuggageIcon';
 
 export const BaggageMenu: React.FC = () => {
   const { 
@@ -30,7 +31,7 @@ export const BaggageMenu: React.FC = () => {
                       className="luggage-badge" 
                       style={{ borderColor: `${lug.color || '#999'}66`, color: lug.color || '#666', position: 'relative', top: '0', right: '0', display: 'inline-flex', marginRight: '8px' }}
                     >
-                      {lug.icon || '💼'}
+                      <LuggageIcon type={lug.icon || 'default'} color={lug.color || '#666'} size={14} />
                     </span> 
                     {lug.name}
                   </h4>

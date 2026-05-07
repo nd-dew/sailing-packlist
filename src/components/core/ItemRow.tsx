@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { usePacklist } from '../../context/PacklistContext';
 import type { PackItem, Luggage } from '../../types';
+import { LuggageIcon } from './LuggageIcon';
 
 interface ItemRowProps {
   item: PackItem;
@@ -82,7 +83,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
           style={{ borderColor: `${assignedLuggage.color || '#999'}66`, color: assignedLuggage.color || '#666' }}
           title={assignedLuggage.name}
         >
-          {assignedLuggage.icon || '💼'}
+          <LuggageIcon type={assignedLuggage.icon || 'default'} color={assignedLuggage.color || '#666'} size={12} />
         </span>
       )}
       <div className={`swipe-background ${isSwipingState && swipeOffset > 0 ? 'bg-pack' : ''}`}>

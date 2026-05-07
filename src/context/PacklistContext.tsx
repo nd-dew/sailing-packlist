@@ -472,7 +472,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const handleAddLuggage = () => {
     if (!newLuggageName.trim()) return;
-    const icons = ['🧳', '🎒', '👜', '💼', '📦', '🛍️', ' sack'];
+    const icons = ['default', 'briefcase', 'duffel', 'backpack'];
     const colors = ['#0074D9', '#FF851B', '#B10DC9', '#39CCCC', '#F012BE', '#85144b', '#3D9970'];
     const newIndex = luggages.length;
     commitAction(`Added bag: ${newLuggageName}`);

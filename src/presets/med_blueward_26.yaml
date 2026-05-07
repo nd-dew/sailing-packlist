@@ -11,15 +11,15 @@ warnings:
 luggages:
   - id: "lug_1"
     name: "Duffel"
-    icon: "🧳"
+    icon: "duffel"
     color: "#0074D9"
   - id: "lug_2"
     name: "Backpack"
-    icon: "🎒"
+    icon: "backpack"
     color: "#FF851B"
   - id: "lug_3"
     name: "On Person"
-    icon: "🧍"
+    icon: "on_person"
     color: "#B10DC9"
 
 categories:

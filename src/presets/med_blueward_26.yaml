@@ -166,12 +166,18 @@ categories:
         description: "Red light preserves night vision for everyone on deck."
       - id: "tech_cables"
         name: "Charging & Cables"
-        description: |-
-          * Phone charger
-          * Power bank
-          * Watch charger
-          * Other device cables
         defaultBag: "lug_2"
+        subItems:
+          - id: "tech_cables_laptop"
+            name: "Laptop Charger"
+          - id: "tech_cables_phone"
+            name: "Phone Charger"
+          - id: "tech_cables_watch"
+            name: "Watch Charger"
+          - id: "tech_cables_powerbank"
+            name: "Power bank"
+          - id: "tech_cables_adapter"
+            name: "USB-A to USB-C adapter"
       - id: "tech_camera"
         name: "Camera / GoPro"
         description: "Capture the memories!"

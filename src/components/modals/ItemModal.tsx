@@ -4,7 +4,7 @@ import { usePacklist } from '../../context/PacklistContext';
 export const ItemModal: React.FC = () => {
   const { 
     selectedItemId, setSelectedItemId, categories, updateItem, moveItemCategory, 
-    luggages, itemLuggage, setItemLuggage, commitAction, setCategories
+    luggages, itemLuggage, setItemLuggage, commitAction, setCategories, checkedItems
   } = usePacklist();
 
   if (!selectedItemId) return null;
@@ -22,7 +22,7 @@ export const ItemModal: React.FC = () => {
 
   return (
     <div className="modal-overlay" onClick={closeItemModal}>
-      <div className="item-card-modal" onClick={(e) => e.stopPropagation()}>
+      <div className={`item-card-modal ${checkedItems[selectedItemId] ? 'modal-item-checked' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-title-wrapper">
             <input 

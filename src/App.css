@@ -724,9 +724,12 @@ body {
   padding: 5px; font-size: 1.3em; flex-shrink: 0;
 }
 
-.list-item.checked { background: #fafafa; }
+.list-item.checked { 
+  background: #e6ffe6; /* Light green background */ 
+}
 .list-item.checked .item-name, .list-item.checked .item-qty {
-  color: #999;
+  color: var(--green); /* Green text color */
+  text-decoration: line-through;
 }
 
 .luggage-badge {
@@ -762,6 +765,25 @@ body {
   display: flex; flex-direction: column;
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   overflow: hidden;
+}
+
+.item-card-modal.modal-item-checked {
+  background: #e6ffe6; /* Light green background */
+}
+
+.item-card-modal.modal-item-checked .modal-title-input,
+.item-card-modal.modal-item-checked .modal-textarea {
+  color: var(--green); /* Green text */
+  text-decoration: line-through;
+  background: transparent;
+}
+
+.item-card-modal.modal-item-checked .modal-title-wrapper {
+  border-bottom-color: rgba(40, 167, 69, 0.4); /* Greenish border for title */
+}
+
+.item-card-modal.modal-item-checked .edit-icon {
+  color: var(--green); /* Green edit icon */
 }
 
 .modal-header {

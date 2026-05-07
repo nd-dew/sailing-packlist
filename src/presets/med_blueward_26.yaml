@@ -28,14 +28,19 @@ categories:
         defaultBag: "lug_2"
       - id: "docs_printed"
         name: "Print Documents"
-        description: |
-          - Boarding pass (from charter)
-          - Logbook
-          - Nautical Maps & Instruments
-          - Boat Insurance / Charter Documents
-          - Songbook
         captainOnly: true
         defaultBag: "lug_2"
+        subItems:
+          - id: "docs_boarding_pass"
+            name: "Boarding pass (from charter)"
+          - id: "docs_logbook"
+            name: "Logbook"
+          - id: "docs_maps"
+            name: "Nautical Maps & Instruments"
+          - id: "docs_insurance"
+            name: "Boat Insurance / Charter Documents"
+          - id: "docs_songbook"
+            name: "Songbook"
       - id: "docs_license"
         name: "Sailing License"
         description: "Required for the Skipper. Not needed for crew."

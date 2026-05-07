@@ -767,22 +767,22 @@ body {
   overflow: hidden;
 }
 
-.item-card-modal.modal-item-checked {
-  background: #f0fff4; /* Lighter green background */
+.item-card-modal.modal-item-checked .modal-header {
+  background: var(--green);
 }
 
 .item-card-modal.modal-item-checked .modal-title-input,
 .item-card-modal.modal-item-checked .modal-textarea {
-  color: var(--green); /* Green text */
+  color: var(--text);
   background: transparent;
 }
 
 .item-card-modal.modal-item-checked .modal-title-wrapper {
-  border-bottom-color: rgba(40, 167, 69, 0.4); /* Greenish border for title */
+  border-bottom-color: rgba(255, 255, 255, 0.4);
 }
 
 .item-card-modal.modal-item-checked .edit-icon {
-  color: var(--green); /* Green edit icon */
+  color: white;
 }
 
 .modal-header {

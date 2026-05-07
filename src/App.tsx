@@ -6,6 +6,7 @@ import { BaggageMenu } from './components/layout/BaggageMenu';
 import { CategoryBlock } from './components/core/CategoryBlock';
 import { ItemModal } from './components/modals/ItemModal';
 import { BagModal } from './components/modals/BagModal';
+import { CategoryModal } from './components/modals/CategoryModal';
 import './App.css';
 
 const AppContent: React.FC = () => {
@@ -40,6 +41,7 @@ const AppContent: React.FC = () => {
 
       <ItemModal />
       <BagModal />
+      <CategoryModal />
 
       <div className="checklist-grid">
         <div className="checklist-column">

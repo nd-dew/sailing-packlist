@@ -12,7 +12,7 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
     filter, hiddenItems, showHiddenCats, handleCreateItem, showPriorityToast, 
     activeToastId, triggerConfirm, unhideAllInCategory, toggleCatHidden, 
     changes, luggages, itemLuggage, unhideItem, commitAction, setCategories,
-    itemViewFilter, checkedItems, setSelectedItemId
+    itemViewFilter, checkedItems, setSelectedItemId, setSelectedCategoryId
   } = usePacklist();
 
   if (filter !== 'all' && cat.priority !== filter) return null;
@@ -64,7 +64,7 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
       <div className="category-header">
         <div className="category-title-area">
           <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-            <h3>{cat.title}</h3>
+            <h3 onClick={() => setSelectedCategoryId(cat.id)} style={{ cursor: 'pointer' }} title="Edit Category">{cat.title}</h3>
             <button className="btn-add-item-header" onClick={() => handleCreateItem(cat.id)} title="Add custom item">+</button>
           </div>
           {cat.priority && (

@@ -74,8 +74,15 @@ interface PacklistContextType {
   handleGlobalTouchStart: (e: React.TouchEvent) => void;
   handleGlobalTouchMove: (e: React.TouchEvent) => void;
   handleGlobalTouchEnd: (e: React.TouchEvent) => void;
-  getMenuStyles: () => { leftMenuStyle: React.CSSProperties, rightMenuStyle: React.CSSProperties, isMenuSwiping: boolean };
+  selectedCategoryId: string | null;
+  setSelectedCategoryId: (id: string | null) => void;
+  updateCategory: (id: string, updates: Partial<Category>) => void;
+  deleteCategory: (id: string) => void;
+  setCategoryLuggage: (categoryId: string, luggageId: string) => void;
+  packAndHideCategory: (categoryId: string) => void;
+  hideCategoryItemsAction: (categoryId: string) => void;
   getSubItemCounts: (item: PackItem) => { packed: number, total: number };
+  getMenuStyles: () => { leftMenuStyle: React.CSSProperties, rightMenuStyle: React.CSSProperties, isMenuSwiping: boolean };
 }
 
 const PacklistContext = createContext<PacklistContextType | undefined>(undefined);
@@ -156,6 +163,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   });
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedLuggageId, setSelectedLuggageId] = useState<string | null>(null);
   const [newLuggageName, setNewLuggageName] = useState('');
   const [showHiddenCats, setShowHiddenCats] = useState<Record<string, boolean>>({});
@@ -431,6 +439,79 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setSelectedItemId(newId);
   };
 
+  const updateCategory = (id: string, updates: Partial<Category>) => {
+    commitAction('Updated category');
+    setCategories(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
+
+  const deleteCategory = (id: string) => {
+    commitAction('Deleted category');
+    setCategories(prev => prev.filter(c => c.id !== id));
+    setSelectedCategoryId(null);
+  };
+
+  const setCategoryLuggage = (categoryId: string, luggageId: string) => {
+    const cat = categories.find(c => c.id === categoryId);
+    if (!cat) return;
+    commitAction(`Moved ${cat.title} to bag`);
+    setItemLuggage(prev => {
+      const next = { ...prev };
+      const applyLuggage = (items: PackItem[]) => {
+        items.forEach(item => {
+          next[item.id] = luggageId;
+          if (item.subItems) applyLuggage(item.subItems);
+        });
+      };
+      applyLuggage(cat.items);
+      return next;
+    });
+  };
+
+  const packAndHideCategory = (categoryId: string) => {
+    const cat = categories.find(c => c.id === categoryId);
+    if (!cat) return;
+    commitAction(`Packed & hid ${cat.title}`);
+    setCheckedItems(prevChecked => {
+      const nextChecked = { ...prevChecked };
+      const applyCheck = (items: PackItem[]) => {
+        items.forEach(item => {
+          nextChecked[item.id] = true;
+          if (item.subItems) applyCheck(item.subItems);
+        });
+      };
+      applyCheck(cat.items);
+      return nextChecked;
+    });
+    setHiddenItems(prevHidden => {
+      const nextHidden = { ...prevHidden };
+      const applyHide = (items: PackItem[]) => {
+        items.forEach(item => {
+          nextHidden[item.id] = true;
+          if (item.subItems) applyHide(item.subItems);
+        });
+      };
+      applyHide(cat.items);
+      return nextHidden;
+    });
+  };
+
+  const hideCategoryItemsAction = (categoryId: string) => {
+    const cat = categories.find(c => c.id === categoryId);
+    if (!cat) return;
+    commitAction(`Hid all in ${cat.title}`);
+    setHiddenItems(prevHidden => {
+      const nextHidden = { ...prevHidden };
+      const applyHide = (items: PackItem[]) => {
+        items.forEach(item => {
+          nextHidden[item.id] = true;
+          if (item.subItems) applyHide(item.subItems);
+        });
+      };
+      applyHide(cat.items);
+      return nextHidden;
+    });
+  };
+
   const updateItem = (id: string, updates: Partial<PackItem>) => {
     setCategories(prev => prev.map(cat => ({
       ...cat,
@@ -540,10 +621,11 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     <PacklistContext.Provider value={{
       changes, updateChanges, showHeader, categories, setCategories, warnings, checkedItems, setCheckedItems,
       hiddenItems, luggages, setLuggages, itemLuggage, setItemLuggage, selectedItemId, setSelectedItemId,
+      selectedCategoryId, setSelectedCategoryId,
       selectedLuggageId, setSelectedLuggageId, newLuggageName, setNewLuggageName, showHiddenCats, toggleCatHidden,
       filter, setFilter, itemViewFilter, setItemViewFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, hideItem,
       unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, applyPreset, resetAll, handleCreateItem, handleAddSubItem,
-      updateItem, deleteItem, moveItemCategory, updateLuggage, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
+      updateItem, deleteItem, moveItemCategory, updateCategory, deleteCategory, setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, updateLuggage, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles
       }}>

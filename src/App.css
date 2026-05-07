@@ -535,7 +535,8 @@ body {
   list-style: none;
   padding: 0;
   margin: 0;
-  max-height: 150px;
+  height: 55vh;
+  max-height: none;
   overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 6px;

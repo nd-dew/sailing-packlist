@@ -27,8 +27,13 @@ categories:
         description: "European Health Insurance Card or personal travel/medical insurance details."
         defaultBag: "lug_2"
       - id: "docs_printed"
-        name: "Printed Documents"
-        description: "Boarding pass (from charter), logbook, singing book, and any other materials you want physically printed."
+        name: "Print Documents"
+        description: |
+          - Boarding pass (from charter)
+          - Logbook
+          - Nautical Maps & Instruments
+          - Boat Insurance / Charter Documents
+          - Songbook
         captainOnly: true
         defaultBag: "lug_2"
       - id: "docs_license"
@@ -39,16 +44,6 @@ categories:
       - id: "docs_vhf"
         name: "VHF License"
         description: "Official radio operator certificate."
-        captainOnly: true
-        defaultBag: "lug_2"
-      - id: "docs_maps"
-        name: "Nautical Maps & Instruments"
-        description: "Essential navigation charts for the area."
-        captainOnly: true
-        defaultBag: "lug_2"
-      - id: "docs_insurance"
-        name: "Boat Insurance / Documents"
-        description: "Charter documents and insurance papers."
         captainOnly: true
         defaultBag: "lug_2"
       - id: "docs_cash"
@@ -84,7 +79,7 @@ categories:
 
   - id: "base"
     title: "👕 Get Dressed"
-    priority: "must-have"
+    priority: "should-have"
     items:
       - id: "base_underwear"
         name: "Underwear"
@@ -142,6 +137,9 @@ categories:
       - id: "toi_earplugs"
         name: "Earplugs"
         description: "Useful to have something when you sleep close to the engine, or when people start to party and you want to sleep."
+      - id: "toi_eyemask"
+        name: "Eye Mask"
+        description: "Helps you sleep during the day after a long night watch."
       - id: "toi_sunscreen"
         name: "Sunscreen (High SPF)"
         description: "The sun is stronger on the water due to reflection."
@@ -150,18 +148,15 @@ categories:
     title: "🪛 Tech Kit"
     priority: "should-have"
     items:
-      - id: "tech_phone"
-        name: "Phone + Charger"
-        defaultBag: "lug_2"
-      - id: "tech_powerbank"
-        name: "Powerbank"
-        defaultBag: "lug_2"
-      - id: "tech_watch"
-        name: "Watch + Charger"
-        defaultBag: "lug_2"
       - id: "tech_cables"
-        name: "Charging Cables / Adapters"
-        description: "Inspect the yacht documents! Sockets vary wildly: some have 230V EU, older yachts have USB-A, and modern ones have USB-C."
+        name: "Charging & Cables"
+        description: |
+          - Laptop Charger
+          - Phone Charger
+          - Watch Charger
+          - Powerbank
+          - USB-A to USB-C adapter (older yachts still have USB-A)
+          - 12V 'car lighter' plug
         defaultBag: "lug_2"
       - id: "tech_headlamp"
         name: "Headlamp (Must have RED light)"
@@ -169,9 +164,6 @@ categories:
       - id: "tech_camera"
         name: "Camera / GoPro"
         description: "Capture the memories!"
-      - id: "tech_speaker"
-        name: "Bluetooth Speaker"
-        description: "Check if one is not already on the ship, many yachts include them."
       - id: "tech_multitool"
         name: "Multitool / Knife"
         description: "Check-in luggage only!"

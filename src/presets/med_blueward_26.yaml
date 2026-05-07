@@ -164,6 +164,14 @@ categories:
       - id: "tech_headlamp"
         name: "Headlamp (Must have RED light)"
         description: "Red light preserves night vision for everyone on deck."
+      - id: "tech_cables"
+        name: "Charging & Cables"
+        description: |-
+          * Phone charger
+          * Power bank
+          * Watch charger
+          * Other device cables
+        defaultBag: "lug_2"
       - id: "tech_camera"
         name: "Camera / GoPro"
         description: "Capture the memories!"

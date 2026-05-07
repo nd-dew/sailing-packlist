@@ -1,3 +1,5 @@
+export type ItemViewFilter = 'all' | 'unpacked' | 'packed';
+
 export interface PackItem {
   id: string;
   name: string;

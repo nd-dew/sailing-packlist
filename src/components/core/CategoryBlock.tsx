@@ -11,15 +11,26 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
   const { 
     filter, hiddenItems, showHiddenCats, handleCreateItem, showPriorityToast, 
     activeToastId, triggerConfirm, unhideAllInCategory, toggleCatHidden, 
-    changes, luggages, itemLuggage, unhideItem, commitAction, setCategories
+    changes, luggages, itemLuggage, unhideItem, commitAction, setCategories,
+    itemViewFilter, checkedItems
   } = usePacklist();
 
   if (filter !== 'all' && cat.priority !== filter) return null;
 
-  const activeItems = cat.items.filter(item => !hiddenItems[item.id]);
+  const activeItems = cat.items
+    .filter(item => !hiddenItems[item.id])
+    .filter(item => {
+      if (itemViewFilter === 'unpacked') return !checkedItems[item.id];
+      if (itemViewFilter === 'packed') return !!checkedItems[item.id];
+      return true;
+    });
+    
   const hiddenCatItems = cat.items.filter(item => hiddenItems[item.id]);
   const isShowingHidden = showHiddenCats[cat.id];
   const baseSetQty = changes;
+
+  if (activeItems.length === 0 && hiddenCatItems.length === 0) return null;
+  if (activeItems.length === 0 && !isShowingHidden) return null;
 
   return (
     <div className="category-block">

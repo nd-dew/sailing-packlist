@@ -6,7 +6,8 @@ import type {
   Warning, 
   Luggage, 
   AppSnapshot, 
-  HistoryEntry 
+  HistoryEntry,
+  ItemViewFilter
 } from '../types';
 import { 
   PRESETS,
@@ -39,6 +40,8 @@ interface PacklistContextType {
   toggleCatHidden: (catId: string) => void;
   filter: 'all' | 'must-have' | 'should-have' | 'nice-to-have';
   setFilter: (filter: 'all' | 'must-have' | 'should-have' | 'nice-to-have') => void;
+  itemViewFilter: ItemViewFilter;
+  setItemViewFilter: React.Dispatch<React.SetStateAction<ItemViewFilter>>;
   activeMenu: 'main' | 'settings' | 'baggage';
   setActiveMenu: (menu: 'main' | 'settings' | 'baggage') => void;
   past: HistoryEntry[];
@@ -146,6 +149,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [newLuggageName, setNewLuggageName] = useState('');
   const [showHiddenCats, setShowHiddenCats] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'all' | 'must-have' | 'should-have' | 'nice-to-have'>('all');
+  const [itemViewFilter, setItemViewFilter] = useState<ItemViewFilter>('all');
   const [activeMenu, setActiveMenu] = useState<'main' | 'settings' | 'baggage'>('main');
   const [activeToastId, setActiveToastId] = useState<string | null>(null);
 
@@ -449,12 +453,12 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       changes, updateChanges, showHeader, categories, setCategories, warnings, checkedItems, setCheckedItems,
       hiddenItems, luggages, setLuggages, itemLuggage, setItemLuggage, selectedItemId, setSelectedItemId,
       selectedLuggageId, setSelectedLuggageId, newLuggageName, setNewLuggageName, showHiddenCats, toggleCatHidden,
-      filter, setFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, hideItem,
+      filter, setFilter, itemViewFilter, setItemViewFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, hideItem,
       unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, applyPreset, resetAll, handleCreateItem,
       updateItem, moveItemCategory, updateLuggage, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles
-    }}>
+      }}>
       {children}
     </PacklistContext.Provider>
   );

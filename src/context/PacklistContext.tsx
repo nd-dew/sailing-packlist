@@ -58,6 +58,7 @@ interface PacklistContextType {
   applyPreset: (cruise: string, role: 'crew' | 'captain') => void;
   resetAll: () => void;
   handleCreateItem: (categoryId: string) => void;
+  handleAddSubItem: (parentId: string) => void;
   updateItem: (id: string, updates: Partial<PackItem>) => void;
   moveItemCategory: (itemId: string, newCategoryId: string) => void;
   updateLuggage: (id: string, updates: Partial<Luggage>) => void;
@@ -403,6 +404,24 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setSelectedItemId(newId);
   };
 
+  const handleAddSubItem = (parentId: string) => {
+    commitAction('Added new sub-item');
+    const newId = `custom_sub_${Date.now()}`;
+    setCategories(prev => prev.map(cat => ({
+      ...cat,
+      items: cat.items.map(item => {
+        if (item.id === parentId) {
+          return {
+            ...item,
+            subItems: [...(item.subItems || []), { id: newId, name: '' }]
+          };
+        }
+        return item;
+      })
+    })));
+    setSelectedItemId(newId);
+  };
+
   const updateItem = (id: string, updates: Partial<PackItem>) => {
     setCategories(prev => prev.map(cat => ({
       ...cat,
@@ -502,7 +521,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       hiddenItems, luggages, setLuggages, itemLuggage, setItemLuggage, selectedItemId, setSelectedItemId,
       selectedLuggageId, setSelectedLuggageId, newLuggageName, setNewLuggageName, showHiddenCats, toggleCatHidden,
       filter, setFilter, itemViewFilter, setItemViewFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, hideItem,
-      unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, applyPreset, resetAll, handleCreateItem,
+      unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, applyPreset, resetAll, handleCreateItem, handleAddSubItem,
       updateItem, moveItemCategory, updateLuggage, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles

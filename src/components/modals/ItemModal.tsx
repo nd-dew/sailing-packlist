@@ -5,7 +5,7 @@ import { ItemRow } from '../core/ItemRow';
 export const ItemModal: React.FC = () => {
   const { 
     selectedItemId, setSelectedItemId, categories, updateItem, moveItemCategory, 
-    luggages, itemLuggage, setItemLuggage, commitAction, setCategories, checkedItems
+    luggages, itemLuggage, setItemLuggage, commitAction, setCategories, checkedItems, handleAddSubItem
   } = usePacklist();
   
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -37,8 +37,16 @@ export const ItemModal: React.FC = () => {
 
   const closeItemModal = () => {
     if (selectedItem && !selectedItem.name.trim()) {
-      commitAction('Removed empty custom item');
-      setCategories(prev => prev.map(c => ({...c, items: c.items.filter(i => i.id !== selectedItemId)})));
+      if (parentItem) {
+        commitAction('Removed empty custom sub-item');
+        setCategories(prev => prev.map(c => ({
+          ...c,
+          items: c.items.map(i => i.id === parentItem.id ? { ...i, subItems: i.subItems?.filter(s => s.id !== selectedItemId) } : i)
+        })));
+      } else {
+        commitAction('Removed empty custom item');
+        setCategories(prev => prev.map(c => ({...c, items: c.items.filter(i => i.id !== selectedItemId)})));
+      }
     }
     setSelectedItemId(null);
   };
@@ -85,17 +93,26 @@ export const ItemModal: React.FC = () => {
             />
           </div>
 
-          {selectedItem.subItems && selectedItem.subItems.length > 0 && (
+          {!parentItem && (
             <div className="modal-field">
-              <ul className="sub-item-list">
-                {selectedItem.subItems.map(subItem => (
-                  <ItemRow 
-                    key={subItem.id} 
-                    item={subItem} 
-                    assignedLugIdx={luggages.findIndex(l => l.id === itemLuggage[subItem.id])} 
-                  />
-                ))}
-              </ul>
+              {selectedItem.subItems && selectedItem.subItems.length > 0 && (
+                <ul className="sub-item-list" style={{ marginBottom: '10px' }}>
+                  {selectedItem.subItems.map(subItem => (
+                    <ItemRow 
+                      key={subItem.id} 
+                      item={subItem} 
+                      assignedLugIdx={luggages.findIndex(l => l.id === itemLuggage[subItem.id])} 
+                      isSubItem={true}
+                    />
+                  ))}
+                </ul>
+              )}
+              <button 
+                onClick={() => handleAddSubItem(selectedItem.id)}
+                style={{ width: '100%', padding: '8px', background: '#f0f4f8', border: '1px dashed var(--navy)', borderRadius: '6px', color: 'var(--navy)', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                + Add Sub-item
+              </button>
             </div>
           )}
 

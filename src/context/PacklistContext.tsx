@@ -82,6 +82,10 @@ interface PacklistContextType {
   packAndHideCategory: (categoryId: string) => void;
   hideCategoryItemsAction: (categoryId: string) => void;
   unpackCategoryItemsAction: (categoryId: string) => void;
+  deleteLuggage: (id: string) => void;
+  packAndHideLuggageItems: (luggageId: string) => void;
+  unpackLuggageItems: (luggageId: string) => void;
+  hideLuggageItems: (luggageId: string) => void;
   getSubItemCounts: (item: PackItem) => { packed: number, total: number };
   getMenuStyles: () => { leftMenuStyle: React.CSSProperties, rightMenuStyle: React.CSSProperties, isMenuSwiping: boolean };
   particles: { id: number; x: number; y: number; type: 'to-green' | 'to-red' }[];
@@ -660,6 +664,65 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setLuggages(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
   };
 
+  const deleteLuggage = (id: string) => {
+    const lug = luggages.find(l => l.id === id);
+    commitAction(`Deleted bag ${lug?.name || ''}`);
+    setLuggages(prev => prev.filter(l => l.id !== id));
+    setItemLuggage(prev => {
+      const next = { ...prev };
+      Object.keys(next).forEach(itemId => {
+        if (next[itemId] === id) delete next[itemId];
+      });
+      return next;
+    });
+    setSelectedLuggageId(null);
+  };
+
+  const packAndHideLuggageItems = (luggageId: string) => {
+    const lug = luggages.find(l => l.id === luggageId);
+    if (!lug) return;
+    commitAction(`Packed & hid bag ${lug.name}`);
+    
+    const itemsInBag = Object.keys(itemLuggage).filter(itemId => itemLuggage[itemId] === luggageId);
+    
+    setCheckedItems(prev => {
+      const next = { ...prev };
+      itemsInBag.forEach(id => next[id] = true);
+      return next;
+    });
+    setHiddenItems(prev => {
+      const next = { ...prev };
+      itemsInBag.forEach(id => next[id] = true);
+      return next;
+    });
+  };
+
+  const unpackLuggageItems = (luggageId: string) => {
+    const lug = luggages.find(l => l.id === luggageId);
+    if (!lug) return;
+    commitAction(`Unpacked bag ${lug.name}`);
+    
+    const itemsInBag = Object.keys(itemLuggage).filter(itemId => itemLuggage[itemId] === luggageId);
+    setCheckedItems(prev => {
+      const next = { ...prev };
+      itemsInBag.forEach(id => next[id] = false);
+      return next;
+    });
+  };
+
+  const hideLuggageItems = (luggageId: string) => {
+    const lug = luggages.find(l => l.id === luggageId);
+    if (!lug) return;
+    commitAction(`Hid bag ${lug.name}`);
+    
+    const itemsInBag = Object.keys(itemLuggage).filter(itemId => itemLuggage[itemId] === luggageId);
+    setHiddenItems(prev => {
+      const next = { ...prev };
+      itemsInBag.forEach(id => next[id] = true);
+      return next;
+    });
+  };
+
   const handleAddLuggage = () => {
     if (!newLuggageName.trim()) return;
     const icons = ['default', 'briefcase', 'duffel', 'backpack'];
@@ -721,7 +784,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       selectedLuggageId, setSelectedLuggageId, newLuggageName, setNewLuggageName, showHiddenCats, toggleCatHidden,
       filter, setFilter, itemViewFilter, setItemViewFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, hideItem,
       unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, applyPreset, resetAll, handleCreateItem, handleAddSubItem,
-      updateItem, deleteItem, moveItemCategory, updateCategory, deleteCategory, setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, unpackCategoryItemsAction, updateLuggage, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
+      updateItem, deleteItem, moveItemCategory, updateCategory, deleteCategory, setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, unpackCategoryItemsAction, updateLuggage, deleteLuggage, packAndHideLuggageItems, unpackLuggageItems, hideLuggageItems, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles,
       particles, triggerParticle, theme, setTheme, importData

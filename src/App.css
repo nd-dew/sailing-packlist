@@ -99,11 +99,11 @@ body {
 }
 
 .filter-glow-frame.packed {
-  box-shadow: inset 0 0 10px 1px rgba(40, 167, 69, 0.2);
+  box-shadow: inset 0 8px 15px -4px rgba(40, 167, 69, 0.4), inset 0 -8px 15px -4px rgba(40, 167, 69, 0.4), inset 4px 0 10px -4px rgba(40, 167, 69, 0.15), inset -4px 0 10px -4px rgba(40, 167, 69, 0.15);
 }
 
 .filter-glow-frame.unpacked {
-  box-shadow: inset 0 0 10px 1px rgba(255, 65, 54, 0.2);
+  box-shadow: inset 0 8px 15px -4px rgba(255, 65, 54, 0.4), inset 0 -8px 15px -4px rgba(255, 65, 54, 0.4), inset 4px 0 10px -4px rgba(255, 65, 54, 0.15), inset -4px 0 10px -4px rgba(255, 65, 54, 0.15);
 }
 
 .confirm-toast {
@@ -227,40 +227,32 @@ body {
 
 /* -- Particle Animation -- */
 .flow-particle {
-  position: absolute;
-  width: 10px;
-  height: 10px;
+  position: fixed;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  z-index: 1;
-  top: 50%;
-  transform: translateY(-50%);
-  animation-duration: 0.4s;
-  animation-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1.0);
-  pointer-events: none; /* Add this */
+  z-index: 9999;
+  pointer-events: none;
 }
 
-.anim-to-green {
-  background-color: var(--accent); /* Starts red */
-  right: 15px; /* Start near the center of the right number */
-  animation-name: flow-to-green-anim;
+.anim-to-green-dyn {
+  background-color: var(--accent);
+  animation: dyn-to-green 0.4s cubic-bezier(0.25, 0.1, 0.25, 1.0) forwards;
 }
 
-.anim-to-red {
-  background-color: var(--green); /* Starts green */
-  left: 15px; /* Start near the center of the left number */
-  animation-name: flow-to-red-anim;
+.anim-to-red-dyn {
+  background-color: var(--green);
+  animation: dyn-to-red 0.4s cubic-bezier(0.25, 0.1, 0.25, 1.0) forwards;
 }
 
-@keyframes flow-to-green-anim {
-  0% { transform: translate(0, -50%) scale(1.2); opacity: 1; }
-  50% { transform: translate(-35px, -25px) scale(0.6); opacity: 1; } /* Arc up */
-  100% { transform: translate(-70px, -50%) scale(0); opacity: 0; }
+@keyframes dyn-to-green {
+  0% { transform: translate(var(--start-x), var(--start-y)) scale(1.2); opacity: 1; }
+  100% { transform: translate(calc(50vw - 35px), 25px) scale(0); opacity: 0; }
 }
 
-@keyframes flow-to-red-anim {
-  0% { transform: translate(0, -50%) scale(1.2); opacity: 1; }
-  50% { transform: translate(35px, -25px) scale(0.6); opacity: 1; } /* Arc up */
-  100% { transform: translate(70px, -50%) scale(0); opacity: 0; }
+@keyframes dyn-to-red {
+  0% { transform: translate(var(--start-x), var(--start-y)) scale(1.2); opacity: 1; }
+  100% { transform: translate(calc(50vw + 35px), 25px) scale(0); opacity: 0; }
 }
 
 /* -- Pop effect -- */
@@ -596,7 +588,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 10px;
+  padding: 8px 12px; /* Increased padding */
 }
 
 .category-title-area {
@@ -1032,7 +1024,7 @@ body {
 
 .grayed-out { opacity: 0.5; background: #eee; }
 .hidden-actions { display: flex; gap: 8px; align-items: center; }
-.btn-unhide, .btn-delete { background: white; border: 1px solid #ccc; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8em; font-weight: bold; }
+.btn-unhide, .btn-delete { background: white; border: 1px solid #ccc; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 1.1em; font-weight: bold; }
 .btn-delete { color: #b30000; border-color: #ff9999; }
 .btn-delete:hover { background: #fff0f0; }
 

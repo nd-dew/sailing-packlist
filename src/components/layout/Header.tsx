@@ -13,11 +13,10 @@ function usePrevious(value: any) {
 export const Header: React.FC = () => {
   const { 
     showHeader, setActiveMenu, undo, redo, past, future, 
-    categories, checkedItems, itemViewFilter, setItemViewFilter 
+    categories, checkedItems, itemViewFilter, setItemViewFilter, particles 
   } = usePacklist();
   
   const [showStats, setShowStats] = useState(false);
-  const [animation, setAnimation] = useState<{ id: number; type: 'to-green' | 'to-red' } | null>(null);
   const [pop, setPop] = useState<'green' | 'red' | null>(null);
 
   useEffect(() => {
@@ -34,20 +33,12 @@ export const Header: React.FC = () => {
   useEffect(() => {
     if (prevPacked !== undefined) {
       if (packedItems > (prevPacked as number)) {
-        setAnimation({ id: Date.now(), type: 'to-green' });
-        setTimeout(() => setPop('green'), 400); 
+        setTimeout(() => setPop('green'), 300); 
       } else if (packedItems < (prevPacked as number)) {
-        setAnimation({ id: Date.now(), type: 'to-red' });
-        setTimeout(() => setPop('red'), 400);
+        setTimeout(() => setPop('red'), 300);
       }
-      
-      const animTimer = setTimeout(() => setAnimation(null), 400);
-      const popTimer = setTimeout(() => setPop(null), 500);
-
-      return () => {
-        clearTimeout(animTimer);
-        clearTimeout(popTimer);
-      };
+      const popTimer = setTimeout(() => setPop(null), 600);
+      return () => clearTimeout(popTimer);
     }
   }, [packedItems, prevPacked]);
 
@@ -61,24 +52,27 @@ export const Header: React.FC = () => {
 
   return (
     <header className={`app-header ${showHeader ? '' : 'hidden'}`}>
+      {particles.map(p => (
+        <div
+          key={p.id}
+          className={`flow-particle ${p.type === 'to-green' ? 'anim-to-green-dyn' : 'anim-to-red-dyn'}`}
+          style={{ 
+            '--start-x': `${p.x}px`, 
+            '--start-y': `${p.y}px` 
+          } as React.CSSProperties}
+        />
+      ))}
       <button className="header-icon-btn" onClick={() => setActiveMenu('settings')}>☰</button>
       <div className="header-title-area">
         <button onClick={undo} disabled={past.length === 0} className="header-undo-btn big-btn" title="Undo">↶</button>
         <div className="header-title-fader">
           <h1 className={showStats ? 'fade-out' : 'fade-in'}>PackList</h1>
           <div className={`header-stats ${showStats ? 'fade-in' : 'fade-out'}`}>
-            
-            {animation && (
-              <div
-                key={animation.id}
-                className={`flow-particle ${animation.type === 'to-green' ? 'anim-to-green' : 'anim-to-red'}`}
-              />
-            )}
-
             <div 
               className={`stat-number done ${itemViewFilter === 'packed' ? 'active' : ''} ${pop === 'green' ? 'pop-stat' : ''}`}
               onClick={() => handleFilterClick('packed')}
               title="Filter by Packed"
+              id="stat-green"
             >
               {packedItems}
             </div>
@@ -86,6 +80,7 @@ export const Header: React.FC = () => {
               className={`stat-number todo ${itemViewFilter === 'unpacked' ? 'active' : ''} ${pop === 'red' ? 'pop-stat' : ''}`}
               onClick={() => handleFilterClick('unpacked')}
               title="Filter by Unpacked"
+              id="stat-red"
             >
               {unpackedItems}
             </div>

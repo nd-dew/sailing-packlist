@@ -49,7 +49,7 @@ interface PacklistContextType {
   undo: () => void;
   redo: () => void;
   commitAction: (message: string) => void;
-  toggleCheck: (id: string) => void;
+  toggleCheck: (id: string, e?: React.MouseEvent | React.TouchEvent | Event) => void;
   hideItem: (id: string) => void;
   unhideItem: (id: string) => void;
   unhideAllInCategory: (catId: string) => void;
@@ -83,6 +83,8 @@ interface PacklistContextType {
   hideCategoryItemsAction: (categoryId: string) => void;
   getSubItemCounts: (item: PackItem) => { packed: number, total: number };
   getMenuStyles: () => { leftMenuStyle: React.CSSProperties, rightMenuStyle: React.CSSProperties, isMenuSwiping: boolean };
+  particles: { id: number; x: number; y: number; type: 'to-green' | 'to-red' }[];
+  triggerParticle: (x: number, y: number, type: 'to-green' | 'to-red') => void;
 }
 
 const PacklistContext = createContext<PacklistContextType | undefined>(undefined);
@@ -171,6 +173,15 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [itemViewFilter, setItemViewFilter] = useState<ItemViewFilter>('all');
   const [activeMenu, setActiveMenu] = useState<'main' | 'settings' | 'baggage'>('main');
   const [activeToastId, setActiveToastId] = useState<string | null>(null);
+  const [particles, setParticles] = useState<{ id: number; x: number; y: number; type: 'to-green' | 'to-red' }[]>([]);
+
+  const triggerParticle = (x: number, y: number, type: 'to-green' | 'to-red') => {
+    const id = Date.now() + Math.random();
+    setParticles(prev => [...prev, { id, x, y, type }]);
+    setTimeout(() => {
+      setParticles(prev => prev.filter(p => p.id !== id));
+    }, 600); // slightly longer than animation
+  };
 
   // Global Swipe detection for menus
   const [menuTouchStart, setMenuTouchStart] = useState<{x: number, y: number} | null>(null);
@@ -329,10 +340,46 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     return undefined;
   };
 
-  const toggleCheck = (id: string) => {
+  const toggleCheck = (id: string, e?: React.MouseEvent | React.TouchEvent | Event) => {
     const item = findItemDeep(id);
-    commitAction(checkedItems[id] ? `Unchecked ${item?.name || 'item'}` : `Checked ${item?.name || 'item'}`);
-    setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
+    const willBeChecked = !checkedItems[id];
+    commitAction(willBeChecked ? `Checked ${item?.name || 'item'}` : `Unchecked ${item?.name || 'item'}`);
+    
+    if (e && willBeChecked) {
+      let clientX = 0;
+      let clientY = 0;
+      if ('touches' in e && (e as React.TouchEvent).touches.length > 0) {
+        clientX = (e as React.TouchEvent).touches[0].clientX;
+        clientY = (e as React.TouchEvent).touches[0].clientY;
+      } else if ('changedTouches' in e && (e as React.TouchEvent).changedTouches.length > 0) {
+        clientX = (e as React.TouchEvent).changedTouches[0].clientX;
+        clientY = (e as React.TouchEvent).changedTouches[0].clientY;
+      } else if ('clientX' in e) {
+        clientX = (e as React.MouseEvent).clientX;
+        clientY = (e as React.MouseEvent).clientY;
+      }
+      if (clientX > 0 || clientY > 0) {
+        triggerParticle(clientX, clientY, 'to-green');
+      }
+    } else if (e && !willBeChecked) {
+        let clientX = 0;
+        let clientY = 0;
+        if ('touches' in e && (e as React.TouchEvent).touches.length > 0) {
+          clientX = (e as React.TouchEvent).touches[0].clientX;
+          clientY = (e as React.TouchEvent).touches[0].clientY;
+        } else if ('changedTouches' in e && (e as React.TouchEvent).changedTouches.length > 0) {
+          clientX = (e as React.TouchEvent).changedTouches[0].clientX;
+          clientY = (e as React.TouchEvent).changedTouches[0].clientY;
+        } else if ('clientX' in e) {
+          clientX = (e as React.MouseEvent).clientX;
+          clientY = (e as React.MouseEvent).clientY;
+        }
+        if (clientX > 0 || clientY > 0) {
+          triggerParticle(clientX, clientY, 'to-red');
+        }
+    }
+
+    setCheckedItems(prev => ({ ...prev, [id]: willBeChecked }));
   };
   
   const hideItem = (id: string) => {
@@ -627,7 +674,8 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, applyPreset, resetAll, handleCreateItem, handleAddSubItem,
       updateItem, deleteItem, moveItemCategory, updateCategory, deleteCategory, setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, updateLuggage, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
-      handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles
+      handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles,
+      particles, triggerParticle
       }}>
       {children}
     </PacklistContext.Provider>

@@ -56,7 +56,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
       if (dx > 0) {
         // Swipe Right: Pack & Hide
         if (!checkedItems[item.id]) {
-            toggleCheck(item.id);
+            toggleCheck(item.id, e);
         }
         hideItem(item.id);
       } else {
@@ -95,7 +95,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
         style={{ transform: isSwipingState ? `translateX(${swipeOffset}px)` : 'translateX(0px)' }}
       >
         <div className="item-main">
-          <input type="checkbox" checked={!!checkedItems[item.id]} onChange={() => toggleCheck(item.id)} />
+          <input type="checkbox" checked={!!checkedItems[item.id]} onChange={(e) => toggleCheck(item.id, e.nativeEvent)} />
           <div 
             className="item-clickable-area" 
             onClick={() => { if(!isSwipingRef.current) setSelectedItemId(item.id); }}

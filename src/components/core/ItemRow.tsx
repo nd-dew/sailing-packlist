@@ -3,6 +3,14 @@ import { usePacklist } from '../../context/PacklistContext';
 import type { PackItem, Luggage } from '../../types';
 import { LuggageIcon } from './LuggageIcon';
 
+function usePrevious<T>(value: T): T | undefined {
+  const ref = useRef<T>(undefined);
+  useEffect(() => {
+    ref.current = value;
+  });
+  return ref.current;
+}
+
 interface ItemRowProps {
   item: PackItem;
   displayQty?: number;
@@ -13,7 +21,7 @@ interface ItemRowProps {
 
 export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLuggage, isSubItem, parentName }) => {
   const { 
-    checkedItems, toggleCheck, hideItem, getNextLuggageHint, cycleLuggage, setSelectedItemId, getSubItemCounts
+    checkedItems, toggleCheck, hideItem, getNextLuggageHint, cycleLuggage, setSelectedItemId, getSubItemCounts, playPopSound
   } = usePacklist();
 
   const [swipeOffset, setSwipeOffset] = useState(0);
@@ -23,6 +31,27 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
 
   const subItemCounts = item.subItems ? getSubItemCounts(item) : null;
   const isParentChecked = subItemCounts ? subItemCounts.packed === subItemCounts.total && subItemCounts.total > 0 : false;
+
+  const prevLuggageId = usePrevious(assignedLuggage?.id);
+  const prevChecked = usePrevious(checkedItems[item.id]);
+  const [luggagePop, setLuggagePop] = useState(false);
+  const [checkPop, setCheckPop] = useState(false);
+
+  useEffect(() => {
+    if (prevLuggageId !== undefined && assignedLuggage?.id !== prevLuggageId) {
+      setLuggagePop(true);
+      const t = setTimeout(() => setLuggagePop(false), 300);
+      return () => clearTimeout(t);
+    }
+  }, [assignedLuggage?.id, prevLuggageId]);
+
+  useEffect(() => {
+    if (prevChecked !== undefined && !!checkedItems[item.id] !== !!prevChecked) {
+      setCheckPop(true);
+      const t = setTimeout(() => setCheckPop(false), 300);
+      return () => clearTimeout(t);
+    }
+  }, [checkedItems[item.id], prevChecked]);
 
   useEffect(() => {
     if (isParentChecked && !checkedItems[item.id]) {
@@ -56,11 +85,13 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
       if (dx > 0) {
         // Swipe Right: Pack & Hide
         if (!checkedItems[item.id]) {
+            playPopSound('click');
             toggleCheck(item.id, e);
         }
         hideItem(item.id);
       } else {
         // Swipe Left: Cycle Luggage
+        playPopSound('pop');
         cycleLuggage(item.id, 1);
       }
     }
@@ -72,14 +103,14 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
 
   return (
     <li 
-      className={`list-item ${checkedItems[item.id] ? 'checked' : ''} ${isSwipingState ? 'is-swiping' : ''} ${isSubItem ? 'is-sub-item' : ''}`}
+      className={`list-item ${checkedItems[item.id] ? 'checked' : ''} ${isSwipingState ? 'is-swiping' : ''} ${isSubItem ? 'is-sub-item' : ''} ${checkPop ? 'pop-animate' : ''}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       {assignedLuggage && (
         <span 
-          className="luggage-badge"
+          className={`luggage-badge ${luggagePop ? 'pop-animate' : ''}`}
           style={{ borderColor: `${assignedLuggage.color || '#999'}66`, color: assignedLuggage.color || '#666' }}
           title={assignedLuggage.name}
         >
@@ -95,7 +126,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
         style={{ transform: isSwipingState ? `translateX(${swipeOffset}px)` : 'translateX(0px)' }}
       >
         <div className="item-main">
-          <input type="checkbox" checked={!!checkedItems[item.id]} onChange={(e) => toggleCheck(item.id, e.nativeEvent)} />
+          <input type="checkbox" checked={!!checkedItems[item.id]} onChange={(e) => { playPopSound('click'); toggleCheck(item.id, e.nativeEvent); }} />
           <div 
             className="item-clickable-area" 
             onClick={() => { if(!isSwipingRef.current) setSelectedItemId(item.id); }}

@@ -8,7 +8,7 @@ export const SettingsMenu: React.FC = () => {
     activeMenu, setActiveMenu, changes, updateChanges,
     applyPreset, deferredPrompt, handleInstallClick, resetAll, past,
     getMenuStyles, categories, luggages, itemLuggage, checkedItems, hiddenItems,
-    theme, setTheme, importData
+    theme, setTheme, importData, soundEnabled, setSoundEnabled
   } = usePacklist();
 
   const { leftMenuStyle, isMenuSwiping } = getMenuStyles();
@@ -96,7 +96,7 @@ export const SettingsMenu: React.FC = () => {
         </div>
 
         <div className="menu-section">
-          <label>Appearance</label>
+          <label>Appearance & Sound</label>
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
             <button 
               className={`btn-preset ${theme === 'light' ? 'active' : ''}`} 
@@ -112,6 +112,15 @@ export const SettingsMenu: React.FC = () => {
             >
               🌙 Dark
             </button>
+          </div>
+          <div style={{ marginTop: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.9em', fontWeight: 'bold' }}>UI Sound Effects</span>
+            <input 
+              type="checkbox" 
+              checked={soundEnabled} 
+              onChange={(e) => setSoundEnabled(e.target.checked)} 
+              style={{ transform: 'scale(1.2)' }}
+            />
           </div>
         </div>
 

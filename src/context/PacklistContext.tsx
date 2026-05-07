@@ -93,12 +93,55 @@ interface PacklistContextType {
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
   importData: (data: any) => void;
+  soundEnabled: boolean;
+  setSoundEnabled: (enabled: boolean) => void;
+  playPopSound: (type?: 'click' | 'pop') => void;
 }
 
 const PacklistContext = createContext<PacklistContextType | undefined>(undefined);
 
 export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const defaultPresetId = Object.keys(PRESETS)[0] || '';
+
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('sailingPacklist_sound_v16');
+    return saved ? JSON.parse(saved) : true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('sailingPacklist_sound_v16', JSON.stringify(soundEnabled));
+  }, [soundEnabled]);
+
+  const playPopSound = useCallback((type: 'click' | 'pop' = 'pop') => {
+    if (!soundEnabled) return;
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      if (type === 'pop') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+      } else {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(400, ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+      }
+      
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.1);
+    } catch (e) {
+      console.warn("Audio play failed", e);
+    }
+  }, [soundEnabled]);
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('sailingPacklist_theme_v16');
@@ -297,6 +340,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const redo = useCallback(() => {
     if (future.length === 0) return;
+    playPopSound('click');
     const next = future[0];
     const currentSnapshot: AppSnapshot = { changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage };
     setPast(prev => [...prev, { id: Date.now().toString(), message: next.message, timestamp: Date.now(), snapshot: currentSnapshot }]);
@@ -312,6 +356,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const undo = useCallback(() => {
     if (past.length === 0) return;
+    playPopSound('click');
     const last = past[past.length - 1];
     const currentSnapshot: AppSnapshot = { changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage };
     setFuture(prev => [{ id: Date.now().toString(), message: last.message, timestamp: Date.now(), snapshot: currentSnapshot }, ...prev]);
@@ -787,7 +832,8 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       updateItem, deleteItem, moveItemCategory, updateCategory, deleteCategory, setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, unpackCategoryItemsAction, updateLuggage, deleteLuggage, packAndHideLuggageItems, unpackLuggageItems, hideLuggageItems, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles,
-      particles, triggerParticle, theme, setTheme, importData
+      particles, triggerParticle, theme, setTheme, importData,
+      soundEnabled, setSoundEnabled, playPopSound
       }}>
       {children}
     </PacklistContext.Provider>

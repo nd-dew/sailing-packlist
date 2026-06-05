@@ -84,6 +84,7 @@ interface PacklistContextType {
   hideCategoryItemsAction: (categoryId: string) => void;
   unpackCategoryItemsAction: (categoryId: string) => void;
   deleteLuggage: (id: string) => void;
+  reorderLuggage: (id: string, direction: 1 | -1) => void;
   packAndHideLuggageItems: (luggageId: string) => void;
   unpackLuggageItems: (luggageId: string) => void;
   hideLuggageItems: (luggageId: string) => void;
@@ -785,6 +786,23 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setSelectedLuggageId(null);
   };
 
+  const reorderLuggage = (id: string, direction: 1 | -1) => {
+    playPopSound('click');
+    setLuggages(prev => {
+      const idx = prev.findIndex(l => l.id === id);
+      if (idx === -1) return prev;
+      const nextIdx = idx + direction;
+      if (nextIdx < 0 || nextIdx >= prev.length) return prev;
+      
+      const nextLuggages = [...prev];
+      const temp = nextLuggages[idx];
+      nextLuggages[idx] = nextLuggages[nextIdx];
+      nextLuggages[nextIdx] = temp;
+      return nextLuggages;
+    });
+    commitAction('Reordered luggage');
+  };
+
   const packAndHideLuggageItems = (luggageId: string) => {
     const lug = luggages.find(l => l.id === luggageId);
     if (!lug) return;
@@ -894,7 +912,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       selectedLuggageId, setSelectedLuggageId, newLuggageName, setNewLuggageName, showHiddenCats, toggleCatHidden,
       filter, setFilter, itemViewFilter, setItemViewFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, toggleParentItem, hideItem,
       unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, applyPreset, resetAll, handleCreateItem, handleAddSubItem,
-      updateItem, deleteItem, moveItemCategory, updateCategory, deleteCategory, setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, unpackCategoryItemsAction, updateLuggage, deleteLuggage, packAndHideLuggageItems, unpackLuggageItems, hideLuggageItems, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
+      updateItem, deleteItem, moveItemCategory, updateCategory, deleteCategory, setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, unpackCategoryItemsAction, updateLuggage, deleteLuggage, reorderLuggage, packAndHideLuggageItems, unpackLuggageItems, hideLuggageItems, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles,
       particles, triggerParticle, theme, setTheme, importData,

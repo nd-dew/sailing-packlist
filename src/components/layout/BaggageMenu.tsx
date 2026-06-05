@@ -6,7 +6,7 @@ export const BaggageMenu: React.FC = () => {
   const { 
     activeMenu, setActiveMenu, luggages, categories, itemLuggage, checkedItems, 
     setSelectedItemId, setSelectedLuggageId, newLuggageName, setNewLuggageName, handleAddLuggage, changes,
-    getMenuStyles
+    getMenuStyles, reorderLuggage
   } = usePacklist();
 
   const { rightMenuStyle, isMenuSwiping } = getMenuStyles();
@@ -21,7 +21,7 @@ export const BaggageMenu: React.FC = () => {
       <div className="menu-content">
         <p className="controls-desc" style={{color: '#b30000', marginBottom: '15px'}}><strong>⚠️ No Hard Suitcases:</strong> Soft bags only! Rigid luggage is impossible to store on a boat. Bring a soft duffel.</p>
         <div className="luggage-lists">
-          {luggages.map((lug) => {
+          {luggages.map((lug, idx) => {
             const packedItems = categories.flatMap(c => c.items).filter(i => itemLuggage[i.id] === lug.id);
             return (
               <div key={lug.id} className="luggage-card">
@@ -35,7 +35,23 @@ export const BaggageMenu: React.FC = () => {
                     </span> 
                     {lug.name}
                   </h4>
-                  <button className="btn-small-action">✎ Edit</button>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    {idx > 0 && (
+                      <button 
+                        className="btn-small-action" 
+                        onClick={(e) => { e.stopPropagation(); reorderLuggage(lug.id, -1); }}
+                        title="Move Up"
+                      >↑</button>
+                    )}
+                    {idx < luggages.length - 1 && (
+                      <button 
+                        className="btn-small-action" 
+                        onClick={(e) => { e.stopPropagation(); reorderLuggage(lug.id, 1); }}
+                        title="Move Down"
+                      >↓</button>
+                    )}
+                    <button className="btn-small-action" onClick={(e) => { e.stopPropagation(); setSelectedLuggageId(lug.id); }}>✎ Edit</button>
+                  </div>
                 </div>
                 {lug.description && <p className="luggage-desc-preview">{lug.description}</p>}
                 {packedItems.length === 0 ? <p className="empty-luggage">No items assigned yet.</p> : <ul className="luggage-contents">{packedItems.map(pi => {

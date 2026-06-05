@@ -999,6 +999,7 @@ button:active,
 .btn-hide {
   background: none; border: none; color: #ccc; cursor: pointer;
   padding: 5px; font-size: 1.3em; flex-shrink: 0;
+  margin-right: 10px;
 }
 
 .list-item.checked { 

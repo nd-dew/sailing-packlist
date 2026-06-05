@@ -48,7 +48,7 @@ test.describe('Serverless URL Sharing Feature', () => {
     const dialogPromise = page.waitForEvent('dialog');
 
     // Tap share button with force to bypass transition intercept issues
-    await page.locator('button:has-text("Copy Share Link")').click({ force: true });
+    await page.locator('button:has-text("Share Current Setup Link")').click({ force: true });
 
     // Wait for the async alert to fire and dismiss it
     const dialog = await dialogPromise;

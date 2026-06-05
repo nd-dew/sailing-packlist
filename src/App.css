@@ -557,6 +557,9 @@ button:active,
     max-width: 600px;
     width: 60vw;
   }
+  .side-menu.left-menu {
+    max-width: 440px;
+  }
 }
 
 .menu-header {
@@ -568,7 +571,7 @@ button:active,
   color: white;
 }
 
-.menu-header h2 { margin: 0; font-size: 1.1em; }
+.menu-header h2 { margin: 0; font-size: 1.1em; color: white !important; }
 
 .btn-close-menu {
   background: rgba(255,255,255,0.2);

@@ -15,7 +15,6 @@ export const SettingsMenu: React.FC = () => {
 
   const { leftMenuStyle, isMenuSwiping } = getMenuStyles();
   const [presetCruise, setPresetCruise] = useState(Object.keys(PRESETS)[0] || '');
-  const [importUrl, setImportUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const baseSetQty = changes;
 
@@ -72,19 +71,6 @@ export const SettingsMenu: React.FC = () => {
     reader.readAsText(file);
   };
 
-  const handleUrlImport = async () => {
-    if (!importUrl) return;
-    try {
-      const res = await fetch(importUrl);
-      const text = await res.text();
-      const data = parse(text);
-      importData(data);
-      setImportUrl('');
-    } catch (err) {
-      alert('Failed to fetch or parse data from URL. Ensure the URL returns valid YAML.');
-    }
-  };
-
   const selectedPresetDesc = PRESETS[presetCruise]?.description || "No description available.";
 
   return (
@@ -104,12 +90,14 @@ export const SettingsMenu: React.FC = () => {
                 <option key={id} value={id}>{data.name || id}</option>
               ))}
             </select>
-            <p className="controls-desc" style={{ fontStyle: 'italic', margin: '4px 0', color: '#666', lineHeight: '1.4' }}>
-              ℹ️ {selectedPresetDesc}
+            <p className="controls-desc" style={{ fontStyle: 'normal', margin: '4px 0', color: '#666', lineHeight: '1.4' }}>
+              <strong>Active Preset:</strong> {PRESETS[presetCruise]?.name || presetCruise}
+              <br />
+              {selectedPresetDesc}
             </p>
             <div className="presets-group" style={{ width: '100%', gap: '8px' }}>
-              <button className="btn-preset" style={{flex: 1, padding: '10px'}} onClick={() => applyPreset(presetCruise, 'crew')}>Apply: Crew</button>
-              <button className="btn-preset" style={{flex: 1, padding: '10px'}} onClick={() => applyPreset(presetCruise, 'captain')}>Apply: Captain</button>
+              <button className="btn-preset" style={{flex: 1, padding: '6px', fontSize: '0.85em'}} onClick={() => applyPreset(presetCruise, 'crew')}>Apply: Crew</button>
+              <button className="btn-preset" style={{flex: 1, padding: '6px', fontSize: '0.85em'}} onClick={() => applyPreset(presetCruise, 'captain')}>Apply: Captain</button>
             </div>
           </div>
         </div>
@@ -122,56 +110,47 @@ export const SettingsMenu: React.FC = () => {
             <input type="number" className="stepper-input" value={changes} onChange={(e) => updateChanges(parseInt(e.target.value) || 1)} min={1} max={14} />
             <button className="stepper-btn" onClick={() => updateChanges(Math.min(14, changes + 1))} disabled={changes >= 14}>+</button>
           </div>
-          <p className="controls-desc">Estimation: <strong>{baseSetQty} Base Sets</strong>. Sets calculated based on actual shower opportunities.</p>
+          <p className="controls-desc">Estimation: <strong>{baseSetQty} Base Sets</strong>. Calculated dynamically.</p>
         </div>
 
-        {/* 3. Appearance & Sound Compact Row */}
-        <div className="menu-section">
-          <label>Preferences</label>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
-            <span style={{ fontSize: '0.9em', fontWeight: 'bold', color: 'var(--text)' }}>Theme & Sound</span>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button 
-                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} 
-                className="btn-preset" 
-                style={{ padding: '8px 12px', fontSize: '1.2em', borderRadius: '6px', minWidth: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-              >
-                {theme === 'light' ? '🌙' : '☀️'}
-              </button>
-              <button 
-                onClick={() => setSoundEnabled(!soundEnabled)} 
-                className="btn-preset" 
-                style={{ padding: '8px 12px', fontSize: '1.2em', borderRadius: '6px', minWidth: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                title={soundEnabled ? 'Mute Sounds' : 'Unmute Sounds'}
-              >
-                {soundEnabled ? '🔊' : '🔇'}
-              </button>
-            </div>
+        {/* 3. Appearance & Sound Compact Toggle Buttons Row (No Title Labels) */}
+        <div className="menu-section" style={{ borderTop: '1px solid var(--border)', paddingTop: '15px' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} 
+              className="btn-preset" 
+              style={{ flex: 1, padding: '10px 12px', fontSize: '0.9em', fontWeight: 'bold', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            >
+              {theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+            </button>
+            <button 
+              onClick={() => setSoundEnabled(!soundEnabled)} 
+              className="btn-preset" 
+              style={{ flex: 1, padding: '10px 12px', fontSize: '0.9em', fontWeight: 'bold', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              title={soundEnabled ? 'Mute Sounds' : 'Unmute Sounds'}
+            >
+              {soundEnabled ? '🔊 Sounds On' : '🔇 Muted'}
+            </button>
           </div>
         </div>
 
         {/* 4. Data & Sharing Category */}
-        <div className="menu-section global-actions-menu">
+        <div className="menu-section global-actions-menu" style={{ borderTop: '1px solid var(--border)', paddingTop: '15px' }}>
           <label>Data & Sharing</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
             <button onClick={handleShareList} className="btn-preset share-btn" style={{ width: '100%', padding: '10px', background: 'var(--navy)', color: 'white', fontWeight: 'bold' }}>
-              🔗 Copy Share Link
+              🔗 Share Current Setup Link
             </button>
             
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={handleExport} className="btn-preset" style={{ flex: 1, padding: '8px 10px', fontSize: '0.9em' }}>
-                💾 Export YAML
+                💾 Export to YAML
               </button>
               <input type="file" accept=".yaml,.yml" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileImport} />
               <button onClick={() => fileInputRef.current?.click()} className="btn-preset" style={{ flex: 1, padding: '8px 10px', fontSize: '0.9em' }}>
-                📂 Import File
+                📂 Import from YAML
               </button>
-            </div>
-
-            <div style={{ display: 'flex', gap: '5px', marginTop: '2px' }}>
-              <input type="text" className="luggage-add-input" style={{ border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.85em', padding: '6px' }} placeholder="Import from URL..." value={importUrl} onChange={e => setImportUrl(e.target.value)} />
-              <button onClick={handleUrlImport} className="btn-luggage-add" style={{ borderRadius: '6px', padding: '6px 12px', fontSize: '0.85em' }}>Go</button>
             </div>
           </div>
         </div>
@@ -184,7 +163,7 @@ export const SettingsMenu: React.FC = () => {
               className="btn-preset" 
               style={{ width: '100%', padding: '8px', background: 'var(--accent)', color: '#121212', borderColor: 'var(--accent)', fontWeight: 'bold', fontSize: '0.9em' }}
             >
-              📱 Install App to Home Screen
+              📱 Install App
             </button>
           </div>
         )}

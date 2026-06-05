@@ -130,7 +130,7 @@ categories:
         name: "Buff"
         description: "A neck gaiter or round piece of material that can be made into a scarf or cap to warm yourself."
       - id: "out_hat_sun"
-        name: "Sun Hat (Baseball Cap)"
+        name: "Sun Hat"
       - id: "out_gloves"
         name: "Gloves"
         description: "Protects your hands from line burns when handling ropes."

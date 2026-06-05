@@ -42,25 +42,25 @@ test.describe('Settings Menu & Luggage Modals', () => {
 
   test('opening and editing a bag modal', async ({ page }) => {
     // Open Baggage Menu
-    await page.locator('button:has-text("🎒")').first().click();
+    await page.locator('button[title="Baggage"]').first().click();
     await expect(page.locator('.side-menu.open')).toBeVisible();
 
-    // Click edit on the first bag (Duffel)
-    await page.locator('.luggage-card-header .btn-small-action').first().click();
+    // Click edit on the first bag (On Person)
+    await page.locator('.luggage-card-header button', { hasText: '✎ Edit' }).first().click();
     
     const bagModal = page.locator('.item-card-modal');
     await expect(bagModal).toBeVisible();
 
     // Change bag name
     const titleInput = bagModal.locator('.modal-title-input');
-    await expect(titleInput).toHaveValue('Duffel');
-    await titleInput.fill('My Giant Duffel');
+    await expect(titleInput).toHaveValue('On me');
+    await titleInput.fill('My Pockets');
 
     // Close bag modal
     await bagModal.locator('.btn-close-modal').click();
     await expect(bagModal).toBeHidden();
 
     // Verify name changed in baggage menu
-    await expect(page.locator('.luggage-card-header').first()).toContainText('My Giant Duffel');
+    await expect(page.locator('.luggage-card-header').first()).toContainText('My Pockets');
   });
 });

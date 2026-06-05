@@ -939,13 +939,11 @@ button:active,
 }
 
 .item-main input[type="checkbox"] {
-  margin: 2px 0 0 0;
-  width: 28px; height: 28px;
+  margin: 0;
+  width: 26px; height: 26px;
   cursor: pointer;
   flex-shrink: 0;
   accent-color: var(--navy);
-  transform: scale(1.2);
-  transform-origin: left top;
 }
 
 .item-clickable-area {

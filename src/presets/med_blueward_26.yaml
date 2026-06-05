@@ -237,6 +237,8 @@ categories:
       - id: "fun_instrument"
         name: "Musical Instrument"
         description: "If you play on it."
+      - id: "fun_pen_paper"
+        name: "Pen & Paper"
       - id: "fun_thermos"
         name: "Thermal Cup / Thermos"
         description: "Great for keeping coffee or tea hot during cold night watches."

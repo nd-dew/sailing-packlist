@@ -21,15 +21,18 @@ export default defineConfig({
         short_name: 'BSC Pack',
         description: 'Interactive Sailing Packing List for the Belgian Sailing Community',
         theme_color: '#001f3f',
+        background_color: '#001f3f',
+        display: 'standalone',
+        start_url: '/sailing-packlist/',
         icons: [
           {
-            src: '/favicon.png',
+            src: 'favicon.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: '/favicon.png',
+            src: 'favicon.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'

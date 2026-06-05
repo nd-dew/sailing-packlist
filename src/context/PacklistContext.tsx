@@ -259,11 +259,22 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; type: 'to-green' | 'to-red' }[]>([]);
 
   const triggerParticle = (x: number, y: number, type: 'to-green' | 'to-red') => {
+    const targetId = type === 'to-green' ? 'stat-green' : 'stat-red';
+    const targetEl = document.getElementById(targetId);
+    let targetX = type === 'to-green' ? window.innerWidth / 2 - 35 : window.innerWidth / 2 + 35;
+    let targetY = 25;
+
+    if (targetEl) {
+      const rect = targetEl.getBoundingClientRect();
+      targetX = rect.left + rect.width / 2;
+      targetY = rect.top + rect.height / 2;
+    }
+
     const id = Date.now() + Math.random();
-    setParticles(prev => [...prev, { id, x, y, type }]);
+    setParticles(prev => [...prev, { id, x, y, type, targetX, targetY } as any]);
     setTimeout(() => {
       setParticles(prev => prev.filter(p => p.id !== id));
-    }, 800); // slightly longer than animation
+    }, 600); // synced with 0.6s CSS animation
   };
 
   // Global Swipe detection for menus

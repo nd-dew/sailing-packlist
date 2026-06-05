@@ -52,13 +52,15 @@ export const Header: React.FC = () => {
 
   return (
     <header className={`app-header ${showHeader ? '' : 'hidden'}`}>
-      {particles.map(p => (
+      {particles.map((p: any) => (
         <div
           key={p.id}
           className={`flow-particle ${p.type === 'to-green' ? 'anim-to-green-dyn' : 'anim-to-red-dyn'}`}
           style={{ 
             '--start-x': `${p.x}px`, 
-            '--start-y': `${p.y}px` 
+            '--start-y': `${p.y}px`,
+            '--target-x': `${p.targetX ?? (p.type === 'to-green' ? window.innerWidth / 2 - 35 : window.innerWidth / 2 + 35)}px`,
+            '--target-y': `${p.targetY ?? 25}px`
           } as React.CSSProperties}
         />
       ))}

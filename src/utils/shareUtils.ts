@@ -14,6 +14,7 @@ export interface SharedCategory {
 export interface SharedPayload {
   v: number;         // Protocol version
   p: string;         // Preset name (e.g. "med_blueward_26")
+  d?: string;        // Optional custom description override
   lugs: SharedLuggage[]; // Luggage bags definition
   cats: (string | SharedCategory)[]; // Active category IDs in order, or custom Category structures
   l: number[];       // Array of luggage indices (matching lugs array) for each preset item in static order. -1 if unassigned.

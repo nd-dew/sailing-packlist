@@ -10,7 +10,7 @@ export const SettingsMenu: React.FC = () => {
     applyPreset, deferredPrompt, handleInstallClick, past,
     getMenuStyles, categories, luggages, itemLuggage, checkedItems, hiddenItems,
     theme, setTheme, importData, soundEnabled, setSoundEnabled,
-    getSharePayload, playPopSound
+    getSharePayload, playPopSound, cruiseDescription, setCruiseDescription
   } = usePacklist();
 
   const { leftMenuStyle, isMenuSwiping } = getMenuStyles();
@@ -90,11 +90,16 @@ export const SettingsMenu: React.FC = () => {
                 <option key={id} value={id}>{data.name || id}</option>
               ))}
             </select>
-            <p className="controls-desc" style={{ fontStyle: 'normal', margin: '4px 0', color: '#666', lineHeight: '1.4' }}>
-              <strong>Active Preset:</strong> {PRESETS[presetCruise]?.name || presetCruise}
-              <br />
-              {selectedPresetDesc}
+            <p style={{ margin: '4px 0 2px 0', fontSize: '0.85em', fontWeight: 'bold', color: 'var(--text)', textAlign: 'left' }}>
+              Active Preset: {PRESETS[presetCruise]?.name || presetCruise}
             </p>
+            <textarea
+              className="preset-description-textarea"
+              value={cruiseDescription || selectedPresetDesc}
+              onChange={(e) => setCruiseDescription(e.target.value)}
+              placeholder="Describe your cruise details here..."
+              title="Click to edit trip description"
+            />
             <div className="presets-group" style={{ width: '100%', gap: '8px' }}>
               <button className="btn-preset" style={{flex: 1, padding: '6px', fontSize: '0.85em'}} onClick={() => applyPreset(presetCruise, 'crew')}>Apply: Crew</button>
               <button className="btn-preset" style={{flex: 1, padding: '6px', fontSize: '0.85em'}} onClick={() => applyPreset(presetCruise, 'captain')}>Apply: Captain</button>

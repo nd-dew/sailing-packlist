@@ -1543,3 +1543,42 @@ button:active,
 .btn-share-confirm.confirm.warning-confirm:hover {
   background: #b71c1c !important;
 }
+
+/* Preset Description Textarea Styles */
+.preset-description-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(0,0,0,0.02);
+  color: #555;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.85em;
+  line-height: 1.4;
+  resize: vertical;
+  min-height: 70px;
+  text-align: left;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.preset-description-textarea:focus {
+  background: white;
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(0, 31, 63, 0.1);
+  color: #121212;
+}
+
+[data-theme="dark"] .preset-description-textarea {
+  background: rgba(255,255,255,0.02);
+  color: #ccc;
+  border-color: #333;
+}
+
+[data-theme="dark"] .preset-description-textarea:focus {
+  background: #252525;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.1);
+  color: white;
+}

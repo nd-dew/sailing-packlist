@@ -105,6 +105,8 @@ interface PacklistContextType {
   playPopSound: (type?: 'click' | 'pop') => void;
   loadSharedState: (shared: SharedPayload) => void;
   getSharePayload: () => SharedPayload;
+  cruiseDescription: string;
+  setCruiseDescription: (desc: string) => void;
 }
 
 const PacklistContext = createContext<PacklistContextType | undefined>(undefined);
@@ -244,6 +246,15 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [itemViewFilter, setItemViewFilter] = useState<ItemViewFilter>('all');
   const [activeMenu, setActiveMenu] = useState<'main' | 'settings' | 'baggage'>('main');
   const [pendingPreset, setPendingPreset] = useState<{ cruise: string, role: 'crew' | 'captain' } | null>(null);
+  const [cruiseDescription, setCruiseDescription] = useState<string>(() => {
+    const saved = localStorage.getItem('sailingPacklist_cruiseDescription_v16');
+    return saved !== null ? saved : '';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('sailingPacklist_cruiseDescription_v16', cruiseDescription);
+  }, [cruiseDescription]);
+
   const [activeToastId, setActiveToastId] = useState<string | null>(null);
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; type: 'to-green' | 'to-red' }[]>([]);
 
@@ -575,6 +586,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setCheckedItems({});
     setItemLuggage(getInitialLuggageAssignments(cruise));
     setLuggages(getPresetData(cruise).luggages || []);
+    setCruiseDescription(''); // reset custom description to fallback to new preset defaults
     commitAction(`Reset list to ${role.toUpperCase()} preset`);
     setPendingPreset(null);
     setActiveMenu('main');
@@ -667,6 +679,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     return {
       v: 1,
       p: defaultPresetId,
+      d: cruiseDescription || undefined,
       lugs: luggages.map(lug => ({
         id: lug.id,
         name: lug.name,
@@ -762,6 +775,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setItemLuggage(newLocalItemLuggage);
     setCheckedItems({});
     setHiddenItems(newHiddenItems);
+    setCruiseDescription(shared.d || '');
     
     commitAction('Loaded shared list from Skipper');
     setActiveMenu('main');
@@ -1110,6 +1124,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles,
       particles, triggerParticle, theme, setTheme, importData, loadSharedState, getSharePayload,
+      cruiseDescription, setCruiseDescription,
       soundEnabled, setSoundEnabled, playPopSound
       }}>
       {children}

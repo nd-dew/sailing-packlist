@@ -135,7 +135,7 @@ categories:
         name: "Gloves"
         description: "Protects your hands from line burns when handling ropes."
       - id: "out_nice_clothes"
-        name: "One \"Nice\" / Party Outfit"
+        name: "Nice Outfit"
         description: "Check with the captain! Are we dining at fancy marinas or fighting storms? Bring something unwrinkled or themed if planned."
       - id: "out_sunglasses"
         name: "Sunglasses"

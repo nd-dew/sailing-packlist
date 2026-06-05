@@ -611,6 +611,19 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       });
     });
 
+    const activeCats = categories.map((cat: Category) => {
+      const isPresetCat = defaultData.categories.some((c: any) => c.id === cat.id);
+      if (isPresetCat) {
+        return cat.id;
+      } else {
+        return {
+          id: cat.id,
+          title: cat.title,
+          priority: cat.priority
+        };
+      }
+    });
+
     const luggageIdArray = luggages.map(lug => lug.id);
     const luggageIndices = presetItemIds.map(itemId => {
       // Check if item is present in categories and NOT hidden
@@ -651,6 +664,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
         icon: lug.icon || 'default',
         color: lug.color || '#666'
       })),
+      cats: activeCats,
       l: luggageIndices,
       c: customSharedItems.length > 0 ? customSharedItems : undefined
     };
@@ -693,10 +707,25 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
     });
 
-    const finalCategories = baseCategories.map((cat: Category) => ({
-      ...cat,
-      items: [...cat.items]
-    }));
+    const finalCategories: Category[] = [];
+    shared.cats.forEach((catRef: any) => {
+      if (typeof catRef === 'string') {
+        const baseCat = baseCategories.find((c: Category) => c.id === catRef);
+        if (baseCat) {
+          finalCategories.push({
+            ...baseCat,
+            items: [...baseCat.items]
+          });
+        }
+      } else {
+        finalCategories.push({
+          id: catRef.id,
+          title: catRef.title,
+          priority: catRef.priority,
+          items: []
+        });
+      }
+    });
 
     if (shared.c) {
       shared.c.forEach(custom => {

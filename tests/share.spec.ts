@@ -2,16 +2,16 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Serverless URL Sharing Feature', () => {
   test('loading a shared list from URL hash', async ({ page }) => {
-    // Generate an automatic 'confirm' dialog acceptor
-    page.on('dialog', async dialog => {
-      expect(dialog.message()).toContain('Load Shared List?');
-      await dialog.accept();
-    });
-
     // Share link containing renamed luggage ('My Belt'), active categories, item assignments, and custom item ('Shared Drone')
     const shareHash = 'eJy9kc1qwzAQhF8lTK97iBNSGh1tk1tPPQZjZGmdmOjHyFZKCX73IkOj9gXKnnaG_ZhhH7hDFIQRApZ125nInzLodvcKgomXCeL8wKAh0tbuQXDSMgTevzYlmxmEQXkHAe_akcPkHQjKGx8g8FIW27o6YqFfkF2GlFLdRqlumdJl5Qk5nd4ORfkXUmRIHfueTUZo7mVckz0J-2NVVRWWhqDknEqh98HKdDX7eLmCoANPE2sQgrfSzYNKJqvk2VXvo0NDMBDnLf3TpMTrD1Kzj6sMrDd18I6xVoH4idhBFEuzfAN34X_b';
     
     await page.goto(`/#s=${shareHash}`);
+
+    // Verify custom share confirm overlay is visible
+    await expect(page.locator('.share-confirm-overlay')).toBeVisible();
+
+    // Click "Yes, Load" on our beautiful React modal
+    await page.locator('button:has-text("Yes, Load")').click();
 
     // Verify URL Hash has been safely cleaned up from the browser address bar
     await expect(page).not.toHaveURL(/#s=/);

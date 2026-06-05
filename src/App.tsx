@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { PacklistProvider, usePacklist } from './context/PacklistContext';
 import { Header } from './components/layout/Header';
 import { SettingsMenu } from './components/layout/SettingsMenu';
@@ -7,13 +7,48 @@ import { CategoryBlock } from './components/core/CategoryBlock';
 import { ItemModal } from './components/modals/ItemModal';
 import { BagModal } from './components/modals/BagModal';
 import { CategoryModal } from './components/modals/CategoryModal';
+import { decompressPayload } from './utils/shareUtils';
 import './App.css';
 
 const AppContent: React.FC = () => {
   const { 
     activeMenu, setActiveMenu, confirmToast, categories, itemViewFilter,
-    handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd
+    handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd,
+    loadSharedState
   } = usePacklist();
+
+  const [pendingSharePayload, setPendingSharePayload] = React.useState<any>(null);
+
+  useEffect(() => {
+    const handleSharedUrl = async () => {
+      const hash = window.location.hash;
+      if (hash.startsWith('#s=')) {
+        const shareToken = hash.substring(3);
+        try {
+          const unpacked = await decompressPayload(shareToken);
+          setPendingSharePayload(unpacked);
+        } catch (err) {
+          console.error("Failed to parse shared URL:", err);
+          alert("Failed to parse shared URL. The link might be invalid or broken.");
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      }
+    };
+    handleSharedUrl();
+  }, []);
+
+  const handleAcceptShare = () => {
+    if (pendingSharePayload) {
+      loadSharedState(pendingSharePayload);
+    }
+    setPendingSharePayload(null);
+    window.history.replaceState(null, '', window.location.pathname);
+  };
+
+  const handleCancelShare = () => {
+    setPendingSharePayload(null);
+    window.history.replaceState(null, '', window.location.pathname);
+  };
 
   return (
     <>
@@ -32,6 +67,20 @@ const AppContent: React.FC = () => {
         <div className="confirm-toast-overlay">
           <div className="confirm-toast">
             {confirmToast.message}
+          </div>
+        </div>
+      )}
+
+      {pendingSharePayload && (
+        <div className="share-confirm-overlay">
+          <div className="share-confirm-card">
+            <span className="share-confirm-icon">⛵</span>
+            <h3>Shared Packlist Detected</h3>
+            <p>Seems like someone gave you a link with an included packlist configured. Do you want to open it? (it will override whatever you currently have?)</p>
+            <div className="share-confirm-actions">
+              <button onClick={handleCancelShare} className="btn-share-confirm cancel">Cancel</button>
+              <button onClick={handleAcceptShare} className="btn-share-confirm confirm">Yes, Load</button>
+            </div>
           </div>
         </div>
       )}

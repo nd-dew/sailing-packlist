@@ -1337,3 +1337,117 @@ button:active,
 .app-footer a:hover {
   color: var(--navy);
 }
+
+/* Custom Share Confirmation Modal */
+.share-confirm-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.share-confirm-card {
+  background: white;
+  border-radius: 16px;
+  max-width: 420px;
+  width: 100%;
+  padding: 25px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  text-align: center;
+  animation: slide-in-item 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+[data-theme="dark"] .share-confirm-card {
+  background: #1e1e1e;
+  color: white;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  border: 1px solid #333;
+}
+
+.share-confirm-icon {
+  font-size: 3em;
+  margin-bottom: 15px;
+  display: inline-block;
+  animation: pop-animate 0.4s ease-out;
+}
+
+.share-confirm-card h3 {
+  margin: 0 0 12px 0;
+  font-size: 1.3em;
+  color: var(--navy);
+}
+
+[data-theme="dark"] .share-confirm-card h3 {
+  color: var(--accent);
+}
+
+.share-confirm-card p {
+  font-size: 0.95em;
+  line-height: 1.5;
+  color: #555;
+  margin: 0 0 25px 0;
+}
+
+[data-theme="dark"] .share-confirm-card p {
+  color: #ccc;
+}
+
+.share-confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-share-confirm {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+  font-size: 0.95em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-share-confirm.confirm {
+  background: var(--navy);
+  color: white;
+}
+
+.btn-share-confirm.confirm:hover {
+  background: #003366;
+  transform: translateY(-1px);
+}
+
+.btn-share-confirm.confirm:active {
+  transform: scale(0.97);
+}
+
+.btn-share-confirm.cancel {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.btn-share-confirm.cancel:hover {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.btn-share-confirm.cancel:active {
+  transform: scale(0.97);
+}
+
+[data-theme="dark"] .btn-share-confirm.cancel {
+  background: #2d2d2d;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .btn-share-confirm.cancel:hover {
+  background: #3d3d3d;
+}

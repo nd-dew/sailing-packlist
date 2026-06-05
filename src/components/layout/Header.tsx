@@ -88,7 +88,12 @@ export const Header: React.FC = () => {
         </div>
         <button onClick={redo} disabled={future.length === 0} className="header-undo-btn big-btn" title="Redo">↷</button>
       </div>
-      <button className="header-icon-btn" onClick={() => setActiveMenu('baggage')}>🎒</button>
+      <button className="header-icon-btn" onClick={() => setActiveMenu('baggage')} title="Baggage">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle' }}>
+          <rect x="3" y="7" width="18" height="14" rx="2" ry="2" />
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+        </svg>
+      </button>
     </header>
   );
 };

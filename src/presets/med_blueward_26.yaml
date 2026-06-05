@@ -116,7 +116,7 @@ categories:
         name: "Socks"
         qty: 0
       - id: "base_tshirt"
-        name: "T-Shirts / Tops"
+        name: "T-Shirts"
         qty: 0
       - id: "out_shoes_deck"
         name: "Sneakers"

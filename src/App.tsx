@@ -50,6 +50,23 @@ const AppContent: React.FC = () => {
     window.history.replaceState(null, '', window.location.pathname);
   };
 
+  // Dynamically balance categories into two columns for desktop view
+  const leftCol: typeof categories = [];
+  const rightCol: typeof categories = [];
+  let leftWeight = 0;
+  let rightWeight = 0;
+
+  categories.forEach(cat => {
+    const weight = cat.items.length + 3; // weight is proportional to item count + header padding
+    if (leftWeight <= rightWeight) {
+      leftCol.push(cat);
+      leftWeight += weight;
+    } else {
+      rightCol.push(cat);
+      rightWeight += weight;
+    }
+  });
+
   return (
     <>
       <div className={`filter-glow-frame ${itemViewFilter === 'packed' ? 'packed' : itemViewFilter === 'unpacked' ? 'unpacked' : ''}`} />
@@ -94,12 +111,12 @@ const AppContent: React.FC = () => {
 
       <div className="checklist-grid">
         <div className="checklist-column">
-          {categories.filter(cat => ['docs', 'tough', 'base'].includes(cat.id)).map(cat => (
+          {leftCol.map(cat => (
             <CategoryBlock key={cat.id} cat={cat} />
           ))}
         </div>
         <div className="checklist-column">
-          {categories.filter(cat => !['docs', 'tough', 'base'].includes(cat.id)).map(cat => (
+          {rightCol.map(cat => (
             <CategoryBlock key={cat.id} cat={cat} />
           ))}
           

@@ -102,13 +102,15 @@ const AppContent: React.FC = () => {
           {categories.filter(cat => !['docs', 'tough', 'base'].includes(cat.id)).map(cat => (
             <CategoryBlock key={cat.id} cat={cat} />
           ))}
+          
+          <div className="category-block btn-add-category-block" onClick={() => handleCreateCategory()}>
+            <div className="category-header add-category-header">
+              <div className="category-title-area add-category-title-area">
+                <h3>Add Category</h3>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'center', margin: '10px 0 30px 0', width: '100%' }}>
-        <button onClick={() => handleCreateCategory()} className="btn-add-category-main" style={{ width: '100%', maxWidth: '340px', padding: '12px 24px', background: 'var(--navy)', color: 'white', fontWeight: 'bold', fontSize: '1em', borderRadius: '8px', border: 'none', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-          ➕ Add Custom Category
-        </button>
       </div>
 
       <footer className="app-footer">

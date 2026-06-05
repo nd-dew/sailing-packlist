@@ -57,8 +57,8 @@ test.describe('Category Modal', () => {
   });
 
   test('can create custom category', async ({ page }) => {
-    // Locate the Add Custom Category button at the bottom of the page
-    const addCatBtn = page.locator('button:has-text("Add Custom Category")');
+    // Locate the Add Category card button inside the checklist column
+    const addCatBtn = page.locator('.btn-add-category-block h3:has-text("Add Category")');
     await expect(addCatBtn).toBeVisible();
 
     // Click it instantly

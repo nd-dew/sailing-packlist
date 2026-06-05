@@ -14,7 +14,8 @@ const AppContent: React.FC = () => {
   const { 
     activeMenu, setActiveMenu, confirmToast, categories, itemViewFilter,
     handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd,
-    loadSharedState, handleCreateCategory
+    loadSharedState, handleCreateCategory,
+    pendingPreset, setPendingPreset, executeApplyPreset
   } = usePacklist();
 
   const [pendingSharePayload, setPendingSharePayload] = React.useState<any>(null);
@@ -97,6 +98,20 @@ const AppContent: React.FC = () => {
             <div className="share-confirm-actions">
               <button onClick={handleCancelShare} className="btn-share-confirm cancel">Cancel</button>
               <button onClick={handleAcceptShare} className="btn-share-confirm confirm">Yes, Load</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingPreset && (
+        <div className="share-confirm-overlay">
+          <div className="share-confirm-card warning-card">
+            <span className="share-confirm-icon warning-icon">⚠️</span>
+            <h3>Factory Reset List?</h3>
+            <p>This will completely factory reset your list to the <strong>{pendingPreset.role.toUpperCase()}</strong> preset. All custom items, bag assignments, and packing progress will be permanently lost! Are you sure?</p>
+            <div className="share-confirm-actions">
+              <button onClick={() => setPendingPreset(null)} className="btn-share-confirm cancel">Cancel</button>
+              <button onClick={() => executeApplyPreset(pendingPreset.cruise, pendingPreset.role)} className="btn-share-confirm confirm warning-confirm">Yes, Reset</button>
             </div>
           </div>
         </div>

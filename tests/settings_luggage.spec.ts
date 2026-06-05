@@ -63,4 +63,31 @@ test.describe('Settings Menu & Luggage Modals', () => {
     // Verify name changed in baggage menu
     await expect(page.locator('.luggage-card-header').first()).toContainText('My Pockets');
   });
+
+  test('applying a preset triggers custom reset warning modal', async ({ page }) => {
+    // Open settings
+    await page.locator('button', { hasText: '☰' }).first().click();
+    await expect(page.locator('.side-menu.open')).toBeVisible();
+
+    // Click Apply: Crew
+    await page.locator('button:has-text("Apply: Crew")').click();
+
+    // Verify beautiful warning modal is visible
+    const warningModal = page.locator('.share-confirm-card.warning-card');
+    await expect(warningModal).toBeVisible();
+    await expect(warningModal.locator('h3')).toHaveText('Factory Reset List?');
+
+    // Click Cancel
+    await warningModal.locator('button:has-text("Cancel")').click();
+    await expect(warningModal).toBeHidden();
+
+    // Re-trigger and Confirm reset
+    await page.locator('button:has-text("Apply: Crew")').click();
+    await expect(warningModal).toBeVisible();
+    await warningModal.locator('button:has-text("Yes, Reset")').click();
+
+    // Verify warning modal is closed and settings side panel is closed
+    await expect(warningModal).toBeHidden();
+    await expect(page.locator('.side-menu.open')).toBeHidden();
+  });
 });

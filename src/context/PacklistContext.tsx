@@ -58,6 +58,9 @@ interface PacklistContextType {
   cycleLuggage: (itemId: string, direction: 1 | -1) => void;
   getNextLuggageHint: (itemId: string, direction: 1 | -1) => string;
   applyPreset: (cruise: string, role: 'crew' | 'captain') => void;
+  executeApplyPreset: (cruise: string, role: 'crew' | 'captain') => void;
+  pendingPreset: { cruise: string, role: 'crew' | 'captain' } | null;
+  setPendingPreset: (preset: { cruise: string, role: 'crew' | 'captain' } | null) => void;
   resetAll: () => void;
   handleCreateItem: (categoryId: string) => void;
   handleAddSubItem: (parentId: string) => void;
@@ -240,6 +243,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [filter, setFilter] = useState<'all' | 'must-have' | 'should-have' | 'nice-to-have'>('all');
   const [itemViewFilter, setItemViewFilter] = useState<ItemViewFilter>('all');
   const [activeMenu, setActiveMenu] = useState<'main' | 'settings' | 'baggage'>('main');
+  const [pendingPreset, setPendingPreset] = useState<{ cruise: string, role: 'crew' | 'captain' } | null>(null);
   const [activeToastId, setActiveToastId] = useState<string | null>(null);
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; type: 'to-green' | 'to-red' }[]>([]);
 
@@ -561,15 +565,19 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const applyPreset = (cruise: string, role: 'crew' | 'captain') => {
-    if (confirm(`WARNING: This will completely factory reset your list to the ${role.toUpperCase()} preset for this cruise. ALL custom items, bag assignments, and packing progress will be permanently lost! Are you sure?`)) {
-      setCategories(getPresetCategories(cruise, role));
-      setWarnings(getPresetData(cruise).warnings || []);
-      setHiddenItems({});
-      setCheckedItems({});
-      setItemLuggage(getInitialLuggageAssignments(cruise));
-      setLuggages(getPresetData(cruise).luggages || []);
-      setActiveMenu('main');
-    }
+    setPendingPreset({ cruise, role });
+  };
+
+  const executeApplyPreset = (cruise: string, role: 'crew' | 'captain') => {
+    setCategories(getPresetCategories(cruise, role));
+    setWarnings(getPresetData(cruise).warnings || []);
+    setHiddenItems({});
+    setCheckedItems({});
+    setItemLuggage(getInitialLuggageAssignments(cruise));
+    setLuggages(getPresetData(cruise).luggages || []);
+    commitAction(`Reset list to ${role.toUpperCase()} preset`);
+    setPendingPreset(null);
+    setActiveMenu('main');
   };
 
   const resetAll = () => {
@@ -1097,7 +1105,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       selectedCategoryId, setSelectedCategoryId,
       selectedLuggageId, setSelectedLuggageId, newLuggageName, setNewLuggageName, showHiddenCats, toggleCatHidden,
       filter, setFilter, itemViewFilter, setItemViewFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, toggleParentItem, hideItem,
-      unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, applyPreset, resetAll, handleCreateItem, handleAddSubItem,
+      unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, applyPreset, executeApplyPreset, pendingPreset, setPendingPreset, resetAll, handleCreateItem, handleAddSubItem,
       updateItem, deleteItem, moveItemCategory, updateCategory, deleteCategory, handleCreateCategory, setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, unpackCategoryItemsAction, updateLuggage, deleteLuggage, reorderLuggage, packAndHideLuggageItems, unpackLuggageItems, hideLuggageItems, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles,

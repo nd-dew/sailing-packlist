@@ -1526,3 +1526,20 @@ button:active,
 [data-theme="dark"] .btn-add-category-block:hover .add-category-header h3 {
   color: var(--accent) !important;
 }
+
+/* Red Warning Modal Accents */
+.share-confirm-card.warning-card h3 {
+  color: #d32f2f !important;
+}
+
+[data-theme="dark"] .share-confirm-card.warning-card h3 {
+  color: #f44336 !important;
+}
+
+.btn-share-confirm.confirm.warning-confirm {
+  background: #d32f2f !important;
+}
+
+.btn-share-confirm.confirm.warning-confirm:hover {
+  background: #b71c1c !important;
+}

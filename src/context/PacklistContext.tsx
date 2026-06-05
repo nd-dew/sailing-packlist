@@ -15,6 +15,7 @@ import {
   getInitialLuggageAssignments, 
   getPresetCategories 
 } from '../utils/presetUtils';
+import type { SharedPayload } from '../utils/shareUtils';
 
 interface PacklistContextType {
   changes: number;
@@ -98,6 +99,8 @@ interface PacklistContextType {
   soundEnabled: boolean;
   setSoundEnabled: (enabled: boolean) => void;
   playPopSound: (type?: 'click' | 'pop') => void;
+  loadSharedState: (shared: SharedPayload) => void;
+  getSharePayload: () => SharedPayload;
 }
 
 const PacklistContext = createContext<PacklistContextType | undefined>(undefined);
@@ -336,7 +339,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const commitAction = useCallback((message: string) => {
     const snapshot: AppSnapshot = { changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage };
-    setPast(prev => [...prev.slice(-29), { id: Date.now().toString(), message, timestamp: Date.now(), snapshot }]);
+    setPast(prev => [...prev.slice(-29), { id: `${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, message, timestamp: Date.now(), snapshot }]);
     setFuture([]);
   }, [changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage]);
 
@@ -345,7 +348,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     playPopSound('click');
     const next = future[0];
     const currentSnapshot: AppSnapshot = { changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage };
-    setPast(prev => [...prev, { id: Date.now().toString(), message: next.message, timestamp: Date.now(), snapshot: currentSnapshot }]);
+    setPast(prev => [...prev, { id: `${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, message: next.message, timestamp: Date.now(), snapshot: currentSnapshot }]);
     setChanges(next.snapshot.changes);
     setCategories(next.snapshot.categories);
     setWarnings(next.snapshot.warnings);
@@ -361,7 +364,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     playPopSound('click');
     const last = past[past.length - 1];
     const currentSnapshot: AppSnapshot = { changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage };
-    setFuture(prev => [{ id: Date.now().toString(), message: last.message, timestamp: Date.now(), snapshot: currentSnapshot }, ...prev]);
+    setFuture(prev => [{ id: `${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, message: last.message, timestamp: Date.now(), snapshot: currentSnapshot }, ...prev]);
     setChanges(last.snapshot.changes);
     setCategories(last.snapshot.categories);
     setWarnings(last.snapshot.warnings);
@@ -596,6 +599,134 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       commitAction('Imported list data');
       setActiveMenu('main');
     }
+  };
+
+  const getSharePayload = (): SharedPayload => {
+    const defaultData = getPresetData(defaultPresetId);
+    
+    const presetItemIds: string[] = [];
+    defaultData.categories.forEach((cat: any) => {
+      cat.items.forEach((item: any) => {
+        presetItemIds.push(item.id);
+      });
+    });
+
+    const luggageIdArray = luggages.map(lug => lug.id);
+    const luggageIndices = presetItemIds.map(itemId => {
+      // Check if item is present in categories and NOT hidden
+      const isPresent = categories.some((cat: Category) => cat.items.some((item: PackItem) => item.id === itemId));
+      const isHidden = !!hiddenItems[itemId];
+
+      if (!isPresent || isHidden) {
+        return -2; // Special value indicating deleted or hidden default item!
+      }
+
+      const assignedLuggageId = itemLuggage[itemId];
+      if (!assignedLuggageId) return -1;
+      return luggageIdArray.indexOf(assignedLuggageId);
+    });
+
+    const customSharedItems: { n: string; cat: string; b: number }[] = [];
+    categories.forEach((cat: Category) => {
+      cat.items.forEach((item: PackItem) => {
+        const isCustom = !presetItemIds.includes(item.id);
+        if (isCustom) {
+          const assignedLuggageId = itemLuggage[item.id];
+          const bagIndex = assignedLuggageId ? luggageIdArray.indexOf(assignedLuggageId) : -1;
+          customSharedItems.push({
+            n: item.name,
+            cat: cat.id,
+            b: bagIndex
+          });
+        }
+      });
+    });
+
+    return {
+      v: 1,
+      p: defaultPresetId,
+      lugs: luggages.map(lug => ({
+        id: lug.id,
+        name: lug.name,
+        icon: lug.icon || 'default',
+        color: lug.color || '#666'
+      })),
+      l: luggageIndices,
+      c: customSharedItems.length > 0 ? customSharedItems : undefined
+    };
+  };
+
+  const loadSharedState = (shared: SharedPayload) => {
+    playPopSound('click');
+
+    const newLuggages: Luggage[] = shared.lugs.map(lug => ({
+      id: lug.id,
+      name: lug.name,
+      icon: lug.icon,
+      color: lug.color
+    }));
+    setLuggages(newLuggages);
+
+    const basePresetId = shared.p || defaultPresetId;
+    const baseCategories = getPresetCategories(basePresetId, 'crew'); 
+    
+    const defaultData = getPresetData(basePresetId);
+    const presetItems: PackItem[] = [];
+    defaultData.categories.forEach((cat: any) => {
+      cat.items.forEach((item: any) => {
+        presetItems.push(item);
+      });
+    });
+
+    const newLocalItemLuggage: Record<string, string> = {};
+    const newHiddenItems: Record<string, boolean> = {};
+
+    shared.l.forEach((bagIndex, itemIndex) => {
+      const presetItem = presetItems[itemIndex];
+      if (presetItem) {
+        if (bagIndex === -2) {
+          newHiddenItems[presetItem.id] = true;
+        } else if (bagIndex >= 0 && bagIndex < newLuggages.length) {
+          const targetBagId = newLuggages[bagIndex].id;
+          newLocalItemLuggage[presetItem.id] = targetBagId;
+        }
+      }
+    });
+
+    const finalCategories = baseCategories.map((cat: Category) => ({
+      ...cat,
+      items: [...cat.items]
+    }));
+
+    if (shared.c) {
+      shared.c.forEach(custom => {
+        let targetCat = finalCategories.find((c: Category) => c.id === custom.cat);
+        if (!targetCat) {
+          targetCat = finalCategories.find((c: Category) => c.title.toLowerCase().includes(custom.cat.toLowerCase()));
+        }
+        
+        if (targetCat) {
+          const customId = `custom_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+          targetCat.items.push({
+            id: customId,
+            name: custom.n,
+            qty: 1
+          });
+
+          if (custom.b >= 0 && custom.b < newLuggages.length) {
+            newLocalItemLuggage[customId] = newLuggages[custom.b].id;
+          }
+        }
+      });
+    }
+
+    setCategories(finalCategories);
+    setItemLuggage(newLocalItemLuggage);
+    setCheckedItems({});
+    setHiddenItems(newHiddenItems);
+    
+    commitAction('Loaded shared list from Skipper');
+    setActiveMenu('main');
   };
 
   const handleCreateItem = (categoryId: string) => {
@@ -915,7 +1046,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       updateItem, deleteItem, moveItemCategory, updateCategory, deleteCategory, setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, unpackCategoryItemsAction, updateLuggage, deleteLuggage, reorderLuggage, packAndHideLuggageItems, unpackLuggageItems, hideLuggageItems, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles,
-      particles, triggerParticle, theme, setTheme, importData,
+      particles, triggerParticle, theme, setTheme, importData, loadSharedState, getSharePayload,
       soundEnabled, setSoundEnabled, playPopSound
       }}>
       {children}

@@ -14,12 +14,12 @@ test.describe('Settings Menu & Luggage Modals', () => {
     // Default theme check
     await expect(page.locator('body')).toHaveAttribute('data-theme', 'light');
 
-    // Click dark theme
-    await page.locator('button', { hasText: '🌙 Dark' }).click();
+    // Click dark theme toggle button (displays '🌙' when theme is light)
+    await page.locator('button', { hasText: '🌙' }).click();
     await expect(page.locator('body')).toHaveAttribute('data-theme', 'dark');
 
-    // Click light theme
-    await page.locator('button', { hasText: '☀️ Light' }).click();
+    // Click light theme toggle button (displays '☀️' when theme is dark)
+    await page.locator('button', { hasText: '☀️' }).click();
     await expect(page.locator('body')).toHaveAttribute('data-theme', 'light');
   });
 

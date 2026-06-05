@@ -7,7 +7,7 @@ import { compressPayload } from '../../utils/shareUtils';
 export const SettingsMenu: React.FC = () => {
   const { 
     activeMenu, setActiveMenu, changes, updateChanges,
-    applyPreset, deferredPrompt, handleInstallClick, resetAll, past,
+    applyPreset, deferredPrompt, handleInstallClick, past,
     getMenuStyles, categories, luggages, itemLuggage, checkedItems, hiddenItems,
     theme, setTheme, importData, soundEnabled, setSoundEnabled,
     getSharePayload, playPopSound
@@ -85,116 +85,131 @@ export const SettingsMenu: React.FC = () => {
     }
   };
 
+  const selectedPresetDesc = PRESETS[presetCruise]?.description || "No description available.";
+
   return (
     <div className={`side-menu left-menu ${activeMenu === 'settings' ? 'open' : ''} ${isMenuSwiping ? 'is-swiping' : ''}`} style={leftMenuStyle}>
       <div className="menu-header">
         <h2>Settings</h2>
         <button className="btn-close-menu" onClick={() => setActiveMenu('main')}>✕</button>
       </div>
-      <div className="menu-content">
+      <div className="menu-content" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         
-        <div className="menu-section history-section">
-          <div className="history-header">
-            <label>Action History</label>
-          </div>
-          {past.length === 0 ? (
-            <p className="controls-desc">No actions taken yet.</p>
-          ) : (
-            <ul className="history-log">
-              {[...past].reverse().slice(0, 50).map((entry) => (
-                <li key={entry.id}>
-                  <span className="log-time">{new Date(entry.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
-                  <span className="log-msg">{entry.message}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="menu-section">
-          <label>Appearance & Sound</label>
-          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-            <button 
-              className={`btn-preset ${theme === 'light' ? 'active' : ''}`} 
-              style={{ flex: 1, background: theme === 'light' ? 'var(--navy)' : 'transparent', color: theme === 'light' ? 'white' : 'var(--text)' }} 
-              onClick={() => setTheme('light')}
-            >
-              ☀️ Light
-            </button>
-            <button 
-              className={`btn-preset ${theme === 'dark' ? 'active' : ''}`} 
-              style={{ flex: 1, background: theme === 'dark' ? 'var(--navy)' : 'transparent', color: theme === 'dark' ? 'white' : 'var(--text)' }} 
-              onClick={() => setTheme('dark')}
-            >
-              🌙 Dark
-            </button>
-          </div>
-          <div style={{ marginTop: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.9em', fontWeight: 'bold' }}>UI Sound Effects</span>
-            <input 
-              type="checkbox" 
-              checked={soundEnabled} 
-              onChange={(e) => setSoundEnabled(e.target.checked)} 
-              style={{ transform: 'scale(1.2)' }}
-            />
-          </div>
-        </div>
-
-        <div className="menu-section">
-          <label>Expected Showers</label>
-          <div className="stepper-control">
-            <button className="stepper-btn" onClick={() => updateChanges(Math.max(1, changes - 1))} disabled={changes <= 1}>−</button>
-            <input type="number" className="stepper-input" value={changes} onChange={(e) => updateChanges(parseInt(e.target.value) || 1)} min={1} max={14} />
-            <button className="stepper-btn" onClick={() => updateChanges(Math.min(14, changes + 1))} disabled={changes >= 14}>+</button>
-          </div>
-          <p className="controls-desc">Estimation: <strong>{baseSetQty} Base Sets</strong>. Instead of packing for every night, we estimate how many times you'll actually change base layers based on shower opportunities.</p>
-        </div>
-        
+        {/* 1. Cruise Presets at the TOP */}
         <div className="menu-section">
           <label>Cruise Presets</label>
-          <p className="controls-desc" style={{color: '#b30000'}}><strong>Warning:</strong> Applying a preset will overwrite your current list! Select your cruise and role to fill in the recommended packing list.</p>
-          <div className="preset-selectors" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+          <div className="preset-selectors" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
             <select className="modal-select" value={presetCruise} onChange={(e) => setPresetCruise(e.target.value)}>
               {Object.entries(PRESETS).map(([id, data]) => (
                 <option key={id} value={id}>{data.name || id}</option>
               ))}
             </select>
-            <div className="presets-group" style={{ width: '100%' }}>
-              <button className="btn-preset" style={{flex: 1}} onClick={() => applyPreset(presetCruise, 'crew')}>Apply: Crew</button>
-              <button className="btn-preset" style={{flex: 1}} onClick={() => applyPreset(presetCruise, 'captain')}>Apply: Captain</button>
+            <p className="controls-desc" style={{ fontStyle: 'italic', margin: '4px 0', color: '#666', lineHeight: '1.4' }}>
+              ℹ️ {selectedPresetDesc}
+            </p>
+            <div className="presets-group" style={{ width: '100%', gap: '8px' }}>
+              <button className="btn-preset" style={{flex: 1, padding: '10px'}} onClick={() => applyPreset(presetCruise, 'crew')}>Apply: Crew</button>
+              <button className="btn-preset" style={{flex: 1, padding: '10px'}} onClick={() => applyPreset(presetCruise, 'captain')}>Apply: Captain</button>
             </div>
           </div>
         </div>
 
-        <div className="menu-section global-actions-menu">
-          <label>Data Management</label>
-          <button onClick={handleShareList} className="btn-preset share-btn" style={{ width: '100%', marginBottom: '10px', background: 'var(--navy)', color: 'white', fontWeight: 'bold' }}>🔗 Share Setup with Crew</button>
-          <button onClick={handleExport} className="btn-preset" style={{ width: '100%', marginBottom: '10px' }}>💾 Export Data (YAML)</button>
-          
-          <input type="file" accept=".yaml,.yml" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileImport} />
-          <button onClick={() => fileInputRef.current?.click()} className="btn-preset" style={{ width: '100%', marginBottom: '10px' }}>📂 Import from File</button>
-          
-          <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
-            <input type="text" className="luggage-add-input" style={{ border: '1px solid var(--border)', borderRadius: '6px' }} placeholder="https://.../list.yaml" value={importUrl} onChange={e => setImportUrl(e.target.value)} />
-            <button onClick={handleUrlImport} className="btn-luggage-add" style={{ borderRadius: '6px' }}>Import</button>
+        {/* 2. Expected Showers */}
+        <div className="menu-section">
+          <label>Expected Showers</label>
+          <div className="stepper-control" style={{ margin: '8px 0' }}>
+            <button className="stepper-btn" onClick={() => updateChanges(Math.max(1, changes - 1))} disabled={changes <= 1}>−</button>
+            <input type="number" className="stepper-input" value={changes} onChange={(e) => updateChanges(parseInt(e.target.value) || 1)} min={1} max={14} />
+            <button className="stepper-btn" onClick={() => updateChanges(Math.min(14, changes + 1))} disabled={changes >= 14}>+</button>
           </div>
-
-          <button onClick={() => { resetAll(); setActiveMenu('main'); }} className="btn-reset">⚠️ Factory Reset List</button>
+          <p className="controls-desc">Estimation: <strong>{baseSetQty} Base Sets</strong>. Sets calculated based on actual shower opportunities.</p>
         </div>
 
+        {/* 3. Appearance & Sound Compact Row */}
         <div className="menu-section">
-          <label>App Installation</label>
-          {deferredPrompt ? (
+          <label>Preferences</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+            <span style={{ fontSize: '0.9em', fontWeight: 'bold', color: 'var(--text)' }}>Theme & Sound</span>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} 
+                className="btn-preset" 
+                style={{ padding: '8px 12px', fontSize: '1.2em', borderRadius: '6px', minWidth: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              >
+                {theme === 'light' ? '🌙' : '☀️'}
+              </button>
+              <button 
+                onClick={() => setSoundEnabled(!soundEnabled)} 
+                className="btn-preset" 
+                style={{ padding: '8px 12px', fontSize: '1.2em', borderRadius: '6px', minWidth: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                title={soundEnabled ? 'Mute Sounds' : 'Unmute Sounds'}
+              >
+                {soundEnabled ? '🔊' : '🔇'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Data & Sharing Category */}
+        <div className="menu-section global-actions-menu">
+          <label>Data & Sharing</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+            <button onClick={handleShareList} className="btn-preset share-btn" style={{ width: '100%', padding: '10px', background: 'var(--navy)', color: 'white', fontWeight: 'bold' }}>
+              🔗 Copy Share Link
+            </button>
+            
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={handleExport} className="btn-preset" style={{ flex: 1, padding: '8px 10px', fontSize: '0.9em' }}>
+                💾 Export YAML
+              </button>
+              <input type="file" accept=".yaml,.yml" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileImport} />
+              <button onClick={() => fileInputRef.current?.click()} className="btn-preset" style={{ flex: 1, padding: '8px 10px', fontSize: '0.9em' }}>
+                📂 Import File
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '5px', marginTop: '2px' }}>
+              <input type="text" className="luggage-add-input" style={{ border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.85em', padding: '6px' }} placeholder="Import from URL..." value={importUrl} onChange={e => setImportUrl(e.target.value)} />
+              <button onClick={handleUrlImport} className="btn-luggage-add" style={{ borderRadius: '6px', padding: '6px 12px', fontSize: '0.85em' }}>Go</button>
+            </div>
+          </div>
+        </div>
+
+        {/* 5. Minimalist App Installation */}
+        {deferredPrompt && (
+          <div className="menu-section" style={{ borderTop: '1px solid var(--border)', paddingTop: '15px' }}>
             <button 
               onClick={handleInstallClick} 
               className="btn-preset" 
-              style={{ width: '100%', background: 'var(--accent)', color: 'white', borderColor: 'var(--accent)' }}
+              style={{ width: '100%', padding: '8px', background: 'var(--accent)', color: '#121212', borderColor: 'var(--accent)', fontWeight: 'bold', fontSize: '0.9em' }}
             >
               📱 Install App to Home Screen
             </button>
-          ) : (
-            <p className="controls-desc">To install this app on your phone, tap your browser's menu (or the Share button on iOS) and select <strong>"Add to Home Screen"</strong>.</p>
-          )}
+          </div>
+        )}
+
+        {/* 6. Collapsible Action History */}
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '15px', marginTop: '10px' }}>
+          <details className="history-disclosure">
+            <summary style={{ fontSize: '0.85em', fontWeight: 'bold', color: '#888', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              📜 View Action History ({past.length})
+            </summary>
+            <div style={{ maxHeight: '150px', overflowY: 'auto', marginTop: '10px', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px', background: 'rgba(0,0,0,0.02)' }}>
+              {past.length === 0 ? (
+                <p className="controls-desc" style={{ margin: 0 }}>No actions taken yet.</p>
+              ) : (
+                <ul className="history-log" style={{ margin: 0, padding: 0 }}>
+                  {[...past].reverse().slice(0, 30).map((entry) => (
+                    <li key={entry.id} style={{ fontSize: '0.8em', padding: '4px 0', borderBottom: '1px solid rgba(0,0,0,0.05)', listStyle: 'none' }}>
+                      <span className="log-time" style={{ color: '#888', marginRight: '6px' }}>{new Date(entry.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
+                      <span className="log-msg" style={{ color: 'var(--text)' }}>{entry.message}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </details>
         </div>
 
       </div>

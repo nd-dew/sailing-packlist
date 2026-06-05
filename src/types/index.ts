@@ -15,6 +15,7 @@ export interface Category {
   title: string;
   priority?: 'must-have' | 'should-have' | 'nice-to-have';
   items: PackItem[];
+  isCustom?: boolean;
 }
 
 export interface Warning {

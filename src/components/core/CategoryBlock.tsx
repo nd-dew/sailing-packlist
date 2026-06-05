@@ -78,14 +78,15 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
     }
   });
   
-  const isDone = catTotal > 0 && catTotal === catPacked;
+  const isDone = catTotal > 0 && catPacked === catTotal;
+  const isCustomCategory = cat.id.startsWith('cat_custom_') || (cat as any).isCustom;
 
-  if (cat.items.length === 0) return null; // Only hide completely empty categories
+  if (cat.items.length === 0 && !isCustomCategory) return null; // Only hide completely empty preset categories
 
   // Hide the category entirely if we're filtering and there are no matching items
   if (itemViewFilter !== 'all' && itemsToRender.length === 0) return null;
   // If not filtering, and there's nothing to render, and no hidden items, hide it
-  if (itemViewFilter === 'all' && itemsToRender.length === 0 && hiddenCatItems.length === 0) return null;
+  if (itemViewFilter === 'all' && itemsToRender.length === 0 && hiddenCatItems.length === 0 && !isCustomCategory) return null;
 
   return (
     <div className="category-block">

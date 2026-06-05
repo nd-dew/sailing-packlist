@@ -31,46 +31,29 @@ test.describe('Serverless URL Sharing Feature', () => {
     await expect(customItem).toBeVisible();
   });
 
-  test('clicking share setup button copies URL to clipboard and triggers alert', async ({ page }) => {
-    let alertTriggered = false;
-
-    // Handle the browser alert dialog
-    page.on('dialog', async dialog => {
-      expect(dialog.message()).toContain('copied to clipboard');
-      alertTriggered = true;
-      await dialog.dismiss();
-    });
-
-    // Hermetically stub the clipboard API to avoid parallel OS clipboard contention
-    await page.addInitScript(() => {
-      let clipboardBuffer = '';
-      Object.defineProperty(navigator, 'clipboard', {
-        value: {
-          writeText: async (text: string) => {
-            clipboardBuffer = text;
-          },
-          readText: async () => {
-            return clipboardBuffer;
-          }
-        },
-        configurable: true
-      });
-    });
-
+  test('clicking share setup button copies URL to clipboard and triggers alert', async ({ page, context }) => {
     await page.goto('/');
+
+    // Grant clipboard-write permissions to browser context
+    await context.grantPermissions(['clipboard-write', 'clipboard-read']);
 
     // Open settings menu
     await page.locator('button', { hasText: '☰' }).first().click();
     await expect(page.locator('.side-menu.open')).toBeVisible();
 
     // Wait for slide-in transition to completely stabilize
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
+
+    // Setup dialog promise listener
+    const dialogPromise = page.waitForEvent('dialog');
 
     // Tap share button with force to bypass transition intercept issues
     await page.locator('button:has-text("Share Setup with Crew")').click({ force: true });
 
-    // Ensure the dialog popped up
-    expect(alertTriggered).toBe(true);
+    // Wait for the async alert to fire and dismiss it
+    const dialog = await dialogPromise;
+    expect(dialog.message()).toContain('copied to clipboard');
+    await dialog.dismiss();
 
     // Verify clipboard contains the share URL
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText());

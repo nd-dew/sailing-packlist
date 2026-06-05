@@ -72,7 +72,7 @@ categories:
         description: "For boat deposits, emergencies, or larger expenses."
         defaultBag: "lug_3"
       - id: "docs_cash"
-        name: "Cash (Local Currency)"
+        name: "Local Currency"
         description: "Many smaller island restaurants and local ports only accept cash."
         defaultBag: "lug_3"
 
@@ -81,7 +81,7 @@ categories:
     priority: "must-have"
     items:
       - id: "base_thermal_top"
-        name: "Thermal Base Layer (Top)"
+        name: "Thermal Top base layer"
         description: "Highly recommended for night watches."
       - id: "base_thermal_bot"
         name: "Thermal Base Layer (Bottom)"

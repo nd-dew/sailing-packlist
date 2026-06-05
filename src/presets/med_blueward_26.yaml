@@ -165,8 +165,8 @@ categories:
       - id: "toi_eyemask"
         name: "Eye Mask"
         description: "Helps you sleep during the day after a long night watch."
-      - id: "toi_sunscreen"
-        name: "Sunscreen (High SPF)"
+      - id: "med_sunscreen"
+        name: "Sunscreen"
         description: "The sun is stronger on the water due to reflection."
 
   - id: "tech"

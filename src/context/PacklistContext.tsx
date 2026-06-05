@@ -80,7 +80,7 @@ interface PacklistContextType {
   setSelectedCategoryId: (id: string | null) => void;
   updateCategory: (id: string, updates: Partial<Category>) => void;
   deleteCategory: (id: string) => void;
-  handleCreateCategory: (title: string) => void;
+  handleCreateCategory: (title?: string) => void;
   setCategoryLuggage: (categoryId: string, luggageId: string) => void;
   packAndHideCategory: (categoryId: string) => void;
   hideCategoryItemsAction: (categoryId: string) => void;
@@ -796,14 +796,25 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setSelectedCategoryId(null);
   };
 
-  const handleCreateCategory = (title: string) => {
-    if (!title.trim()) return;
+  const handleCreateCategory = (title?: string) => {
     playPopSound('click');
-    commitAction(`Created category ${title}`);
+    
+    let finalTitle = title?.trim();
+    if (!finalTitle) {
+      const baseName = "New Category";
+      let counter = 1;
+      finalTitle = baseName;
+      while (categories.some(c => c.title.toLowerCase() === finalTitle!.toLowerCase())) {
+        counter++;
+        finalTitle = `${baseName} ${counter}`;
+      }
+    }
+
+    commitAction(`Created category ${finalTitle}`);
     const newId = `cat_custom_${Date.now()}`;
     setCategories(prev => [...prev, {
       id: newId,
-      title: title.trim(),
+      title: finalTitle!,
       priority: 'should-have',
       items: [],
       isCustom: true

@@ -57,25 +57,15 @@ test.describe('Category Modal', () => {
   });
 
   test('can create custom category', async ({ page }) => {
-    // Open settings menu
-    await page.locator('button', { hasText: '☰' }).first().click();
-    await expect(page.locator('.side-menu.open')).toBeVisible();
+    // Locate the Add Custom Category button at the bottom of the page
+    const addCatBtn = page.locator('button:has-text("Add Custom Category")');
+    await expect(addCatBtn).toBeVisible();
 
-    // Wait for slide-in transition to completely stabilize
-    await page.waitForTimeout(500);
+    // Click it instantly
+    await addCatBtn.click();
 
-    // Fill in new category title
-    const input = page.locator('input[placeholder="e.g. Fishing Gear, Electronics"]');
-    await input.fill('Fishing Gear');
-
-    // Click Add
-    await page.locator('.menu-section button:has-text("Add")').click({ force: true });
-
-    // Verify side menu is closed
-    await expect(page.locator('.side-menu.open')).toBeHidden();
-
-    // Verify the new category block is visible on the main list
-    const newCat = page.locator('.category-header h3:has-text("Fishing Gear")');
+    // Verify a new category block named 'New Category' is visible on the main list
+    const newCat = page.locator('.category-header h3:has-text("New Category")');
     await expect(newCat).toBeVisible();
   });
 });

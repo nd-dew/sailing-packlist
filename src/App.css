@@ -1451,3 +1451,27 @@ button:active,
 [data-theme="dark"] .btn-share-confirm.cancel:hover {
   background: #3d3d3d;
 }
+
+/* Add Category Main Button */
+.btn-add-category-main {
+  transition: all 0.2s ease;
+}
+
+.btn-add-category-main:hover {
+  background: #003366 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
+}
+
+.btn-add-category-main:active {
+  transform: scale(0.97);
+}
+
+[data-theme="dark"] .btn-add-category-main {
+  background: var(--accent) !important;
+  color: #121212 !important;
+}
+
+[data-theme="dark"] .btn-add-category-main:hover {
+  background: #00e5ff !important;
+}

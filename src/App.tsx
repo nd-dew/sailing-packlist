@@ -14,7 +14,7 @@ const AppContent: React.FC = () => {
   const { 
     activeMenu, setActiveMenu, confirmToast, categories, itemViewFilter,
     handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd,
-    loadSharedState
+    loadSharedState, handleCreateCategory
   } = usePacklist();
 
   const [pendingSharePayload, setPendingSharePayload] = React.useState<any>(null);
@@ -103,6 +103,12 @@ const AppContent: React.FC = () => {
             <CategoryBlock key={cat.id} cat={cat} />
           ))}
         </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'center', margin: '10px 0 30px 0', width: '100%' }}>
+        <button onClick={() => handleCreateCategory()} className="btn-add-category-main" style={{ width: '100%', maxWidth: '340px', padding: '12px 24px', background: 'var(--navy)', color: 'white', fontWeight: 'bold', fontSize: '1em', borderRadius: '8px', border: 'none', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+          ➕ Add Custom Category
+        </button>
       </div>
 
       <footer className="app-footer">

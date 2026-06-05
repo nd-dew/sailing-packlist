@@ -10,13 +10,12 @@ export const SettingsMenu: React.FC = () => {
     applyPreset, deferredPrompt, handleInstallClick, resetAll, past,
     getMenuStyles, categories, luggages, itemLuggage, checkedItems, hiddenItems,
     theme, setTheme, importData, soundEnabled, setSoundEnabled,
-    getSharePayload, playPopSound, handleCreateCategory
+    getSharePayload, playPopSound
   } = usePacklist();
 
   const { leftMenuStyle, isMenuSwiping } = getMenuStyles();
   const [presetCruise, setPresetCruise] = useState(Object.keys(PRESETS)[0] || '');
   const [importUrl, setImportUrl] = useState('');
-  const [newCatTitle, setNewCatTitle] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const baseSetQty = changes;
 
@@ -54,14 +53,6 @@ export const SettingsMenu: React.FC = () => {
     } catch (err) {
       console.error("Failed to generate share link:", err);
       alert("Failed to generate share link.");
-    }
-  };
-
-  const onAddCategory = () => {
-    if (newCatTitle.trim()) {
-      handleCreateCategory(newCatTitle);
-      setNewCatTitle('');
-      setActiveMenu('main');
     }
   };
 
@@ -157,21 +148,6 @@ export const SettingsMenu: React.FC = () => {
             <button className="stepper-btn" onClick={() => updateChanges(Math.min(14, changes + 1))} disabled={changes >= 14}>+</button>
           </div>
           <p className="controls-desc">Estimation: <strong>{baseSetQty} Base Sets</strong>. Instead of packing for every night, we estimate how many times you'll actually change base layers based on shower opportunities.</p>
-        </div>
-
-        <div className="menu-section">
-          <label>Custom Categories</label>
-          <div style={{ display: 'flex', gap: '5px', marginTop: '10px' }}>
-            <input 
-              type="text" 
-              className="luggage-add-input" 
-              style={{ border: '1px solid var(--border)', borderRadius: '6px' }} 
-              placeholder="e.g. Fishing Gear, Electronics" 
-              value={newCatTitle} 
-              onChange={e => setNewCatTitle(e.target.value)} 
-            />
-            <button onClick={onAddCategory} className="btn-luggage-add" style={{ borderRadius: '6px' }}>Add</button>
-          </div>
         </div>
         
         <div className="menu-section">

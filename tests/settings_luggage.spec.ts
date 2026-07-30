@@ -25,6 +25,15 @@ test.describe('Settings Menu & Luggage Modals', () => {
 
   test('can increment and decrement expected showers', async ({ page }) => {
     await page.locator('button', { hasText: '☰' }).first().click();
+    await expect(page.locator('.side-menu.open')).toBeVisible();
+
+    // Select a preset that has showers enabled (med_blueward_26)
+    await page.locator('.modal-select').selectOption('med_blueward_26');
+    await page.locator('button:has-text("Load as Crew")').click();
+
+    // Re-open settings
+    await page.locator('button', { hasText: '☰' }).first().click();
+    await expect(page.locator('.side-menu.open')).toBeVisible();
     
     const stepperInput = page.locator('.stepper-input');
     await expect(stepperInput).toBeVisible();

@@ -86,7 +86,9 @@ export const SettingsMenu: React.FC = () => {
   };
 
   const currentPreviewPreset = pendingPreset ? pendingPreset.cruise : activePresetId;
-  const selectedPresetDesc = PRESETS[currentPreviewPreset]?.description || "No description available.";
+  const currentPresetData = PRESETS[currentPreviewPreset];
+  const hideShowers = currentPresetData?.hideShowers === true;
+  const selectedPresetDesc = currentPresetData?.description || "No description available.";
 
   return (
     <div className={`side-menu left-menu ${activeMenu === 'settings' ? 'open' : ''} ${isMenuSwiping ? 'is-swiping' : ''}`} style={leftMenuStyle}>
@@ -148,15 +150,17 @@ export const SettingsMenu: React.FC = () => {
         </div>
 
         {/* 2. Expected Showers */}
-        <div className="menu-section">
-          <label>Expected Showers</label>
-          <div className="stepper-control" style={{ margin: '8px 0' }}>
-            <button className="stepper-btn" onClick={() => updateChanges(Math.max(1, changes - 1))} disabled={changes <= 1}>−</button>
-            <input type="number" className="stepper-input" value={changes} onChange={(e) => updateChanges(parseInt(e.target.value) || 1)} min={1} max={14} />
-            <button className="stepper-btn" onClick={() => updateChanges(Math.min(14, changes + 1))} disabled={changes >= 14}>+</button>
+        {!hideShowers && (
+          <div className="menu-section">
+            <label>Expected Showers</label>
+            <div className="stepper-control" style={{ margin: '8px 0' }}>
+              <button className="stepper-btn" onClick={() => updateChanges(Math.max(1, changes - 1))} disabled={changes <= 1}>−</button>
+              <input type="number" className="stepper-input" value={changes} onChange={(e) => updateChanges(parseInt(e.target.value) || 1)} min={1} max={14} />
+              <button className="stepper-btn" onClick={() => updateChanges(Math.min(14, changes + 1))} disabled={changes >= 14}>+</button>
+            </div>
+            <p className="controls-desc">Estimation: <strong>{baseSetQty} Base Sets</strong>. Calculated dynamically.</p>
           </div>
-          <p className="controls-desc">Estimation: <strong>{baseSetQty} Base Sets</strong>. Calculated dynamically.</p>
-        </div>
+        )}
 
         {/* 3. Appearance & Sound Compact Toggle Buttons Row (No Title Labels) */}
         <div className="menu-section" style={{ borderTop: '1px solid var(--border)', paddingTop: '15px' }}>

@@ -10,7 +10,7 @@ export const SettingsMenu: React.FC = () => {
     applyPreset, deferredPrompt, handleInstallClick, past,
     getMenuStyles, categories, luggages, itemLuggage, checkedItems, hiddenItems,
     theme, setTheme, importData, soundEnabled, setSoundEnabled,
-    getSharePayload, playPopSound, cruiseDescription, setCruiseDescription
+    getSharePayload, playPopSound, cruiseDescription, setCruiseDescription, triggerConfirm
   } = usePacklist();
 
   const { leftMenuStyle, isMenuSwiping } = getMenuStyles();
@@ -60,7 +60,7 @@ export const SettingsMenu: React.FC = () => {
     try {
       const shareUrl = `${window.location.origin}${window.location.pathname}#p=${presetCruise}`;
       await navigator.clipboard.writeText(shareUrl);
-      alert(`📋 Preset link copied to clipboard:\n${shareUrl}`);
+      triggerConfirm(`📋 Link to "${PRESETS[presetCruise]?.name || presetCruise}" copied to clipboard!`, '', () => {});
     } catch (err) {
       console.error("Failed to copy preset link:", err);
       const shareUrl = `${window.location.origin}${window.location.pathname}#p=${presetCruise}`;
@@ -94,25 +94,39 @@ export const SettingsMenu: React.FC = () => {
       </div>
       <div className="menu-content" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         
-        {/* 1. Cruise Presets at the TOP */}
+        {/* 1. Cruise Preset at the TOP */}
         <div className="menu-section">
-          <label>Cruise Presets</label>
-          <div className="preset-selectors" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <select className="modal-select" style={{ flex: 1, margin: 0 }} value={presetCruise} onChange={(e) => setPresetCruise(e.target.value)}>
-                {Object.entries(PRESETS).map(([id, data]) => (
-                  <option key={id} value={id}>{data.name || id}</option>
-                ))}
-              </select>
-              <button 
-                className="btn-preset" 
-                style={{ padding: '8px 12px', fontSize: '1em', borderRadius: '6px', minWidth: '45px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                onClick={handleSharePreset}
-                title="Copy link to this preset"
-              >
-                🔗
-              </button>
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <label style={{ margin: 0 }}>Cruise Preset</label>
+            <button 
+              className="btn-preset-copy-inline" 
+              onClick={handleSharePreset}
+              title="Copy link to this preset"
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '4px 8px',
+                fontSize: '1em',
+                cursor: 'pointer',
+                opacity: 0.7,
+                transition: 'opacity 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                color: 'var(--text)'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+            >
+              🔗 <span style={{ fontSize: '0.85em', textDecoration: 'underline' }}>Copy Link</span>
+            </button>
+          </div>
+          <div className="preset-selectors" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <select className="modal-select" style={{ width: '100%', margin: 0 }} value={presetCruise} onChange={(e) => setPresetCruise(e.target.value)}>
+              {Object.entries(PRESETS).map(([id, data]) => (
+                <option key={id} value={id}>{data.name || id}</option>
+              ))}
+            </select>
             <p style={{ margin: '4px 0 2px 0', fontSize: '0.85em', fontWeight: 'bold', color: 'var(--text)', textAlign: 'left' }}>
               Active Preset: {PRESETS[presetCruise]?.name || presetCruise}
             </p>

@@ -66,12 +66,6 @@ test.describe('Serverless URL Sharing Feature', () => {
     // Grant clipboard permissions
     await context.grantPermissions(['clipboard-write', 'clipboard-read']);
 
-    // Setup automatic dialog handler
-    page.on('dialog', async dialog => {
-      expect(dialog.message()).toContain('copied to clipboard');
-      await dialog.dismiss();
-    });
-
     // Open settings menu
     await page.locator('button', { hasText: '☰' }).first().click();
     await expect(page.locator('.side-menu.open')).toBeVisible();
@@ -79,8 +73,12 @@ test.describe('Serverless URL Sharing Feature', () => {
     // Wait for slide-in transition to stabilize
     await page.waitForTimeout(1000);
 
-    // Click the 🔗 button next to select dropdown (by default med_blueward_26 is selected)
-    await page.locator('.preset-selectors button:has-text("🔗")').click({ force: true });
+    // Click the Copy Link inline button
+    await page.locator('button:has-text("Copy Link")').click({ force: true });
+
+    // Verify non-blocking custom confirmation toast appears
+    await expect(page.locator('.confirm-toast')).toBeVisible();
+    await expect(page.locator('.confirm-toast')).toContainText('copied to clipboard');
 
     // Verify clipboard contains #p=med_blueward_26
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText());

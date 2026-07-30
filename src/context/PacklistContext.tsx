@@ -57,10 +57,10 @@ interface PacklistContextType {
   unhideAllInCategory: (catId: string) => void;
   cycleLuggage: (itemId: string, direction: 1 | -1) => void;
   getNextLuggageHint: (itemId: string, direction: 1 | -1) => string;
-  applyPreset: (cruise: string, role: 'crew' | 'captain') => void;
+  activePresetId: string;
   executeApplyPreset: (cruise: string, role: 'crew' | 'captain') => void;
-  pendingPreset: { cruise: string, role: 'crew' | 'captain' } | null;
-  setPendingPreset: (preset: { cruise: string, role: 'crew' | 'captain' } | null) => void;
+  pendingPreset: { cruise: string, role: 'crew' | 'captain' | null } | null;
+  setPendingPreset: (preset: { cruise: string, role: 'crew' | 'captain' | null } | null) => void;
   resetAll: () => void;
   handleCreateItem: (categoryId: string) => void;
   handleAddSubItem: (parentId: string) => void;
@@ -273,7 +273,15 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [filter, setFilter] = useState<'all' | 'must-have' | 'should-have' | 'nice-to-have'>('all');
   const [itemViewFilter, setItemViewFilter] = useState<ItemViewFilter>('all');
   const [activeMenu, setActiveMenu] = useState<'main' | 'settings' | 'baggage'>('main');
-  const [pendingPreset, setPendingPreset] = useState<{ cruise: string, role: 'crew' | 'captain' } | null>(null);
+  const [pendingPreset, setPendingPreset] = useState<{ cruise: string, role: 'crew' | 'captain' | null } | null>(null);
+  const [activePresetId, setActivePresetId] = useState<string>(() => {
+    const saved = localStorage.getItem('sailingPacklist_activePresetId_v16');
+    return saved || defaultPresetId;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('sailingPacklist_activePresetId_v16', activePresetId);
+  }, [activePresetId]);
   const [cruiseDescription, setCruiseDescription] = useState<string>(() => {
     const saved = localStorage.getItem('sailingPacklist_cruiseDescription_v16');
     return saved !== null ? saved : '';
@@ -614,10 +622,6 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     return `Put in ${luggages[nextVirt - 1]?.name}` || 'Unassign luggage';
   };
 
-  const applyPreset = (cruise: string, role: 'crew' | 'captain') => {
-    setPendingPreset({ cruise, role });
-  };
-
   const executeApplyPreset = (cruise: string, role: 'crew' | 'captain') => {
     setCategories(getPresetCategories(cruise, role));
     setWarnings(getPresetData(cruise).warnings || []);
@@ -626,6 +630,8 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setItemLuggage(getInitialLuggageAssignments(cruise));
     setLuggages(getPresetData(cruise).luggages || []);
     setCruiseDescription(''); // reset custom description to fallback to new preset defaults
+    setActivePresetId(cruise);
+    setChanges(getPresetData(cruise).showers || 1);
     commitAction(`Reset list to ${role.toUpperCase()} preset`);
     setPendingPreset(null);
     setActiveMenu('main');
@@ -815,6 +821,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setCheckedItems({});
     setHiddenItems(newHiddenItems);
     setCruiseDescription(shared.d || '');
+    setActivePresetId(basePresetId);
     
     commitAction('Loaded shared list from Skipper');
     setActiveMenu('main');
@@ -1158,7 +1165,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       selectedCategoryId, setSelectedCategoryId,
       selectedLuggageId, setSelectedLuggageId, newLuggageName, setNewLuggageName, showHiddenCats, toggleCatHidden,
       filter, setFilter, itemViewFilter, setItemViewFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, toggleParentItem, hideItem,
-      unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, applyPreset, executeApplyPreset, pendingPreset, setPendingPreset, resetAll, handleCreateItem, handleAddSubItem,
+      unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, activePresetId, executeApplyPreset, pendingPreset, setPendingPreset, resetAll, handleCreateItem, handleAddSubItem,
       updateItem, deleteItem, moveItemCategory, updateCategory, deleteCategory, handleCreateCategory, setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, unpackCategoryItemsAction, updateLuggage, deleteLuggage, reorderLuggage, packAndHideLuggageItems, unpackLuggageItems, hideLuggageItems, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles,

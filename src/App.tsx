@@ -130,11 +130,19 @@ const AppContent: React.FC = () => {
         <div className="share-confirm-overlay">
           <div className="share-confirm-card warning-card">
             <span className="share-confirm-icon warning-icon">⚠️</span>
-            <h3>Factory Reset List?</h3>
-            <p>This will completely factory reset your list to the <strong>{pendingPreset.role.toUpperCase()}</strong> preset. All custom items, bag assignments, and packing progress will be permanently lost! Are you sure?</p>
-            <div className="share-confirm-actions">
-              <button onClick={() => setPendingPreset(null)} className="btn-share-confirm cancel">Cancel</button>
-              <button onClick={() => executeApplyPreset(pendingPreset.cruise, pendingPreset.role)} className="btn-share-confirm confirm warning-confirm">Yes, Reset</button>
+            <h3>Load Preset?</h3>
+            <p>This will completely factory reset your list to the <strong>{PRESETS[pendingPreset.cruise]?.name || pendingPreset.cruise}</strong> preset. All custom items, bag assignments, and packing progress will be permanently lost!</p>
+            <p style={{ fontWeight: 'bold', marginTop: '12px', marginBottom: '8px', textAlign: 'center' }}>How would you like to load it?</p>
+            <div className="share-confirm-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+              <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                <button onClick={() => executeApplyPreset(pendingPreset.cruise, 'crew')} className="btn-share-confirm confirm" style={{ flex: 1 }}>
+                  Load as Crew
+                </button>
+                <button onClick={() => executeApplyPreset(pendingPreset.cruise, 'captain')} className="btn-share-confirm confirm" style={{ flex: 1, background: 'var(--accent)', color: '#121212' }}>
+                  Load as Captain
+                </button>
+              </div>
+              <button onClick={() => setPendingPreset(null)} className="btn-share-confirm cancel" style={{ width: '100%' }}>Cancel</button>
             </div>
           </div>
         </div>

@@ -64,27 +64,27 @@ test.describe('Settings Menu & Luggage Modals', () => {
     await expect(page.locator('.luggage-card-header').first()).toContainText('My Pockets');
   });
 
-  test('applying a preset triggers custom reset warning modal', async ({ page }) => {
+  test('selecting a preset triggers custom reset warning modal', async ({ page }) => {
     // Open settings
     await page.locator('button', { hasText: '☰' }).first().click();
     await expect(page.locator('.side-menu.open')).toBeVisible();
 
-    // Click Apply: Crew
-    await page.locator('button:has-text("Apply: Crew")').click();
+    // Select different preset from dropdown to trigger modal
+    await page.locator('.modal-select').selectOption('med_blueward_26');
 
     // Verify beautiful warning modal is visible
     const warningModal = page.locator('.share-confirm-card.warning-card');
     await expect(warningModal).toBeVisible();
-    await expect(warningModal.locator('h3')).toHaveText('Factory Reset List?');
+    await expect(warningModal.locator('h3')).toHaveText('Load Preset?');
 
     // Click Cancel
     await warningModal.locator('button:has-text("Cancel")').click();
     await expect(warningModal).toBeHidden();
 
     // Re-trigger and Confirm reset
-    await page.locator('button:has-text("Apply: Crew")').click();
+    await page.locator('.modal-select').selectOption('med_blueward_26');
     await expect(warningModal).toBeVisible();
-    await warningModal.locator('button:has-text("Yes, Reset")').click();
+    await warningModal.locator('button:has-text("Load as Crew")').click();
 
     // Verify warning modal is closed and settings side panel is closed
     await expect(warningModal).toBeHidden();
@@ -96,17 +96,24 @@ test.describe('Settings Menu & Luggage Modals', () => {
     await page.locator('button', { hasText: '☰' }).first().click();
     await expect(page.locator('.side-menu.open')).toBeVisible();
 
+    // Force load the med_blueward_26 first to have a clean state transition
+    await page.locator('.modal-select').selectOption('med_blueward_26');
+    await page.locator('button:has-text("Load as Crew")').click();
+
+    // Re-open settings
+    await page.locator('button', { hasText: '☰' }).first().click();
+    await expect(page.locator('.side-menu.open')).toBeVisible();
+
     // Select the new preset
     await page.locator('.modal-select').selectOption('zeeland_fox_22');
 
-    // Verify description updates
+    // Verify description updates in textarea
     await expect(page.locator('.preset-description-textarea')).toHaveValue(/Packing list for a summer day sail in Zeeland/);
 
-    // Apply the preset
-    await page.locator('button:has-text("Apply: Crew")').click();
+    // Apply via modal
     const warningModal = page.locator('.share-confirm-card.warning-card');
     await expect(warningModal).toBeVisible();
-    await warningModal.locator('button:has-text("Yes, Reset")').click();
+    await warningModal.locator('button:has-text("Load as Crew")').click();
 
     // Verify settings side panel is closed
     await expect(page.locator('.side-menu.open')).toBeHidden();

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { usePacklist } from '../../context/PacklistContext';
 import { PRESETS } from '../../utils/presetUtils';
 import { parse, stringify } from 'yaml';
@@ -7,14 +7,14 @@ import { compressPayload } from '../../utils/shareUtils';
 export const SettingsMenu: React.FC = () => {
   const { 
     activeMenu, setActiveMenu, changes, updateChanges,
-    applyPreset, deferredPrompt, handleInstallClick, past,
+    deferredPrompt, handleInstallClick, past,
     getMenuStyles, categories, luggages, itemLuggage, checkedItems, hiddenItems,
     theme, setTheme, importData, soundEnabled, setSoundEnabled,
-    getSharePayload, playPopSound, cruiseDescription, setCruiseDescription, triggerConfirm
+    getSharePayload, playPopSound, cruiseDescription, setCruiseDescription, triggerConfirm,
+    activePresetId, pendingPreset, setPendingPreset
   } = usePacklist();
 
   const { leftMenuStyle, isMenuSwiping } = getMenuStyles();
-  const [presetCruise, setPresetCruise] = useState(PRESETS['zeeland_fox_22'] ? 'zeeland_fox_22' : (Object.keys(PRESETS)[0] || ''));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const baseSetQty = changes;
 
@@ -57,13 +57,14 @@ export const SettingsMenu: React.FC = () => {
 
   const handleSharePreset = async () => {
     playPopSound('click');
+    const currentPreset = pendingPreset ? pendingPreset.cruise : activePresetId;
     try {
-      const shareUrl = `${window.location.origin}${window.location.pathname}#p=${presetCruise}`;
+      const shareUrl = `${window.location.origin}${window.location.pathname}#p=${currentPreset}`;
       await navigator.clipboard.writeText(shareUrl);
-      triggerConfirm(`📋 Link to "${PRESETS[presetCruise]?.name || presetCruise}" copied to clipboard!`, '', () => {});
+      triggerConfirm(`📋 Link to "${PRESETS[currentPreset]?.name || currentPreset}" copied to clipboard!`, '', () => {});
     } catch (err) {
       console.error("Failed to copy preset link:", err);
-      const shareUrl = `${window.location.origin}${window.location.pathname}#p=${presetCruise}`;
+      const shareUrl = `${window.location.origin}${window.location.pathname}#p=${currentPreset}`;
       alert(`📋 Preset Link:\n${shareUrl}`);
     }
   };
@@ -84,7 +85,8 @@ export const SettingsMenu: React.FC = () => {
     reader.readAsText(file);
   };
 
-  const selectedPresetDesc = PRESETS[presetCruise]?.description || "No description available.";
+  const currentPreviewPreset = pendingPreset ? pendingPreset.cruise : activePresetId;
+  const selectedPresetDesc = PRESETS[currentPreviewPreset]?.description || "No description available.";
 
   return (
     <div className={`side-menu left-menu ${activeMenu === 'settings' ? 'open' : ''} ${isMenuSwiping ? 'is-swiping' : ''}`} style={leftMenuStyle}>
@@ -122,13 +124,18 @@ export const SettingsMenu: React.FC = () => {
             </button>
           </div>
           <div className="preset-selectors" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <select className="modal-select" style={{ width: '100%', margin: 0 }} value={presetCruise} onChange={(e) => setPresetCruise(e.target.value)}>
+            <select 
+              className="modal-select" 
+              style={{ width: '100%', margin: 0 }} 
+              value={currentPreviewPreset} 
+              onChange={(e) => setPendingPreset({ cruise: e.target.value, role: null })}
+            >
               {Object.entries(PRESETS).map(([id, data]) => (
                 <option key={id} value={id}>{data.name || id}</option>
               ))}
             </select>
             <p style={{ margin: '4px 0 2px 0', fontSize: '0.85em', fontWeight: 'bold', color: 'var(--text)', textAlign: 'left' }}>
-              Active Preset: {PRESETS[presetCruise]?.name || presetCruise}
+              Active Preset: {PRESETS[currentPreviewPreset]?.name || currentPreviewPreset}
             </p>
             <textarea
               className="preset-description-textarea"
@@ -137,10 +144,6 @@ export const SettingsMenu: React.FC = () => {
               placeholder="Describe your cruise details here..."
               title="Click to edit trip description"
             />
-            <div className="presets-group" style={{ width: '100%', gap: '8px' }}>
-              <button className="btn-preset" style={{flex: 1, padding: '6px', fontSize: '0.85em'}} onClick={() => applyPreset(presetCruise, 'crew')}>Apply: Crew</button>
-              <button className="btn-preset" style={{flex: 1, padding: '6px', fontSize: '0.85em'}} onClick={() => applyPreset(presetCruise, 'captain')}>Apply: Captain</button>
-            </div>
           </div>
         </div>
 

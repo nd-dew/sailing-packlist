@@ -154,16 +154,44 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   }, [soundEnabled]);
 
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('sailingPacklist_theme_v16');
+  const [theme, setThemeState] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('sailingPacklist_theme_override');
     if (saved === 'dark' || saved === 'light') return saved;
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
+  const setTheme = (newTheme: 'light' | 'dark') => {
+    localStorage.setItem('sailingPacklist_theme_override', newTheme);
+    setThemeState(newTheme);
+  };
+
   useEffect(() => {
-    localStorage.setItem('sailingPacklist_theme_v16', theme);
     document.body.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      const override = localStorage.getItem('sailingPacklist_theme_override');
+      if (!override) {
+        setThemeState(e.matches ? 'dark' : 'light');
+      }
+    };
+    
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleChange);
+    } else {
+      mediaQuery.addListener(handleChange);
+    }
+    
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleChange);
+      } else {
+        mediaQuery.removeListener(handleChange);
+      }
+    };
+  }, []);
 
   const [changes, setChanges] = useState<number>(() => {
     const saved = localStorage.getItem('sailingPacklist_showers_v16');

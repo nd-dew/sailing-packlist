@@ -90,4 +90,28 @@ test.describe('Settings Menu & Luggage Modals', () => {
     await expect(warningModal).toBeHidden();
     await expect(page.locator('.side-menu.open')).toBeHidden();
   });
+
+  test('can select and apply the Zeeland Fox 22 preset', async ({ page }) => {
+    // Open settings
+    await page.locator('button', { hasText: '☰' }).first().click();
+    await expect(page.locator('.side-menu.open')).toBeVisible();
+
+    // Select the new preset
+    await page.locator('.modal-select').selectOption('zeeland_fox_22');
+
+    // Verify description updates
+    await expect(page.locator('.preset-description-textarea')).toHaveValue(/Packing list for a summer day sail in Zeeland/);
+
+    // Apply the preset
+    await page.locator('button:has-text("Apply: Crew")').click();
+    const warningModal = page.locator('.share-confirm-card.warning-card');
+    await expect(warningModal).toBeVisible();
+    await warningModal.locator('button:has-text("Yes, Reset")').click();
+
+    // Verify settings side panel is closed
+    await expect(page.locator('.side-menu.open')).toBeHidden();
+
+    // Verify item from the new preset is visible on main list
+    await expect(page.locator('body')).toContainText('Windproof or waterproof jacket');
+  });
 });

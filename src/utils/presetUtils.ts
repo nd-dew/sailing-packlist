@@ -35,8 +35,9 @@ export const getInitialLuggageAssignments = (cruiseId: string) => {
 export const getPresetCategories = (cruiseId: string, role: 'crew' | 'captain') => {
   const data = getPresetData(cruiseId);
   if (!data || !data.categories) return [];
+  const disableRoles = data.disableRoles === true;
   return data.categories.map((cat: Category) => ({
     ...cat,
-    items: role === 'crew' ? cat.items.filter((i: PackItem) => !i.captainOnly) : [...cat.items]
+    items: (role === 'crew' && !disableRoles) ? cat.items.filter((i: PackItem) => !i.captainOnly) : [...cat.items]
   }));
 };

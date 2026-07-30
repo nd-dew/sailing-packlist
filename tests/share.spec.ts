@@ -92,8 +92,8 @@ test.describe('Serverless URL Sharing Feature', () => {
     await expect(presetOverlay).toBeVisible();
     await expect(presetOverlay.locator('h3')).toHaveText('Preset Detected');
 
-    // Click "Load as Crew"
-    await page.locator('button:has-text("Load as Crew")').click();
+    // Click "Load Preset"
+    await page.locator('button:has-text("Load Preset")').click();
 
     // Verify overlay is closed and hash cleared
     await expect(presetOverlay).toBeHidden();

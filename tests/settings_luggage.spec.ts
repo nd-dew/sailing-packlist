@@ -122,7 +122,7 @@ test.describe('Settings Menu & Luggage Modals', () => {
     // Apply via modal
     const warningModal = page.locator('.share-confirm-card.warning-card');
     await expect(warningModal).toBeVisible();
-    await warningModal.locator('button:has-text("Load as Crew")').click();
+    await warningModal.locator('button:has-text("Load Preset")').click();
 
     // Verify settings side panel is closed
     await expect(page.locator('.side-menu.open')).toBeHidden();

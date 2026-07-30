@@ -3,6 +3,7 @@ name: "Day Sail, August, Zeeland Fox 22"
 description: "Packing list for a summer day sail in Zeeland on a Fox 22."
 showers: 1
 hideShowers: true
+disableRoles: true
 
 warnings:
   - id: "warn_fox_1"

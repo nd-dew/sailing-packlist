@@ -132,18 +132,29 @@ const AppContent: React.FC = () => {
             <span className="share-confirm-icon warning-icon">⚠️</span>
             <h3>Load Preset?</h3>
             <p>This will completely factory reset your list to the <strong>{PRESETS[pendingPreset.cruise]?.name || pendingPreset.cruise}</strong> preset. All custom items, bag assignments, and packing progress will be permanently lost!</p>
-            <p style={{ fontWeight: 'bold', marginTop: '12px', marginBottom: '8px', textAlign: 'center' }}>How would you like to load it?</p>
-            <div className="share-confirm-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
-              <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                <button onClick={() => executeApplyPreset(pendingPreset.cruise, 'crew')} className="btn-share-confirm confirm" style={{ flex: 1 }}>
-                  Load as Crew
+            {PRESETS[pendingPreset.cruise]?.disableRoles ? (
+              <div className="share-confirm-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: '15px' }}>
+                <button onClick={() => executeApplyPreset(pendingPreset.cruise, 'crew')} className="btn-share-confirm confirm" style={{ width: '100%' }}>
+                  Load Preset
                 </button>
-                <button onClick={() => executeApplyPreset(pendingPreset.cruise, 'captain')} className="btn-share-confirm confirm" style={{ flex: 1, background: 'var(--accent)', color: '#121212' }}>
-                  Load as Captain
-                </button>
+                <button onClick={() => setPendingPreset(null)} className="btn-share-confirm cancel" style={{ width: '100%' }}>Cancel</button>
               </div>
-              <button onClick={() => setPendingPreset(null)} className="btn-share-confirm cancel" style={{ width: '100%' }}>Cancel</button>
-            </div>
+            ) : (
+              <>
+                <p style={{ fontWeight: 'bold', marginTop: '12px', marginBottom: '8px', textAlign: 'center' }}>How would you like to load it?</p>
+                <div className="share-confirm-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                  <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                    <button onClick={() => executeApplyPreset(pendingPreset.cruise, 'crew')} className="btn-share-confirm confirm" style={{ flex: 1 }}>
+                      Load as Crew
+                    </button>
+                    <button onClick={() => executeApplyPreset(pendingPreset.cruise, 'captain')} className="btn-share-confirm confirm" style={{ flex: 1, background: 'var(--accent)', color: '#121212' }}>
+                      Load as Captain
+                    </button>
+                  </div>
+                  <button onClick={() => setPendingPreset(null)} className="btn-share-confirm cancel" style={{ width: '100%' }}>Cancel</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -157,20 +168,31 @@ const AppContent: React.FC = () => {
             <div className="preset-detected-badge">
               {PRESETS[pendingPresetId]?.name || pendingPresetId}
             </div>
-            <p style={{ margin: '8px 0 15px 0' }}>How would you like to load it?</p>
-            <div className="share-confirm-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
-              <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                <button onClick={() => handleApplyPresetUrl('crew')} className="btn-share-confirm confirm" style={{ flex: 1 }}>
-                  Load as Crew
+            {PRESETS[pendingPresetId]?.disableRoles ? (
+              <div className="share-confirm-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: '15px' }}>
+                <button onClick={() => handleApplyPresetUrl('crew')} className="btn-share-confirm confirm" style={{ width: '100%' }}>
+                  Load Preset
                 </button>
-                <button onClick={() => handleApplyPresetUrl('captain')} className="btn-share-confirm confirm" style={{ flex: 1 }}>
-                  Load as Captain
-                </button>
+                <button onClick={handleCancelPresetUrl} className="btn-share-confirm cancel" style={{ width: '100%' }}>Cancel</button>
               </div>
-              <button onClick={handleCancelPresetUrl} className="btn-share-confirm cancel" style={{ width: '100%' }}>
-                Cancel
-              </button>
-            </div>
+            ) : (
+              <>
+                <p style={{ margin: '8px 0 15px 0' }}>How would you like to load it?</p>
+                <div className="share-confirm-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                  <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                    <button onClick={() => handleApplyPresetUrl('crew')} className="btn-share-confirm confirm" style={{ flex: 1 }}>
+                      Load as Crew
+                    </button>
+                    <button onClick={() => handleApplyPresetUrl('captain')} className="btn-share-confirm confirm" style={{ flex: 1 }}>
+                      Load as Captain
+                    </button>
+                  </div>
+                  <button onClick={handleCancelPresetUrl} className="btn-share-confirm cancel" style={{ width: '100%' }}>
+                    Cancel
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

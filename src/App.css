@@ -1584,3 +1584,23 @@ button:active,
   box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.1);
   color: white;
 }
+
+/* Preset Detected Badge Highlight */
+.preset-detected-badge {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: bold;
+  font-size: 0.95em;
+  color: var(--navy);
+  margin: 10px 0;
+  text-align: center;
+  word-break: break-word;
+}
+
+[data-theme="dark"] .preset-detected-badge {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--accent);
+  border-color: #333;
+}

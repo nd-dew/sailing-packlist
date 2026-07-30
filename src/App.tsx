@@ -145,10 +145,11 @@ const AppContent: React.FC = () => {
           <div className="share-confirm-card">
             <span className="share-confirm-icon">⛵</span>
             <h3>Preset Detected</h3>
-            <p>
-              This link contains the <strong>{PRESETS[pendingPresetId]?.name || pendingPresetId}</strong> preset.
-              How would you like to load it?
-            </p>
+            <p style={{ margin: '0 0 8px 0' }}>This link contains the following preset:</p>
+            <div className="preset-detected-badge">
+              {PRESETS[pendingPresetId]?.name || pendingPresetId}
+            </div>
+            <p style={{ margin: '8px 0 15px 0' }}>How would you like to load it?</p>
             <div className="share-confirm-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
               <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
                 <button onClick={() => handleApplyPresetUrl('crew')} className="btn-share-confirm confirm" style={{ flex: 1 }}>

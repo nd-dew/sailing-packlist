@@ -112,7 +112,7 @@ interface PacklistContextType {
 const PacklistContext = createContext<PacklistContextType | undefined>(undefined);
 
 export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const defaultPresetId = Object.keys(PRESETS)[0] || '';
+  const defaultPresetId = PRESETS['zeeland_fox_22'] ? 'zeeland_fox_22' : (Object.keys(PRESETS)[0] || '');
 
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
     const saved = localStorage.getItem('sailingPacklist_sound_v16');

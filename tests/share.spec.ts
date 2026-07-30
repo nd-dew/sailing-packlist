@@ -80,9 +80,9 @@ test.describe('Serverless URL Sharing Feature', () => {
     await expect(page.locator('.confirm-toast')).toBeVisible();
     await expect(page.locator('.confirm-toast')).toContainText('copied to clipboard');
 
-    // Verify clipboard contains #p=med_blueward_26
+    // Verify clipboard contains #p=zeeland_fox_22
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clipboardText).toContain('#p=med_blueward_26');
+    expect(clipboardText).toContain('#p=zeeland_fox_22');
 
     // Directly load the Zeeland preset URL hash
     await page.goto('/#p=zeeland_fox_22');

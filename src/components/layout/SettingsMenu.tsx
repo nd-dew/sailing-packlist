@@ -14,7 +14,7 @@ export const SettingsMenu: React.FC = () => {
   } = usePacklist();
 
   const { leftMenuStyle, isMenuSwiping } = getMenuStyles();
-  const [presetCruise, setPresetCruise] = useState(Object.keys(PRESETS)[0] || '');
+  const [presetCruise, setPresetCruise] = useState(PRESETS['zeeland_fox_22'] ? 'zeeland_fox_22' : (Object.keys(PRESETS)[0] || ''));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const baseSetQty = changes;
 

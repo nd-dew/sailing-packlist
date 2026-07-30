@@ -128,6 +128,6 @@ test.describe('Settings Menu & Luggage Modals', () => {
     await expect(page.locator('.side-menu.open')).toBeHidden();
 
     // Verify item from the new preset is visible on main list
-    await expect(page.locator('body')).toContainText('Windproof or waterproof jacket');
+    await expect(page.locator('body')).toContainText('Windproof jacket');
   });
 });

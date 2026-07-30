@@ -100,6 +100,6 @@ test.describe('Serverless URL Sharing Feature', () => {
     await expect(page).not.toHaveURL(/#p=/);
 
     // Verify items of Zeeland Fox 22 are loaded
-    await expect(page.locator('body')).toContainText('Windproof or waterproof jacket');
+    await expect(page.locator('body')).toContainText('Windproof jacket');
   });
 });

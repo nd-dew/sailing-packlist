@@ -59,4 +59,49 @@ test.describe('Serverless URL Sharing Feature', () => {
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
     expect(clipboardText).toContain('#s=');
   });
+
+  test('copying and loading preset direct URLs', async ({ page, context }) => {
+    await page.goto('/');
+
+    // Grant clipboard permissions
+    await context.grantPermissions(['clipboard-write', 'clipboard-read']);
+
+    // Setup automatic dialog handler
+    page.on('dialog', async dialog => {
+      expect(dialog.message()).toContain('copied to clipboard');
+      await dialog.dismiss();
+    });
+
+    // Open settings menu
+    await page.locator('button', { hasText: '☰' }).first().click();
+    await expect(page.locator('.side-menu.open')).toBeVisible();
+
+    // Wait for slide-in transition to stabilize
+    await page.waitForTimeout(1000);
+
+    // Click the 🔗 button next to select dropdown (by default med_blueward_26 is selected)
+    await page.locator('.preset-selectors button:has-text("🔗")').click({ force: true });
+
+    // Verify clipboard contains #p=med_blueward_26
+    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboardText).toContain('#p=med_blueward_26');
+
+    // Directly load the Zeeland preset URL hash
+    await page.goto('/#p=zeeland_fox_22');
+
+    // Verify Preset Detected overlay is visible
+    const presetOverlay = page.locator('.share-confirm-overlay');
+    await expect(presetOverlay).toBeVisible();
+    await expect(presetOverlay.locator('h3')).toHaveText('Preset Detected');
+
+    // Click "Load as Crew"
+    await page.locator('button:has-text("Load as Crew")').click();
+
+    // Verify overlay is closed and hash cleared
+    await expect(presetOverlay).toBeHidden();
+    await expect(page).not.toHaveURL(/#p=/);
+
+    // Verify items of Zeeland Fox 22 are loaded
+    await expect(page.locator('body')).toContainText('Windproof or waterproof jacket');
+  });
 });

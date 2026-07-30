@@ -55,6 +55,19 @@ export const SettingsMenu: React.FC = () => {
     }
   };
 
+  const handleSharePreset = async () => {
+    playPopSound('click');
+    try {
+      const shareUrl = `${window.location.origin}${window.location.pathname}#p=${presetCruise}`;
+      await navigator.clipboard.writeText(shareUrl);
+      alert(`📋 Preset link copied to clipboard:\n${shareUrl}`);
+    } catch (err) {
+      console.error("Failed to copy preset link:", err);
+      const shareUrl = `${window.location.origin}${window.location.pathname}#p=${presetCruise}`;
+      alert(`📋 Preset Link:\n${shareUrl}`);
+    }
+  };
+
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -85,11 +98,21 @@ export const SettingsMenu: React.FC = () => {
         <div className="menu-section">
           <label>Cruise Presets</label>
           <div className="preset-selectors" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-            <select className="modal-select" value={presetCruise} onChange={(e) => setPresetCruise(e.target.value)}>
-              {Object.entries(PRESETS).map(([id, data]) => (
-                <option key={id} value={id}>{data.name || id}</option>
-              ))}
-            </select>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select className="modal-select" style={{ flex: 1, margin: 0 }} value={presetCruise} onChange={(e) => setPresetCruise(e.target.value)}>
+                {Object.entries(PRESETS).map(([id, data]) => (
+                  <option key={id} value={id}>{data.name || id}</option>
+                ))}
+              </select>
+              <button 
+                className="btn-preset" 
+                style={{ padding: '8px 12px', fontSize: '1em', borderRadius: '6px', minWidth: '45px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                onClick={handleSharePreset}
+                title="Copy link to this preset"
+              >
+                🔗
+              </button>
+            </div>
             <p style={{ margin: '4px 0 2px 0', fontSize: '0.85em', fontWeight: 'bold', color: 'var(--text)', textAlign: 'left' }}>
               Active Preset: {PRESETS[presetCruise]?.name || presetCruise}
             </p>

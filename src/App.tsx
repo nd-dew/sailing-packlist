@@ -8,6 +8,7 @@ import { ItemModal } from './components/modals/ItemModal';
 import { BagModal } from './components/modals/BagModal';
 import { CategoryModal } from './components/modals/CategoryModal';
 import { decompressPayload } from './utils/shareUtils';
+import { PRESETS } from './utils/presetUtils';
 import './App.css';
 
 const AppContent: React.FC = () => {
@@ -19,9 +20,10 @@ const AppContent: React.FC = () => {
   } = usePacklist();
 
   const [pendingSharePayload, setPendingSharePayload] = React.useState<any>(null);
+  const [pendingPresetId, setPendingPresetId] = React.useState<string | null>(null);
 
   useEffect(() => {
-    const handleSharedUrl = async () => {
+    const handleUrlHash = async () => {
       const hash = window.location.hash;
       if (hash.startsWith('#s=')) {
         const shareToken = hash.substring(3);
@@ -33,9 +35,17 @@ const AppContent: React.FC = () => {
           alert("Failed to parse shared URL. The link might be invalid or broken.");
           window.history.replaceState(null, '', window.location.pathname);
         }
+      } else if (hash.startsWith('#p=')) {
+        const presetId = hash.substring(3);
+        if (PRESETS[presetId]) {
+          setPendingPresetId(presetId);
+        } else {
+          console.warn("Preset not found:", presetId);
+          window.history.replaceState(null, '', window.location.pathname);
+        }
       }
     };
-    handleSharedUrl();
+    handleUrlHash();
   }, []);
 
   const handleAcceptShare = () => {
@@ -48,6 +58,19 @@ const AppContent: React.FC = () => {
 
   const handleCancelShare = () => {
     setPendingSharePayload(null);
+    window.history.replaceState(null, '', window.location.pathname);
+  };
+
+  const handleApplyPresetUrl = (role: 'crew' | 'captain') => {
+    if (pendingPresetId) {
+      executeApplyPreset(pendingPresetId, role);
+    }
+    setPendingPresetId(null);
+    window.history.replaceState(null, '', window.location.pathname);
+  };
+
+  const handleCancelPresetUrl = () => {
+    setPendingPresetId(null);
     window.history.replaceState(null, '', window.location.pathname);
   };
 
@@ -112,6 +135,32 @@ const AppContent: React.FC = () => {
             <div className="share-confirm-actions">
               <button onClick={() => setPendingPreset(null)} className="btn-share-confirm cancel">Cancel</button>
               <button onClick={() => executeApplyPreset(pendingPreset.cruise, pendingPreset.role)} className="btn-share-confirm confirm warning-confirm">Yes, Reset</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingPresetId && (
+        <div className="share-confirm-overlay">
+          <div className="share-confirm-card">
+            <span className="share-confirm-icon">⛵</span>
+            <h3>Preset Detected</h3>
+            <p>
+              This link contains the <strong>{PRESETS[pendingPresetId]?.name || pendingPresetId}</strong> preset.
+              How would you like to load it?
+            </p>
+            <div className="share-confirm-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+              <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                <button onClick={() => handleApplyPresetUrl('crew')} className="btn-share-confirm confirm" style={{ flex: 1 }}>
+                  Load as Crew
+                </button>
+                <button onClick={() => handleApplyPresetUrl('captain')} className="btn-share-confirm confirm" style={{ flex: 1 }}>
+                  Load as Captain
+                </button>
+              </div>
+              <button onClick={handleCancelPresetUrl} className="btn-share-confirm cancel" style={{ width: '100%' }}>
+                Cancel
+              </button>
             </div>
           </div>
         </div>

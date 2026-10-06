@@ -224,7 +224,11 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
                 value={item.name}
                 autoFocus={!item.name}
                 onChange={(e) => updateItem(item.id, { name: e.target.value })}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); close(); } }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); close(); }
+                  // ↓ goes on to the note
+                  if (e.key === 'ArrowDown') { e.preventDefault(); liRef.current?.querySelector<HTMLElement>('.item-note-input')?.focus(); }
+                }}
                 // an emptied name comes back on close; the placeholder shows which one
                 placeholder={nameAtOpen || 'Item name'}
                 aria-label="Item name"

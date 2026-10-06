@@ -98,8 +98,14 @@ interface PacklistContextType {
   handleGlobalTouchStart: (e: React.TouchEvent) => void;
   handleGlobalTouchMove: (e: React.TouchEvent) => void;
   handleGlobalTouchEnd: (e: React.TouchEvent) => void;
-  selectedCategoryId: string | null;
-  setSelectedCategoryId: (id: string | null) => void;
+  // category whose name is being edited in its header
+  renamingCategoryId: string | null;
+  setRenamingCategoryId: (id: string | null) => void;
+  // category whose actions menu (pack all, bag, priority, delete…) is open
+  categoryMenuId: string | null;
+  setCategoryMenuId: (id: string | null) => void;
+  showPriorities: boolean;
+  setShowPriorities: (show: boolean) => void;
   updateCategory: (id: string, updates: Partial<Category>) => void;
   deleteCategory: (id: string) => void;
   handleCreateCategory: (title?: string) => void;
@@ -260,7 +266,10 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   // The item currently opened in place in the list
   const [selectedItemId, setSelectedItemIdRaw] = useState<string | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [renamingCategoryId, setRenamingCategoryId] = useState<string | null>(null);
+  const [categoryMenuId, setCategoryMenuId] = useState<string | null>(null);
+  const [showPriorities, setShowPriorities] = useState<boolean>(() => localStorage.getItem('sailingPacklist_priorities') !== 'hidden');
+  useEffect(() => { localStorage.setItem('sailingPacklist_priorities', showPriorities ? 'shown' : 'hidden'); }, [showPriorities]);
   const [selectedLuggageId, setSelectedLuggageId] = useState<string | null>(null);
   const [newLuggageName, setNewLuggageName] = useState('');
   const [collapsedCats, setCollapsedCats] = useState<Record<string, boolean>>(() => {
@@ -901,9 +910,9 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const deleteCategory = (id: string) => {
     playPopSound('pop');
-    commitAction('Deleted category');
+    commitAction(`Deleted ${categories.find(c => c.id === id)?.title || 'category'}`);
     setCategories(prev => prev.filter(c => c.id !== id));
-    setSelectedCategoryId(null);
+    setCategoryMenuId(null);
   };
 
   const handleCreateCategory = (title?: string) => {
@@ -1208,7 +1217,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     <PacklistContext.Provider value={{
       changes, updateChanges, showHeader, categories, setCategories, warnings, checkedItems, setCheckedItems,
       luggages, setLuggages, itemLuggage, setItemLuggage, selectedItemId, setSelectedItemId,
-      selectedCategoryId, setSelectedCategoryId,
+      renamingCategoryId, setRenamingCategoryId, categoryMenuId, setCategoryMenuId, showPriorities, setShowPriorities,
       selectedLuggageId, setSelectedLuggageId, newLuggageName, setNewLuggageName,
       collapsedCats, setCatCollapsed, swipeHintItemId, setSwipeHintItemId, markSwipeLearned,
       layoutColumns, setLayoutColumns, density, setDensity,

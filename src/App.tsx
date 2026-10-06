@@ -6,7 +6,6 @@ import { BaggageMenu } from './components/layout/BaggageMenu';
 import { TripHeader } from './components/layout/TripHeader';
 import { CategoryBlock } from './components/core/CategoryBlock';
 import { BagModal } from './components/modals/BagModal';
-import { CategoryModal } from './components/modals/CategoryModal';
 import { decompressPayload } from './utils/shareUtils';
 import { PRESETS } from './utils/presetUtils';
 import { countLeafItems } from './utils/countUtils';
@@ -62,7 +61,7 @@ const AppContent: React.FC = () => {
     handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd,
     handleCreateCategory, triggerConfirm,
     checkedItems, collapsedCats, setSwipeHintItemId,
-    activePresetId, layoutColumns, density, commitAction, setCategories, luggages, itemLuggage, changes,
+    activePresetId, layoutColumns, density, commitAction, setCategories, luggages, itemLuggage, changes, setCategoryMenuId,
     trips, activeTrip, switchTrip, createTripFromPreset, openSharedTrip, addLooseItem
   } = usePacklist();
 
@@ -143,7 +142,7 @@ const AppContent: React.FC = () => {
   const drag = useListDrag(categories, columnIds, (next, message) => {
     commitAction(message);
     setCategories(next);
-  });
+  }, (catId) => setCategoryMenuId(catId));
   const dragEnabled = itemViewFilter === 'all';
 
   // During a category drag the columns follow the drag preview
@@ -157,31 +156,33 @@ const AppContent: React.FC = () => {
   // the scroll), scroll by the difference, and where scrolling can't go far enough, push the list down.
   const gridRef = useRef<HTMLDivElement>(null);
   const grabTopRef = useRef<number | null>(null);
+  const gridHeightRef = useRef(0);
   const categoryHeader = (catId: string) => document.querySelector(`[data-category-header="${catId}"]`);
   const handleDragStart = (event: DragStartEvent) => {
     const catId = event.active.data.current?.type === 'category' ? event.active.data.current.catId : null;
     if (catId && gridRef.current) {
       // measured now, before anything folds
       grabTopRef.current = categoryHeader(catId)?.getBoundingClientRect().top ?? null;
-      gridRef.current.style.minHeight = `${gridRef.current.offsetHeight}px`;
+      gridHeightRef.current = gridRef.current.offsetHeight;
     }
     drag.handlers.onDragStart(event);
   };
   useLayoutEffect(() => {
     const grid = gridRef.current;
     if (!grid) return;
-    if (!drag.draggedCategoryId) {
+    if (!drag.reorderingCategoryId) {
       grid.style.minHeight = '';
       grid.style.paddingTop = '';
       return;
     }
-    const header = categoryHeader(drag.draggedCategoryId);
+    grid.style.minHeight = `${gridHeightRef.current}px`;
+    const header = categoryHeader(drag.reorderingCategoryId);
     const grabTop = grabTopRef.current;
     if (!header || grabTop === null) return;
     window.scrollBy(0, header.getBoundingClientRect().top - grabTop);
     const stillAbove = grabTop - header.getBoundingClientRect().top;
     if (stillAbove > 0) grid.style.paddingTop = `${stillAbove}px`;
-  }, [drag.draggedCategoryId]);
+  }, [drag.reorderingCategoryId]);
 
   const draggedItem = drag.activeId ? drag.shownCategories.flatMap(c => c.items).find(i => i.id === drag.activeId) : undefined;
 
@@ -218,7 +219,8 @@ const AppContent: React.FC = () => {
 
       {confirmToast && (
         <div className="confirm-toast-overlay">
-          <div className="confirm-toast">
+          {/* plain messages (no second tap needed) are neutral; red is for "tap again to delete" */}
+          <div className={`confirm-toast ${confirmToast.actionId ? 'is-confirm' : 'is-info'}`}>
             {confirmToast.message}
           </div>
         </div>
@@ -244,7 +246,6 @@ const AppContent: React.FC = () => {
       <BaggageMenu />
 
       <BagModal />
-      <CategoryModal />
 
       <TripHeader />
 
@@ -268,7 +269,7 @@ const AppContent: React.FC = () => {
       >
         <div
           ref={gridRef}
-          className={`checklist-grid cols-${effectiveColumns} ${drag.activeId || draggedCategory ? 'is-dragging' : ''} ${draggedCategory ? 'is-reordering-categories' : ''}`}>
+          className={`checklist-grid cols-${effectiveColumns} ${drag.activeId || draggedCategory ? 'is-dragging' : ''} ${drag.reorderingCategoryId ? 'is-reordering-categories' : ''}`}>
           {columns.map((col, colIndex) => (
             <div className="checklist-column" key={colIndex}>
               <SortableContext items={col.map(cat => categoryDragId(cat.id))} strategy={verticalListSortingStrategy}>

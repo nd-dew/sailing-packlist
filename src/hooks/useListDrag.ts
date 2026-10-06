@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   MouseSensor, TouchSensor, useSensor, useSensors, closestCorners, closestCenter,
   type Active, type CollisionDetection,
-  type DragStartEvent, type DragOverEvent, type DragEndEvent, type UniqueIdentifier
+  type DragStartEvent, type DragOverEvent, type DragMoveEvent, type DragEndEvent, type UniqueIdentifier
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import type { Category } from '../types';
@@ -54,13 +54,17 @@ export const useListDrag = (
   categories: Category[],
   // category ids per column, as currently shown
   categoryColumns: string[][],
-  onCommit: (next: Category[], message: string) => void
+  onCommit: (next: Category[], message: string) => void,
+  // a long-press on a category header that is let go without moving: open its menu instead
+  onCategoryHold?: (catId: string) => void
 ) => {
   const [preview, setPreview] = useState<Category[] | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
   // While a category is dragged: the column layout, updated live when it moves to another column
   const [columnsPreview, setColumnsPreview] = useState<string[][] | null>(null);
+  // Categories only fold up for reordering once the pointer actually moves (a long-press alone opens the menu)
+  const [categoryMoved, setCategoryMoved] = useState(false);
 
   const sensors = useSensors(
     // Mouse: start after a small move so clicks and checkbox taps still work
@@ -74,14 +78,18 @@ export const useListDrag = (
     setActiveId(null);
     setDraggedCategoryId(null);
     setColumnsPreview(null);
+    setCategoryMoved(false);
     lastDragEndAt = Date.now();
     dragActive = false;
   };
 
-  const onDragStart = ({ active }: DragStartEvent) => {
+  const onDragStart = ({ active, activatorEvent }: DragStartEvent) => {
     dragActive = true;
     navigator.vibrate?.(15);
     if (isCategoryDrag(active)) {
+      // A mouse drag only starts after the pointer moved, so it is a reorder right away;
+      // a touch drag starts on a long-press, which may still turn out to be "open the menu"
+      setCategoryMoved(!(typeof TouchEvent !== 'undefined' && activatorEvent instanceof TouchEvent));
       setDraggedCategoryId(catIdFromDragId(active.id));
       setColumnsPreview(categoryColumns);
       return;
@@ -90,10 +98,14 @@ export const useListDrag = (
     setPreview(categories);
   };
 
+  const onDragMove = ({ active, delta }: DragMoveEvent) => {
+    if (isCategoryDrag(active) && !categoryMoved && Math.abs(delta.x) + Math.abs(delta.y) > 8) setCategoryMoved(true);
+  };
+
   const onDragOver = ({ active, over }: DragOverEvent) => {
     if (!over) return;
 
-    if (isCategoryDrag(active)) {
+    if (isCategoryDrag(active) && categoryMoved) {
       // Within a column the sortable list makes room by itself; across columns we move it over live
       const draggedId = catIdFromDragId(active.id);
       const targetId = catIdFromDragId(over.id);
@@ -135,6 +147,11 @@ export const useListDrag = (
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (isCategoryDrag(active)) {
       const draggedId = catIdFromDragId(active.id);
+      if (!categoryMoved) {
+        reset();
+        onCategoryHold?.(draggedId);
+        return;
+      }
       if (over && columnsPreview) {
         const targetId = catIdFromDragId(over.id);
         const columns = columnsPreview.map(col => [...col]);
@@ -178,8 +195,10 @@ export const useListDrag = (
     sensors,
     activeId,
     draggedCategoryId,
+    // a category is being reordered (dragged and moved, not just held)
+    reorderingCategoryId: categoryMoved ? draggedCategoryId : null,
     columnsPreview,
     shownCategories: preview ?? categories,
-    handlers: { onDragStart, onDragOver, onDragEnd, onDragCancel: reset },
+    handlers: { onDragStart, onDragMove, onDragOver, onDragEnd, onDragCancel: reset },
   };
 };

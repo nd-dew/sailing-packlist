@@ -141,6 +141,17 @@ export const TripHeader: React.FC = () => {
           </button>
         )}
 
+        {!isRenaming && (
+          <span className="trip-title-actions">
+            <button className="trip-title-icon" onClick={() => setIsRenaming(true)} title="Rename packlist" aria-label="Rename packlist">
+              <Icon d="M4 20h4L19 9l-4-4L4 16v4z M13.5 6.5l4 4" />
+            </button>
+            <button className="trip-title-icon" onClick={handleShare} title="Copy share link" aria-label="Copy share link">
+              <Icon d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1 M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+            </button>
+          </span>
+        )}
+
         {isMenuOpen && (
           <div className="trip-menu" role="menu" aria-label="Packlists">
             <div className="trip-menu-section">

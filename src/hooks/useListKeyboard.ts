@@ -19,6 +19,7 @@ export const SHORTCUT_GROUPS: { title: string; keys: [string, string][] }[] = [
       ['Space', 'Pack'],
       ['Enter', 'Open'],
       ['e', 'Rename'],
+      ['d', 'Edit note'],
       ['b', 'Change bag'],
       ['Alt+↓ Alt+↑', 'Move'],
       ['Del', 'Delete'],
@@ -28,7 +29,8 @@ export const SHORTCUT_GROUPS: { title: string; keys: [string, string][] }[] = [
     title: 'Category',
     keys: [
       ['c', 'Fold'],
-      ['e', 'Edit'],
+      ['e', 'Rename'],
+      ['m', 'Menu: pack all, bag, priority, delete'],
       ['Alt+↓ Alt+↑', 'Move'],
     ],
   },
@@ -39,6 +41,7 @@ export const SHORTCUT_GROUPS: { title: string; keys: [string, string][] }[] = [
       ['a', 'Add (no category)'],
       ['f', 'Filter'],
       ['t', 'Packlists'],
+      ['Shift+D', 'Edit packlist notes'],
       ['Ctrl+Z', 'Undo'],
       ['?', 'Shortcuts'],
       ['Alt', 'Hold: show them in place'],
@@ -75,6 +78,8 @@ export const useListKeyboard = (onToggleHelp: () => void) => {
       const c = ctxRef.current;
       const active = document.activeElement as HTMLElement | null;
       if (isTyping(active) || e.ctrlKey || e.metaKey) return;
+      // inside a category menu / priority picker its own keys apply
+      if (active?.closest('.category-popover')) return;
       if (c.activeMenu !== 'main' || document.querySelector('.modal-overlay, .share-confirm-overlay')) return;
 
       const current = active?.closest<HTMLElement>('[data-nav]') ?? null;
@@ -129,6 +134,8 @@ export const useListKeyboard = (onToggleHelp: () => void) => {
         return;
       }
       if (key === 't') { e.preventDefault(); document.querySelector<HTMLElement>('.trip-title')?.click(); return; }
+      if (key === 'D') { e.preventDefault(); document.querySelector<HTMLElement>('.trip-notes')?.click(); return; }
+      if (key === 'm' && catId) { e.preventDefault(); c.setCategoryMenuId(catId); return; }
       if (key === 'n') {
         e.preventDefault();
         const field = (catId && document.querySelector<HTMLElement>(`[data-add-item-for="${catId}"]`)) || document.querySelector<HTMLElement>('[data-quick-add]');
@@ -140,7 +147,7 @@ export const useListKeyboard = (onToggleHelp: () => void) => {
       // On a category header
       if (current?.dataset.nav === 'category' && catId) {
         if (key === ' ' || key === 'Enter' || key === 'c') { e.preventDefault(); c.setCatCollapsed(catId, !c.collapsedCats[catId]); return; }
-        if (key === 'e' || key === 'F2') { e.preventDefault(); c.setSelectedCategoryId(catId); return; }
+        if (key === 'e' || key === 'F2') { e.preventDefault(); c.setRenamingCategoryId(catId); return; }
         if (e.altKey && (key === 'ArrowDown' || key === 'ArrowUp')) {
           e.preventDefault();
           c.moveCategoryBy(catId, key === 'ArrowDown' ? 1 : -1);
@@ -174,6 +181,12 @@ export const useListKeyboard = (onToggleHelp: () => void) => {
         e.preventDefault();
         c.setSelectedItemId(itemId);
         focusLater(`${rowSelector} .item-name-input`);
+        return;
+      }
+      if (key === 'd') {
+        e.preventDefault();
+        c.setSelectedItemId(itemId);
+        focusLater(`${rowSelector} .item-note-input`);
         return;
       }
       if (key === 'b' || key === 'B') {

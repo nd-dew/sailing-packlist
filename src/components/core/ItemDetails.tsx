@@ -47,6 +47,14 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({ item, isSubItem, onDon
         // size changes between the compact empty look and the editing look, so re-measure
         onFocus={(e) => autoSize(e.target)}
         onBlur={(e) => autoSize(e.target)}
+        onKeyDown={(e) => {
+          // ↑ at the very start goes back to the name
+          const el = e.target as HTMLTextAreaElement;
+          if (e.key === 'ArrowUp' && el.selectionStart === 0 && el.selectionEnd === 0) {
+            e.preventDefault();
+            el.closest('.list-item')?.querySelector<HTMLElement>('.item-name-input')?.focus();
+          }
+        }}
         placeholder="Add a note…"
         aria-label={`Note for ${item.name}`}
       />

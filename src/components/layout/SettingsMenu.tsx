@@ -10,7 +10,7 @@ export const SettingsMenu: React.FC = () => {
     getMenuStyles, categories, luggages, itemLuggage, checkedItems,
     theme, setTheme, importData, soundEnabled, setSoundEnabled,
     activePresetId, activeTrip, cruiseDescription, warnings,
-    layoutColumns, setLayoutColumns, density, setDensity
+    layoutColumns, setLayoutColumns, density, setDensity, showPriorities, setShowPriorities
   } = usePacklist();
 
   const { leftMenuStyle, isMenuSwiping } = getMenuStyles();
@@ -116,6 +116,19 @@ export const SettingsMenu: React.FC = () => {
                   </button>
                 ))}
               </div>
+            </div>
+            <div className="menu-row">
+              <span className="menu-row-title">Priorities (stars)</span>
+              <button
+                role="switch"
+                aria-checked={showPriorities}
+                aria-label="Show priorities"
+                className={`switch ${showPriorities ? 'on' : ''}`}
+                onClick={() => setShowPriorities(!showPriorities)}
+                title={showPriorities ? 'Hide priorities' : 'Show priorities'}
+              >
+                <span className="switch-knob" />
+              </button>
             </div>
             <div className="menu-row">
               <span className="menu-row-title">Sounds</span>

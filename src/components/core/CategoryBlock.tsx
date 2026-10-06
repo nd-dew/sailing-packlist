@@ -1,8 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { usePacklist } from '../../context/PacklistContext';
 import type { Category, PackItem } from '../../types';
 import { ItemRow } from './ItemRow';
 import { AddItemInput } from './AddItemInput';
+import { CategoryMenu, PriorityPicker } from './CategoryMenu';
+import { PRIORITIES } from '../../utils/priorities';
 import { countLeafItems } from '../../utils/countUtils';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -21,14 +23,35 @@ interface CategoryBlockProps {
 
 export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat, dragEnabled = false }) => {
   const {
-    filter, addItem, showPriorityToast, activeToastId,
-    changes, luggages, itemLuggage, itemViewFilter, checkedItems, setSelectedCategoryId,
+    filter, addItem, updateCategory,
+    renamingCategoryId, setRenamingCategoryId, categoryMenuId, setCategoryMenuId, showPriorities,
+    changes, luggages, itemLuggage, itemViewFilter, checkedItems,
     collapsedCats, setCatCollapsed, selectedItemId
   } = usePacklist();
 
   const { total: catTotal, packed: catPacked } = countLeafItems(cat.items, checkedItems);
   const isDone = catTotal > 0 && catPacked === catTotal;
   const isCollapsed = !!collapsedCats[cat.id];
+  const isRenaming = renamingCategoryId === cat.id;
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  // where the priority picker / actions menu hang from
+  const [priorityAnchor, setPriorityAnchor] = useState<DOMRect | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<DOMRect | null>(null);
+  // the menu can be opened from elsewhere (keyboard, long-press): measure the header when it does
+  useLayoutEffect(() => {
+    setMenuAnchor(categoryMenuId === cat.id ? headerRef.current?.getBoundingClientRect() ?? null : null);
+  }, [categoryMenuId, cat.id]);
+  const [titleAtRename, setTitleAtRename] = useState(cat.title);
+  const [wasRenaming, setWasRenaming] = useState(isRenaming);
+  if (wasRenaming !== isRenaming) {
+    setWasRenaming(isRenaming);
+    if (isRenaming) setTitleAtRename(cat.title);
+  }
+  const finishRename = (revert = false) => {
+    if (revert || !cat.title.trim()) updateCategory(cat.id, { title: titleAtRename });
+    setRenamingCategoryId(null);
+    requestAnimationFrame(() => headerRef.current?.focus());
+  };
 
   // The whole card accepts drops, so items can go into empty or collapsed categories
   const { setNodeRef: setDropRef, isOver, active } = useDroppable({ id: categoryDropId(cat.id), disabled: !dragEnabled });
@@ -108,7 +131,7 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat, dragEnabled =
       className={`category-block ${isCollapsed ? 'is-collapsed' : ''} ${isItemOver ? 'is-drop-target' : ''} ${isCategoryDragged ? 'is-drag-source' : ''}`}
     >
       <div
-        ref={setDragRef}
+        ref={(el) => { setDragRef(el); headerRef.current = el; }}
         data-category-header={cat.id}
         data-nav="category"
         data-cat-id={cat.id}
@@ -116,31 +139,44 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat, dragEnabled =
         className={`category-header ${isDone ? 'done' : ''}`}
         {...dragListeners}
         onClick={(e) => {
-          if (justFinishedDrag()) return;
-          if (!(e.target as HTMLElement).closest('button, h3, .stars-badge')) toggleCollapsed();
+          if (justFinishedDrag() || isRenaming) return;
+          if (!(e.target as HTMLElement).closest('button, h3, input, .stars-badge')) toggleCollapsed();
         }}
+        // the actions menu: right-click here, long-press on touch, "m" on the keyboard
+        onContextMenu={(e) => { e.preventDefault(); setCategoryMenuId(cat.id); }}
       >
         <div className="category-title-area">
           <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-            <h3 onClick={() => { if (!justFinishedDrag()) setSelectedCategoryId(cat.id); }} style={{ cursor: 'pointer' }} title="Edit category" data-shortcut="e">{cat.title}</h3>
+            {isRenaming ? (
+              <input
+                className="category-title-input"
+                autoFocus
+                value={cat.title}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => updateCategory(cat.id, { title: e.target.value })}
+                onBlur={() => finishRename()}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === 'Enter') finishRename();
+                  if (e.key === 'Escape') finishRename(true);
+                }}
+                placeholder={titleAtRename || 'Category name'}
+                aria-label="Category name"
+              />
+            ) : (
+              <h3 onClick={() => { if (!justFinishedDrag()) setRenamingCategoryId(cat.id); }} style={{ cursor: 'text' }} title="Rename · right-click for more" data-shortcut="e">{cat.title}</h3>
+            )}
           </div>
           <div className="category-meta">
             {catTotal > 0 && <span className="cat-progress">{isDone ? '✓ ' : ''}{catPacked}/{catTotal}</span>}
-            {cat.priority && (
-              <div style={{position: 'relative'}}>
-                <span
-                  className="stars-badge"
-                  title={priorityLabel(cat.priority)}
-                  onClick={() => showPriorityToast(cat.id)}
-                >
-                  {cat.priority === 'must-have' ? '★★★' : cat.priority === 'nice-to-have' ? '★☆☆' : '★★☆'}
-                </span>
-                {activeToastId === cat.id && (
-                  <div className="priority-toast">
-                    {priorityLabel(cat.priority)}
-                  </div>
-                )}
-              </div>
+            {showPriorities && (
+              <button
+                className={`stars-badge ${cat.priority ? '' : 'is-empty'}`}
+                title={cat.priority ? `${priorityLabel(cat.priority)} · click to change` : 'Set a priority'}
+                onClick={(e) => setPriorityAnchor((e.currentTarget as HTMLElement).getBoundingClientRect())}
+              >
+                {PRIORITIES.find(p => p.value === cat.priority)?.stars ?? '☆☆☆'}
+              </button>
             )}
             <button
               className="btn-collapse-cat"
@@ -156,6 +192,10 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat, dragEnabled =
           </div>
         </div>
       </div>
+      {priorityAnchor && <PriorityPicker cat={cat} anchor={priorityAnchor} onClose={() => setPriorityAnchor(null)} />}
+      {menuAnchor && (
+        <CategoryMenu cat={cat} anchor={menuAnchor} onClose={() => setCategoryMenuId(null)} onRename={() => setRenamingCategoryId(cat.id)} />
+      )}
       {catTotal > 0 && (
         <div className="cat-progress-bar" aria-hidden="true">
           <div className={`cat-progress-fill ${isDone ? 'done' : ''}`} style={{ width: `${(catPacked / catTotal) * 100}%` }} />

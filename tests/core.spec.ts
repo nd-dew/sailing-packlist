@@ -150,8 +150,8 @@ test.describe('Core App Functionality', () => {
 
     const other = page.locator('.category-block', { has: page.locator('h3', { hasText: 'Other' }) });
     await expect(other.locator('.list-item .item-name')).toHaveText(['Passport photo']);
-    // "Other" is created at the top, next to where you typed
-    await expect(page.locator('.category-header h3').first()).toContainText('Other');
+    // "Other" is created at the end, next to the field at the bottom
+    await expect(page.locator('.category-block:not(.btn-add-category-block) .category-header h3').last()).toContainText('Other');
   });
 
   test('an item taken out of its bag can be put in a bag again', async ({ page }) => {

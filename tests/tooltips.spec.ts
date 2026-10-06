@@ -51,5 +51,12 @@ test.describe('Hover tooltips', () => {
     // side by side
     expect(fresh!.x).toBeGreaterThan(mine!.x + mine!.width - 2);
   });
+
+  test('tooltips show the keyboard shortcut', async ({ page }) => {
+    await page.locator('.list-item').first().locator('.btn-remove').hover();
+    const tip = page.locator('.hover-tip');
+    await expect(tip).toContainText('Delete item');
+    await expect(tip.locator('.hover-tip-kbd')).toHaveText('Del');
+  });
 });
 

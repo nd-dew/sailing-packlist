@@ -8,6 +8,14 @@ This app uses a highly flexible, data-driven preset system. This means non-devel
 
 All default lists and templates are defined in easy-to-read YAML files located in `src/presets/`.
 
+### Easiest: build it in the app
+1. In the app, tap the trip title at the top and start a trip (from a preset or an **Empty list**).
+2. Edit the list until it's right: add, remove and drag items, set bags, add notes and sub-items.
+3. Open the trip title menu again and tap **⬇ Export**. You get a `.yaml` file in the preset format.
+4. Put that file in `src/presets/` (rename it and its `id` if you like) and open a pull request.
+
+### By hand
+
 ### Step 1: Create a YAML File
 Create a new file in `src/presets/` named after your cruise, for example: `north_sea_26.yaml`.
 
@@ -15,8 +23,12 @@ Create a new file in `src/presets/` named after your cruise, for example: `north
 Use the following format (you can copy the structure from `med_blueward_26.yaml` to get started):
 
 ```yaml
-id: "north_sea_26"
+id: "north_sea_26"            # must match the file name
 name: "North Sea Explorer '26"
+description: "Week-long crossing, early June."  # shown under the title
+showers: 7                    # expected showers: drives the underwear / socks / t-shirt counts
+# hideShowers: true           # hide the showers setting (e.g. day sails)
+# disableRoles: true          # one list for everyone, no crew / captain choice
 
 warnings:
   - id: "warn_1"
@@ -51,21 +63,10 @@ categories:
 *   `qty`: (Optional) Default number.
 *   `captainOnly`: (Optional) Set to `true` to restrict this item to the Captain preset.
 *   `defaultBag`: (Optional) The `id` of the luggage this item should automatically be assigned to.
+*   `subItems`: (Optional) A list of `{ id, name }` items packed as part of this one (e.g. the chargers in "Charging & Cables").
 
-### Step 3: Register the Preset
-Once your YAML file is ready, open `src/App.tsx` and add your preset to the `PRESETS` registry near the top of the file:
-
-```typescript
-import northSeaRaw from './presets/north_sea_26.yaml?raw';
-
-// ...
-const PRESETS: Record<string, any> = {
-  'med_blueward_26': parse(medBlueward26Raw),
-  'north_sea_26': parse(northSeaRaw) // <--- Add it here!
-};
-```
-
-Your preset will now automatically appear in the Settings dropdown menu!
+### Step 3: That's it
+Presets are picked up automatically from `src/presets/`, nothing needs registering. Yours appears in the trip menu under **New trip**, and has its own link: `/sailing-packlist/north_sea_26`.
 
 ## Development
 If you are contributing code (React/TypeScript):

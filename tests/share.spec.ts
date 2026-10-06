@@ -1,105 +1,129 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
-test.describe('Serverless URL Sharing Feature', () => {
-  test('loading a shared list from URL hash', async ({ page }) => {
-    // Share link containing renamed luggage ('My Belt'), active categories, item assignments, and custom item ('Shared Drone')
-    const shareHash = 'eJy9kc1qwzAQhF8lTK97iBNSGh1tk1tPPQZjZGmdmOjHyFZKCX73IkOj9gXKnnaG_ZhhH7hDFIQRApZ125nInzLodvcKgomXCeL8wKAh0tbuQXDSMgTevzYlmxmEQXkHAe_akcPkHQjKGx8g8FIW27o6YqFfkF2GlFLdRqlumdJl5Qk5nd4ORfkXUmRIHfueTUZo7mVckz0J-2NVVRWWhqDknEqh98HKdDX7eLmCoANPE2sQgrfSzYNKJqvk2VXvo0NDMBDnLf3TpMTrD1Kzj6sMrDd18I6xVoH4idhBFEuzfAN34X_b';
-    
-    await page.goto(`/#s=${shareHash}`);
+// Start clean once per test; later navigations inside a test keep the saved trips
+const freshStart = async (page: Page) => {
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem('cleared')) {
+      localStorage.clear();
+      sessionStorage.setItem('cleared', '1');
+    }
+  });
+};
 
-    // Verify custom share confirm overlay is visible
-    await expect(page.locator('.share-confirm-overlay')).toBeVisible();
+const tripNames = async (page: Page) => {
+  await page.locator('.trip-title').click();
+  const names = await page.locator('.trip-option .trip-menu-name').allInnerTexts();
+  await page.keyboard.press('Escape');
+  return names;
+};
 
-    // Click "Yes, Load" on our beautiful React modal
-    await page.locator('button:has-text("Yes, Load")').click();
+const SHARE_HASH = 'eJy9kc1qwzAQhF8lTK97iBNSGh1tk1tPPQZjZGmdmOjHyFZKCX73IkOj9gXKnnaG_ZhhH7hDFIQRApZ125nInzLodvcKgomXCeL8wKAh0tbuQXDSMgTevzYlmxmEQXkHAe_akcPkHQjKGx8g8FIW27o6YqFfkF2GlFLdRqlumdJl5Qk5nd4ORfkXUmRIHfueTUZo7mVckz0J-2NVVRWWhqDknEqh98HKdDX7eLmCoANPE2sQgrfSzYNKJqvk2VXvo0NDMBDnLf3TpMTrD1Kzj6sMrDd18I6xVoH4idhBFEuzfAN34X_b';
 
-    // Verify URL Hash has been safely cleaned up from the browser address bar
+test.describe('Links: shared lists and presets', () => {
+  test.beforeEach(async ({ page }) => freshStart(page));
+
+  test('a shared link opens as a new trip, without overwriting the current one', async ({ page }) => {
+    await page.goto('');
+    const before = await tripNames(page);
+
+    await page.goto(`#s=${SHARE_HASH}`);
+    await page.reload();
+    await expect(page.locator('.confirm-toast')).toContainText('Opened the shared list');
     await expect(page).not.toHaveURL(/#s=/);
 
-    // Open baggage side panel
-    await page.locator('button[title="Baggage"]').first().click();
-    await expect(page.locator('.side-menu.open')).toBeVisible();
-
-    // Verify first luggage card has been renamed to 'My Belt'
+    // The shared content is there
+    await expect(page.locator('.item-row:has-text("Shared Drone")')).toBeVisible();
+    await page.locator('button[aria-label="Baggage"]').first().click();
     await expect(page.locator('.luggage-card-header').first()).toContainText('My Belt');
-
-    // Close baggage menu
     await page.locator('.right-menu .btn-close-menu').click();
 
-    // Verify that the custom item 'Shared Drone' is present on the page
-    const customItem = page.locator('.item-row:has-text("Shared Drone")');
-    await expect(customItem).toBeVisible();
+    // ...as an extra trip next to the one we had
+    const after = await tripNames(page);
+    expect(after.length).toBe(before.length + 1);
+
+    // Opening the same link again goes back to that trip instead of adding another
+    await page.goto(`#s=${SHARE_HASH}`);
+    await page.reload();
+    await expect(page.locator('.item-row:has-text("Shared Drone")')).toBeVisible();
+    expect((await tripNames(page)).length).toBe(after.length);
   });
 
-  test('clicking share setup button copies URL to clipboard and triggers alert', async ({ page, context }) => {
-    await page.goto('/');
-
-    // Grant clipboard-write permissions to browser context
+  test('sharing a trip copies a link that recreates it', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-write', 'clipboard-read']);
+    await page.goto('');
 
-    // Open settings menu
-    await page.locator('button', { hasText: '☰' }).first().click();
-    await expect(page.locator('.side-menu.open')).toBeVisible();
+    // Make the trip recognisable: add an item
+    await page.locator('.category-block').first().locator('.btn-add-item-header').click();
+    await page.locator('.list-item.is-expanded .item-name-input').fill('Lucky hat');
+    await page.keyboard.press('Enter');
 
-    // Wait for slide-in transition to completely stabilize
-    await page.waitForTimeout(1000);
+    await page.locator('.trip-title').click();
+    await page.locator('.trip-action', { hasText: 'Share' }).click();
+    await expect(page.locator('.confirm-toast')).toContainText('copied');
+    const link = await page.evaluate(() => navigator.clipboard.readText());
+    expect(link).toContain('/sailing-packlist/#s=');
 
-    // Setup dialog promise listener
-    const dialogPromise = page.waitForEvent('dialog');
-
-    // Tap share button with force to bypass transition intercept issues
-    await page.locator('button:has-text("Share Current Setup Link")').click({ force: true });
-
-    // Wait for the async alert to fire and dismiss it
-    const dialog = await dialogPromise;
-    expect(dialog.message()).toContain('copied to clipboard');
-    await dialog.dismiss();
-
-    // Verify clipboard contains the share URL
-    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clipboardText).toContain('#s=');
+    // A friend opening the link gets the same list, named after the trip
+    const friend = await context.newPage();
+    await friend.goto(link);
+    await expect(friend.locator('.item-row:has-text("Lucky hat")')).toBeVisible();
+    await expect(friend.locator('.trip-title')).toContainText('Zeeland Fox 22');
   });
 
-  test('copying and loading preset direct URLs', async ({ page, context }) => {
-    await page.goto('/');
+  test('address bar and tab title follow the open trip', async ({ page }) => {
+    await page.goto('');
+    await expect(page).toHaveURL(/\/sailing-packlist\/zeeland_fox_22$/);
+    await expect(page).toHaveTitle(/Zeeland Fox 22/);
+    await expect(page.locator('.trip-title')).toContainText('Zeeland Fox 22');
+  });
 
-    // Grant clipboard permissions
-    await context.grantPermissions(['clipboard-write', 'clipboard-read']);
+  test('a preset link starts a trip from it, and later opens that same trip', async ({ page }) => {
+    await page.goto('');
+    // Some progress on the current trip
+    await page.locator('.list-item input[type="checkbox"]').first().check();
 
-    // Open settings menu
-    await page.locator('button', { hasText: '☰' }).first().click();
-    await expect(page.locator('.side-menu.open')).toBeVisible();
+    await page.goto('cyprus_october');
+    await expect(page.locator('.trip-title')).toContainText('Cyprus, October, 5 Nights');
+    await expect(page).toHaveURL(/\/cyprus_october$/);
+    await expect(page.locator('#stat-green')).toHaveText('0');
+    await page.locator('.list-item input[type="checkbox"]').nth(1).check();
 
-    // Wait for slide-in transition to stabilize
-    await page.waitForTimeout(1000);
+    // The previous trip kept its progress
+    await page.locator('.trip-title').click();
+    await page.locator('.trip-option', { hasText: 'Zeeland Fox 22' }).click();
+    await expect(page.locator('#stat-green')).toHaveText('1');
 
-    // Click the Copy Link inline button
-    await page.locator('button:has-text("Copy Link")').click({ force: true });
+    // Opening the Cyprus link again goes back to the Cyprus trip, no duplicate
+    await page.goto('cyprus_october');
+    await expect(page.locator('.trip-title')).toContainText('Cyprus');
+    await expect(page.locator('#stat-green')).toHaveText('1');
+    expect((await tripNames(page)).length).toBe(2);
 
-    // Verify non-blocking custom confirmation toast appears
-    await expect(page.locator('.confirm-toast')).toBeVisible();
-    await expect(page.locator('.confirm-toast')).toContainText('copied to clipboard');
-
-    // Verify clipboard contains #p=zeeland_fox_22
-    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clipboardText).toContain('#p=zeeland_fox_22');
-
-    // Directly load the Zeeland preset URL hash
-    await page.goto('/#p=zeeland_fox_22');
-
-    // Verify Preset Detected overlay is visible
-    const presetOverlay = page.locator('.share-confirm-overlay');
-    await expect(presetOverlay).toBeVisible();
-    await expect(presetOverlay.locator('h3')).toHaveText('Preset Detected');
-
-    // Click "Load Preset"
-    await page.locator('button:has-text("Load Preset")').click();
-
-    // Verify overlay is closed and hash cleared
-    await expect(presetOverlay).toBeHidden();
+    // Old #p= links behave the same
+    await page.goto('#p=zeeland_fox_22');
+    await page.reload();
+    await expect(page.locator('.trip-title')).toContainText('Zeeland Fox 22');
     await expect(page).not.toHaveURL(/#p=/);
+  });
 
-    // Verify items of Zeeland Fox 22 are loaded
-    await expect(page.locator('body')).toContainText('Windproof jacket');
+  test('a link to a preset with crew/captain lists asks which one', async ({ page }) => {
+    await page.goto('med_blueward_26');
+    const card = page.locator('.role-card');
+    await expect(card).toContainText('Mediterranean - BlueWard 26');
+
+    // "Not now" keeps the current trip
+    await card.locator('.btn-role-skip').click();
+    await expect(card).toBeHidden();
+    await expect(page).toHaveURL(/\/zeeland_fox_22$/);
+
+    await page.goto('med_blueward_26');
+    await card.locator('button', { hasText: 'Captain' }).click();
+    await expect(page.locator('.trip-title')).toContainText('BlueWard 26 (captain)');
+    await expect(page).toHaveURL(/\/med_blueward_26$/);
+
+    // Reloading the page stays on that trip without asking again
+    await page.reload();
+    await expect(page.locator('.list-item').first()).toBeVisible();
+    await expect(card).toBeHidden();
   });
 });

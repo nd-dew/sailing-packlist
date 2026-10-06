@@ -5,12 +5,11 @@ test.describe('Mobile Item Swiping', () => {
     await page.goto('/');
   });
 
-  test('swiping right packs and hides the item', async ({ page }) => {
+  test('swiping right toggles packed', async ({ page }) => {
     // Wait for items to render
     const firstItemRow = page.locator('.list-item').first();
     await expect(firstItemRow).toBeVisible();
 
-    const itemName = await firstItemRow.locator('.item-name').innerText();
     const packedCounter = page.locator('#stat-green');
     
     // Initial packed count should be 0 (default preset)
@@ -24,24 +23,29 @@ test.describe('Mobile Item Swiping', () => {
     const startY = box.y + box.height / 2;
     const endX = startX + 200;
 
-    await firstItemRow.dispatchEvent('touchstart', { 
-      touches: [{ identifier: 1, clientX: startX, clientY: startY }],
-      targetTouches: [{ identifier: 1, clientX: startX, clientY: startY }] 
-    });
-    await firstItemRow.dispatchEvent('touchmove', { 
-      touches: [{ identifier: 1, clientX: endX, clientY: startY }],
-      targetTouches: [{ identifier: 1, clientX: endX, clientY: startY }] 
-    });
-    await firstItemRow.dispatchEvent('touchend', { 
-      changedTouches: [{ identifier: 1, clientX: endX, clientY: startY }] 
-    });
+    const swipeRight = async () => {
+      await firstItemRow.dispatchEvent('touchstart', { 
+        touches: [{ identifier: 1, clientX: startX, clientY: startY }],
+        targetTouches: [{ identifier: 1, clientX: startX, clientY: startY }] 
+      });
+      await firstItemRow.dispatchEvent('touchmove', { 
+        touches: [{ identifier: 1, clientX: endX, clientY: startY }],
+        targetTouches: [{ identifier: 1, clientX: endX, clientY: startY }] 
+      });
+      await firstItemRow.dispatchEvent('touchend', { 
+        changedTouches: [{ identifier: 1, clientX: endX, clientY: startY }] 
+      });
+    };
 
-    // Verify item is hidden from main view (it should have grayed-out class if hidden section is expanded, but by default it's unmounted from main list)
-    // Actually, by default, the hidden items are hidden behind the category's "X hidden" badge, so the specific .item-row we swiped should disappear from the main list.
-    await expect(firstItemRow.locator('.item-name')).not.toHaveText(itemName);
-
-    // Verify counter increased
+    // Swipe right packs the item, and it stays in the list
+    await swipeRight();
+    await expect(firstItemRow).toHaveClass(/checked/);
     await expect(packedCounter).toHaveText('1');
+
+    // Swiping right again unpacks it
+    await swipeRight();
+    await expect(firstItemRow).not.toHaveClass(/checked/);
+    await expect(packedCounter).toHaveText('0');
   });
 
   test('swiping left cycles luggage', async ({ page }) => {

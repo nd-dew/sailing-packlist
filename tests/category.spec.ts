@@ -21,13 +21,13 @@ test.describe('Category Modal', () => {
     await expect(modalInput).toHaveValue(catTitle);
   });
 
-  test('bulk pack & hide action works', async ({ page }) => {
+  test('bulk pack action works and folds the category away', async ({ page }) => {
     const firstCatHeader = page.locator('.category-header h3').first();
     await firstCatHeader.click();
 
-    const packHideBtn = page.locator('button:has-text("Pack & Hide All Items")');
-    await expect(packHideBtn).toBeVisible();
-    await packHideBtn.click();
+    const packBtn = page.getByRole('button', { name: '✓ Pack All Items' });
+    await expect(packBtn).toBeVisible();
+    await packBtn.click();
 
     // The modal should close
     await expect(page.locator('.item-card-modal')).toBeHidden();
@@ -36,10 +36,8 @@ test.describe('Category Modal', () => {
     const headerContainer = page.locator('.category-header').first();
     await expect(headerContainer).toHaveClass(/done/);
     
-    // The items inside should be hidden, replacing the list with the 'X hidden' badge
-    const hiddenBadge = page.locator('.badge-hidden').first();
-    await expect(hiddenBadge).toBeVisible();
-    await expect(hiddenBadge).toContainText('hidden');
+    // A fully packed category collapses on its own
+    await expect(page.locator('.category-block').first()).toHaveClass(/is-collapsed/);
   });
 
   test('renaming category updates UI immediately', async ({ page }) => {

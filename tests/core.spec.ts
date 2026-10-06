@@ -43,55 +43,112 @@ test.describe('Core App Functionality', () => {
     await expect(packedCounter).toHaveText('0');
   });
 
-  test('hiding an item moves it to the hidden section', async ({ page }) => {
+  test('deleting an item needs a second tap and can be undone', async ({ page }) => {
     const firstItem = page.locator('.list-item').first();
     const itemName = await firstItem.locator('.item-name').innerText();
-    const hideBtn = firstItem.locator('.btn-hide');
+    const itemByName = page.locator('.list-item .item-name', { hasText: itemName });
+    const removeBtn = firstItem.locator('.btn-remove');
 
-    // Hide the item
-    await hideBtn.click();
+    // First tap only asks for confirmation
+    await removeBtn.click();
+    await expect(page.locator('.confirm-toast')).toContainText('Tap again to delete');
+    await expect(itemByName).toBeVisible();
 
-    // Verify it's no longer in the main active list
-    // Since we just clicked the first item of the first category, we check that specific row is gone
-    await expect(page.locator('.list-item:not(.grayed-out) .item-name', { hasText: itemName })).toBeHidden();
+    // Second tap deletes it
+    await removeBtn.click();
+    await expect(itemByName).toHaveCount(0);
 
-    // Find the category's hidden badge and click it to reveal
-    const hiddenBadge = page.locator('.badge-hidden').first();
-    await expect(hiddenBadge).toBeVisible();
-    await expect(hiddenBadge).toContainText('1 hidden');
-    await hiddenBadge.click();
-
-    // Verify it appears in the grayed-out section
-    const hiddenItemRow = page.locator('.list-item.grayed-out .item-name', { hasText: itemName });
-    await expect(hiddenItemRow).toBeVisible();
-
-    // Unhide it
-    await page.locator('.list-item.grayed-out .btn-unhide').first().click();
-    await expect(hiddenBadge).toBeHidden();
+    // Undo brings it back
+    await page.locator('.header-undo-btn[aria-label="Undo"]').click();
+    await expect(itemByName).toBeVisible();
   });
 
-  test('opening and closing item modal works', async ({ page }) => {
-    const firstItemClickable = page.locator('.list-item .item-clickable-area').first();
-    const itemName = await firstItemClickable.locator('.item-name').innerText();
-    
-    // Open modal
-    await firstItemClickable.click();
+  test('categories can be collapsed and expanded', async ({ page }) => {
+    const firstCat = page.locator('.category-block').first();
+    const collapseBtn = firstCat.locator('.btn-collapse-cat');
 
-    const modal = page.locator('.item-card-modal');
-    await expect(modal).toBeVisible();
+    await expect(collapseBtn).toHaveAttribute('aria-expanded', 'true');
+    await collapseBtn.click();
+    await expect(firstCat).toHaveClass(/is-collapsed/);
+    await expect(collapseBtn).toHaveAttribute('aria-expanded', 'false');
 
-    // Verify modal title matches
-    const modalInput = modal.locator('.modal-title-input');
-    await expect(modalInput).toHaveValue(itemName);
+    await collapseBtn.click();
+    await expect(firstCat).not.toHaveClass(/is-collapsed/);
+  });
 
-    // Close modal
-    await page.locator('.btn-close-modal').first().click();
-    await expect(modal).toBeHidden();
+  test('tapping an item opens it in place to edit its note, tapping outside closes it', async ({ page }) => {
+    const firstItem = page.locator('.list-item').first();
+    const itemName = await firstItem.locator('.item-name').innerText();
+
+    await firstItem.locator('.item-clickable-area').click();
+    await expect(firstItem).toHaveClass(/is-expanded/);
+    await expect(firstItem.locator('.item-name-input')).toHaveValue(itemName);
+    // Opening must not pop the keyboard: nothing is focused yet
+    await expect(firstItem.locator('.item-name-input')).not.toBeFocused();
+
+    const note = firstItem.locator('.item-note-input');
+    await note.fill('Pack the blue one');
+
+    // Tap outside the item closes it, and the note hint shows on the closed row
+    await page.locator('.app-header').click({ position: { x: 5, y: 5 } });
+    await expect(firstItem).not.toHaveClass(/is-expanded/);
+    await expect(firstItem.locator('.item-note-hint')).toBeVisible();
+
+    // Reopen: the note is still there
+    await firstItem.locator('.item-clickable-area').click();
+    await expect(firstItem.locator('.item-note-input')).toHaveValue('Pack the blue one');
+    await firstItem.locator('.item-name-input').press('Escape');
+    await expect(firstItem).not.toHaveClass(/is-expanded/);
+  });
+
+  test('sub-items can be added, packed and show a partly packed parent', async ({ page }) => {
+    const firstItem = page.locator('.list-item').first();
+    await firstItem.locator('.item-clickable-area').click();
+
+    const addInput = firstItem.locator('.add-sub-item input');
+    await addInput.fill('Charger');
+    await addInput.press('Enter');
+    await addInput.fill('Cable');
+    await addInput.press('Enter');
+    // Focus stays in the add field for quick entry
+    await expect(addInput).toBeFocused();
+
+    const subs = firstItem.locator('.sub-item:not(.add-sub-item)');
+    await expect(subs).toHaveCount(2);
+    await subs.nth(0).locator('input[type="checkbox"]').check();
+
+    await expect(firstItem.locator('.sub-item-stats')).toHaveText('1/2');
+    const parentCheckbox = firstItem.locator('.item-row input[type="checkbox"]');
+    expect(await parentCheckbox.evaluate((el: HTMLInputElement) => el.indeterminate)).toBe(true);
+
+    // The counter now counts sub-items, not the parent
+    await subs.nth(1).locator('input[type="checkbox"]').check();
+    await expect(parentCheckbox).toBeChecked();
+    await expect(page.locator('#stat-green')).toHaveText('2');
+  });
+
+  test('a new item opens in place with its name focused, and is dropped if left empty', async ({ page }) => {
+    const firstCat = page.locator('.category-block').first();
+    const rowsBefore = await firstCat.locator('.list-item').count();
+
+    await firstCat.locator('.btn-add-item-header').click();
+    const nameInput = firstCat.locator('.list-item.is-expanded .item-name-input');
+    await expect(nameInput).toBeFocused();
+
+    // Leaving it empty and closing removes it again
+    await nameInput.press('Escape');
+    await expect(firstCat.locator('.list-item')).toHaveCount(rowsBefore);
+
+    // Named items stay
+    await firstCat.locator('.btn-add-item-header').click();
+    await firstCat.locator('.list-item.is-expanded .item-name-input').fill('Spare sunglasses');
+    await page.keyboard.press('Enter');
+    await expect(firstCat.locator('.list-item .item-name', { hasText: 'Spare sunglasses' })).toBeVisible();
   });
 
   test('undo and redo buttons revert and re-apply actions', async ({ page }) => {
-    const undoBtn = page.locator('button[title="Undo"]');
-    const redoBtn = page.locator('button[title="Redo"]');
+    const undoBtn = page.locator('button[aria-label="Undo"]');
+    const redoBtn = page.locator('button[aria-label="Redo"]');
     const checkbox = page.locator('.list-item input[type="checkbox"]').first();
 
     // Initially undo/redo should be disabled
@@ -115,4 +172,72 @@ test.describe('Core App Functionality', () => {
     await expect(undoBtn).toBeEnabled();
     await expect(redoBtn).toBeDisabled();
   });
+
+  test('dragging an item reorders it and can be undone', async ({ page }) => {
+    const firstCat = page.locator('.category-block').first();
+    const names = firstCat.locator('.list-item .item-name');
+    const first = await names.nth(0).innerText();
+    const second = await names.nth(1).innerText();
+
+    // Drag the second row above the first one
+    const from = await firstCat.locator('.list-item').nth(1).boundingBox();
+    const to = await firstCat.locator('.list-item').nth(0).boundingBox();
+    if (!from || !to) throw new Error('Rows not found');
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2 - 10, { steps: 5 });
+    await page.mouse.move(to.x + to.width / 2, to.y + 5, { steps: 10 });
+    await page.mouse.up();
+
+    await expect(names.nth(0)).toHaveText(second);
+    await expect(names.nth(1)).toHaveText(first);
+
+    // Dropping must not open the item
+    await expect(page.locator('.list-item.is-expanded')).toHaveCount(0);
+
+    await page.locator('.header-undo-btn[aria-label="Undo"]').click();
+    await expect(names.nth(0)).toHaveText(first);
+  });
+
+  test('compact density can be switched on in settings', async ({ page }) => {
+    await page.locator('button', { hasText: '☰' }).first().click();
+    await page.locator('.segmented button', { hasText: 'Compact' }).click();
+    await expect(page.locator('.app-container')).toHaveClass(/density-compact/);
+  });
+
+  test('dragging a category header moves the whole category, and can be undone', async ({ page }) => {
+    const titles = page.locator('.category-header h3');
+    // textContent, not innerText: headers are uppercased by CSS
+    const first = (await titles.nth(0).textContent())!;
+    const second = (await titles.nth(1).textContent())!;
+
+    // Fold the (long) first category so both headers fit on the phone screen
+    await page.locator('.category-block').nth(0).locator('.btn-collapse-cat').click();
+    await expect(page.locator('.category-block').nth(0)).toHaveClass(/is-collapsed/);
+    await page.waitForTimeout(400); // let the fold animation finish before measuring header positions
+
+    // Grab the second header (away from its buttons) and drop it on the top half of the first one
+    const from = await page.locator('.category-header').nth(1).boundingBox();
+    const to = await page.locator('.category-header').nth(0).boundingBox();
+    if (!from || !to) throw new Error('Headers not found');
+    await page.mouse.move(from.x + from.width * 0.6, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(from.x + from.width * 0.6, from.y + from.height / 2 - 10, { steps: 4 });
+    // all categories fold to their headers while dragging
+    await expect(page.locator('.checklist-grid')).toHaveClass(/is-reordering-categories/);
+    const target = await page.locator('.category-header').nth(0).boundingBox();
+    await page.mouse.move(target!.x + target!.width * 0.6, target!.y + 4, { steps: 12 });
+    await expect(page.locator('.category-block.drop-before')).toHaveCount(1);
+    await page.mouse.up();
+
+    await expect(titles.nth(0)).toHaveText(second);
+    await expect(titles.nth(1)).toHaveText(first);
+    // Dropping didn't open the category editor or fold the category
+    await expect(page.locator('.item-card-modal')).toBeHidden();
+    await expect(page.locator('.category-block').nth(0)).not.toHaveClass(/is-collapsed/);
+
+    await page.locator('.header-undo-btn[aria-label="Undo"]').click();
+    await expect(titles.nth(0)).toHaveText(first);
+  });
 });
+

@@ -24,17 +24,13 @@ test.describe('Settings Menu & Luggage Modals', () => {
   });
 
   test('can increment and decrement expected showers', async ({ page }) => {
+    // Start a trip from a preset that has showers enabled (med_blueward_26)
+    await page.locator('.trip-title').click();
+    await page.locator('.preset-option', { hasText: 'BlueWard 26' }).locator('.role-pill', { hasText: 'Crew' }).click();
+
     await page.locator('button', { hasText: '☰' }).first().click();
     await expect(page.locator('.side-menu.open')).toBeVisible();
 
-    // Select a preset that has showers enabled (med_blueward_26)
-    await page.locator('.modal-select').selectOption('med_blueward_26');
-    await page.locator('button:has-text("Load as Crew")').click();
-
-    // Re-open settings
-    await page.locator('button', { hasText: '☰' }).first().click();
-    await expect(page.locator('.side-menu.open')).toBeVisible();
-    
     const stepperInput = page.locator('.stepper-input');
     await expect(stepperInput).toBeVisible();
     
@@ -51,7 +47,7 @@ test.describe('Settings Menu & Luggage Modals', () => {
 
   test('opening and editing a bag modal', async ({ page }) => {
     // Open Baggage Menu
-    await page.locator('button[title="Baggage"]').first().click();
+    await page.locator('button[aria-label="Baggage"]').first().click();
     await expect(page.locator('.side-menu.open')).toBeVisible();
 
     // Click edit on the first bag (On Person)
@@ -71,63 +67,5 @@ test.describe('Settings Menu & Luggage Modals', () => {
 
     // Verify name changed in baggage menu
     await expect(page.locator('.luggage-card-header').first()).toContainText('My Pockets');
-  });
-
-  test('selecting a preset triggers custom reset warning modal', async ({ page }) => {
-    // Open settings
-    await page.locator('button', { hasText: '☰' }).first().click();
-    await expect(page.locator('.side-menu.open')).toBeVisible();
-
-    // Select different preset from dropdown to trigger modal
-    await page.locator('.modal-select').selectOption('med_blueward_26');
-
-    // Verify beautiful warning modal is visible
-    const warningModal = page.locator('.share-confirm-card.warning-card');
-    await expect(warningModal).toBeVisible();
-    await expect(warningModal.locator('h3')).toHaveText('Load Preset?');
-
-    // Click Cancel
-    await warningModal.locator('button:has-text("Cancel")').click();
-    await expect(warningModal).toBeHidden();
-
-    // Re-trigger and Confirm reset
-    await page.locator('.modal-select').selectOption('med_blueward_26');
-    await expect(warningModal).toBeVisible();
-    await warningModal.locator('button:has-text("Load as Crew")').click();
-
-    // Verify warning modal is closed and settings side panel is closed
-    await expect(warningModal).toBeHidden();
-    await expect(page.locator('.side-menu.open')).toBeHidden();
-  });
-
-  test('can select and apply the Zeeland Fox 22 preset', async ({ page }) => {
-    // Open settings
-    await page.locator('button', { hasText: '☰' }).first().click();
-    await expect(page.locator('.side-menu.open')).toBeVisible();
-
-    // Force load the med_blueward_26 first to have a clean state transition
-    await page.locator('.modal-select').selectOption('med_blueward_26');
-    await page.locator('button:has-text("Load as Crew")').click();
-
-    // Re-open settings
-    await page.locator('button', { hasText: '☰' }).first().click();
-    await expect(page.locator('.side-menu.open')).toBeVisible();
-
-    // Select the new preset
-    await page.locator('.modal-select').selectOption('zeeland_fox_22');
-
-    // Verify description updates in textarea
-    await expect(page.locator('.preset-description-textarea')).toHaveValue(/Packing list for a summer day sail in Zeeland/);
-
-    // Apply via modal
-    const warningModal = page.locator('.share-confirm-card.warning-card');
-    await expect(warningModal).toBeVisible();
-    await warningModal.locator('button:has-text("Load Preset")').click();
-
-    // Verify settings side panel is closed
-    await expect(page.locator('.side-menu.open')).toBeHidden();
-
-    // Verify item from the new preset is visible on main list
-    await expect(page.locator('body')).toContainText('Windproof jacket');
   });
 });

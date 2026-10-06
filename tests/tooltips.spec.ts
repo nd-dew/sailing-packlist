@@ -32,4 +32,24 @@ test.describe('Hover tooltips', () => {
     await page.locator('.list-item .luggage-badge').first().hover();
     await expect(page.locator('.hover-tip')).toContainText(/^Bag: .+ · click: put in /);
   });
+
+  test('the note hint shows the note itself', async ({ page }) => {
+    const row = page.locator('.list-item').first();
+    await row.locator('.item-clickable-area').click();
+    await row.locator('.item-note-input').fill('Blue one, in the side pocket');
+    await page.locator('.app-header').click({ position: { x: 5, y: 5 } });
+    await row.locator('.item-note-hint').hover();
+    await expect(page.locator('.hover-tip')).toHaveText('Blue one, in the side pocket');
+  });
+
+  test('the packlists menu uses the width of a desktop screen', async ({ page }) => {
+    await page.locator('.trip-title').click();
+    const menu = await page.locator('.trip-menu').boundingBox();
+    expect(menu!.width).toBeGreaterThan(600);
+    const mine = await page.locator('.trip-menu-section').first().boundingBox();
+    const fresh = await page.locator('.trip-menu-new').boundingBox();
+    // side by side
+    expect(fresh!.x).toBeGreaterThan(mine!.x + mine!.width - 2);
+  });
 });
+

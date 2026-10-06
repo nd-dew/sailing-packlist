@@ -43,7 +43,7 @@ test.describe('Trips', () => {
 
   test('an empty trip asks for a name first and starts with no categories', async ({ page }) => {
     await openTripMenu(page);
-    await page.locator('.trip-menu-option', { hasText: 'Empty list' }).click();
+    await page.locator('.trip-menu-option', { hasText: 'Empty packlist' }).click();
 
     const nameInput = page.locator('.trip-title-input');
     await expect(nameInput).toBeFocused();

@@ -127,23 +127,51 @@ test.describe('Core App Functionality', () => {
     await expect(page.locator('#stat-green')).toHaveText('2');
   });
 
-  test('a new item opens in place with its name focused, and is dropped if left empty', async ({ page }) => {
+  test('items are added from the line at the bottom of a category, one after another', async ({ page }) => {
     const firstCat = page.locator('.category-block').first();
     const rowsBefore = await firstCat.locator('.list-item').count();
+    const add = firstCat.locator('.add-item-input');
 
-    await firstCat.locator('.btn-add-item-header').click();
-    const nameInput = firstCat.locator('.list-item.is-expanded .item-name-input');
-    await expect(nameInput).toBeFocused();
+    await add.fill('Spare sunglasses');
+    await add.press('Enter');
+    await add.fill('Lip balm');
+    await add.press('Enter');
+    // the cursor stays in the field for the next one
+    await expect(add).toBeFocused();
 
-    // Leaving it empty and closing removes it again
-    await nameInput.press('Escape');
-    await expect(firstCat.locator('.list-item')).toHaveCount(rowsBefore);
+    await expect(firstCat.locator('.list-item')).toHaveCount(rowsBefore + 2);
+    await expect(firstCat.locator('.list-item .item-name').last()).toHaveText('Lip balm');
+  });
 
-    // Named items stay
-    await firstCat.locator('.btn-add-item-header').click();
-    await firstCat.locator('.list-item.is-expanded .item-name-input').fill('Spare sunglasses');
-    await page.keyboard.press('Enter');
-    await expect(firstCat.locator('.list-item .item-name', { hasText: 'Spare sunglasses' })).toBeVisible();
+  test('an item can be added without a category', async ({ page }) => {
+    const quick = page.locator('[data-quick-add]');
+    await quick.fill('Passport photo');
+    await quick.press('Enter');
+
+    const other = page.locator('.category-block', { has: page.locator('h3', { hasText: 'Other' }) });
+    await expect(other.locator('.list-item .item-name')).toHaveText(['Passport photo']);
+    // "Other" is created at the top, next to where you typed
+    await expect(page.locator('.category-header h3').first()).toContainText('Other');
+  });
+
+  test('an item taken out of its bag can be put in a bag again', async ({ page }) => {
+    const chip = page.locator('.list-item').first().locator('.luggage-badge');
+    // cycle until it says "No bag"
+    for (let i = 0; i < 5 && !/^No bag/.test((await chip.getAttribute('title')) ?? ''); i++) await chip.click();
+    await expect(chip).toHaveClass(/is-empty/);
+    await expect(chip).toBeVisible();
+
+    await chip.click();
+    await expect(chip).not.toHaveClass(/is-empty/);
+    await expect(chip).toHaveAttribute('title', /^Bag: /);
+  });
+
+  test('an opened item has a close button', async ({ page }) => {
+    const firstItem = page.locator('.list-item').first();
+    await firstItem.locator('.item-clickable-area').click();
+    await expect(firstItem).toHaveClass(/is-expanded/);
+    await firstItem.locator('.btn-close-item').click();
+    await expect(firstItem).not.toHaveClass(/is-expanded/);
   });
 
   test('undo and redo buttons revert and re-apply actions', async ({ page }) => {
@@ -227,7 +255,8 @@ test.describe('Core App Functionality', () => {
     await expect(page.locator('.checklist-grid')).toHaveClass(/is-reordering-categories/);
     const target = await page.locator('.category-header').nth(0).boundingBox();
     await page.mouse.move(target!.x + target!.width * 0.6, target!.y + 4, { steps: 12 });
-    await expect(page.locator('.category-block.drop-before')).toHaveCount(1);
+    // a gap marks where it will land
+    await expect(page.locator('.category-block.is-drag-source')).toHaveCount(1);
     await page.mouse.up();
 
     await expect(titles.nth(0)).toHaveText(second);

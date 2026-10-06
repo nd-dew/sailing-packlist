@@ -28,7 +28,7 @@ test.describe('Links: shared lists and presets', () => {
 
     await page.goto(`#s=${SHARE_HASH}`);
     await page.reload();
-    await expect(page.locator('.confirm-toast')).toContainText('Opened the shared list');
+    await expect(page.locator('.confirm-toast')).toContainText('Opened the shared packlist');
     await expect(page).not.toHaveURL(/#s=/);
 
     // The shared content is there
@@ -53,9 +53,9 @@ test.describe('Links: shared lists and presets', () => {
     await page.goto('');
 
     // Make the trip recognisable: add an item
-    await page.locator('.category-block').first().locator('.btn-add-item-header').click();
-    await page.locator('.list-item.is-expanded .item-name-input').fill('Lucky hat');
-    await page.keyboard.press('Enter');
+    const add = page.locator('.category-block').first().locator('.add-item-input');
+    await add.fill('Lucky hat');
+    await add.press('Enter');
 
     await page.locator('.trip-title').click();
     await page.locator('.trip-action', { hasText: 'Share' }).click();

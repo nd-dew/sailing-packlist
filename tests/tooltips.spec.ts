@@ -58,5 +58,22 @@ test.describe('Hover tooltips', () => {
     await expect(tip).toContainText('Delete item');
     await expect(tip.locator('.hover-tip-kbd')).toHaveText('Del');
   });
+
+  test('the packlists menu never scrolls sideways', async ({ page }) => {
+    await page.locator('.trip-title').click();
+    const menu = page.locator('.trip-menu');
+    const { scrollWidth, clientWidth } = await menu.evaluate(el => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+  });
+
+  test('the footer sits at the bottom of a short page', async ({ page }) => {
+    await page.locator('.trip-title').click();
+    await page.locator('.trip-menu-option', { hasText: 'Empty packlist' }).click();
+    await page.keyboard.press('Enter');
+    const footer = await page.locator('.app-footer').boundingBox();
+    const viewport = page.viewportSize()!;
+    // only the page's own bottom padding below it
+    expect(footer!.y + footer!.height).toBeGreaterThan(viewport.height - 20);
+  });
 });
 

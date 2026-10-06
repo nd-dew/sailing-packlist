@@ -92,4 +92,20 @@ test.describe('Keyboard mode', () => {
     await expect(page.locator('#stat-green')).toHaveText('0');
     await expect(page.locator('.shortcuts-card')).toHaveCount(0);
   });
+
+  test('holding Alt shows the shortcuts where they apply', async ({ page }) => {
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.down('Alt');
+    const badges = page.locator('.shortcut-badge');
+    await expect(page.locator('.shortcut-strip')).toBeVisible();
+    // the row under the cursor gets its own keys, not every row
+    const labels = await badges.allTextContents();
+    for (const key of ['Space', 'Enter', 'b', 'Del', 'e', 'c', 't', 'Ctrl+Z']) expect(labels).toContain(key);
+    expect(labels.filter(l => l === 'Space')).toHaveLength(1);
+    await page.keyboard.up('Alt');
+    await expect(badges).toHaveCount(0);
+    await expect(page.locator('.shortcut-strip')).toHaveCount(0);
+  });
 });
+

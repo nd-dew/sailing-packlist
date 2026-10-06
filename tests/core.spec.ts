@@ -268,5 +268,41 @@ test.describe('Core App Functionality', () => {
     await page.locator('.header-undo-btn[aria-label="Undo"]').click();
     await expect(titles.nth(0)).toHaveText(first);
   });
+
+  test('renaming is its own undo step', async ({ page }) => {
+    const row = page.locator('.list-item').first();
+    const original = (await row.locator('.item-name').textContent())!;
+
+    await row.locator('input[type="checkbox"]').check();
+    await row.locator('.item-clickable-area').click();
+    await row.locator('.item-name-input').fill('Renamed');
+    await row.locator('.item-name-input').press('Enter');
+    await expect(row.locator('.item-name')).toHaveText('Renamed');
+
+    // first undo: only the rename goes, the item stays packed
+    await page.locator('.header-undo-btn[aria-label="Undo"]').click();
+    await expect(row.locator('.item-name')).toHaveText(original);
+    await expect(row).toHaveClass(/checked/);
+
+    // second undo: now the packing goes
+    await page.locator('.header-undo-btn[aria-label="Undo"]').click();
+    await expect(row).not.toHaveClass(/checked/);
+  });
+
+  test('clearing a name and closing brings the old name back instead of deleting', async ({ page }) => {
+    const row = page.locator('.list-item').first();
+    const original = (await row.locator('.item-name').textContent())!;
+    const count = await page.locator('.list-item').count();
+
+    await row.locator('.item-clickable-area').click();
+    const input = row.locator('.item-name-input');
+    await input.fill('');
+    // while empty, the old name shows as the placeholder
+    await expect(input).toHaveAttribute('placeholder', original);
+    await input.press('Escape');
+
+    await expect(page.locator('.list-item')).toHaveCount(count);
+    await expect(row.locator('.item-name')).toHaveText(original);
+  });
 });
 

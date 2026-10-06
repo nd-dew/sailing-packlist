@@ -126,4 +126,23 @@ test.describe('Links: shared lists and presets', () => {
     await expect(page.locator('.list-item').first()).toBeVisible();
     await expect(card).toBeHidden();
   });
+
+  test('rename and share sit right next to the title; the share message is not a warning', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-write', 'clipboard-read']);
+    await page.goto('');
+
+    await page.locator('.trip-title-icon[aria-label="Copy share link"]').click();
+    const toast = page.locator('.confirm-toast');
+    await expect(toast).toContainText('copied');
+    await expect(toast).toHaveClass(/is-info/);
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('#s=');
+
+    await page.locator('.trip-title-icon[aria-label="Rename packlist"]').click();
+    const input = page.locator('.trip-title-input');
+    await expect(input).toBeFocused();
+    await input.fill('Our boat trip');
+    await input.press('Enter');
+    await expect(page.locator('.trip-title')).toContainText('Our boat trip');
+  });
 });
+

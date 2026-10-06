@@ -107,5 +107,32 @@ test.describe('Keyboard mode', () => {
     await expect(badges).toHaveCount(0);
     await expect(page.locator('.shortcut-strip')).toHaveCount(0);
   });
+
+  test('d edits the note, Shift+D the packlist notes, m opens the category menu', async ({ page }) => {
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('d');
+    const note = page.locator('.list-item.is-expanded .item-note-input');
+    await expect(note).toBeFocused();
+    await note.fill('typed with the keyboard');
+    await note.press('Escape');
+    await expect(page.locator('.list-item').first().locator('.item-note-hint')).toBeVisible();
+
+    await page.locator('.list-item').first().focus();
+    await page.keyboard.press('Shift+D');
+    await expect(page.locator('.trip-notes-input')).toBeFocused();
+    await page.keyboard.press('Escape');
+
+    await page.locator('.list-item').first().focus();
+    await page.keyboard.press('m');
+    const menu = page.locator('.category-menu');
+    await expect(menu).toBeVisible();
+    // arrows move inside the menu, Esc closes it and gives the cursor back
+    await page.keyboard.press('ArrowRight');
+    await expect(menu.getByRole('menuitem', { name: 'Pack all', exact: true })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+    await expect(page.locator('.list-item').first()).toBeFocused();
+  });
 });
 

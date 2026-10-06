@@ -5,6 +5,13 @@ import { compressPayload } from '../../utils/shareUtils';
 import { countLeafItems } from '../../utils/countUtils';
 import { loadTripData, type TripMeta } from '../../utils/tripStore';
 
+// Small line icon for the menu
+const Icon: React.FC<{ d: string }> = ({ d }) => (
+  <svg className="menu-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {d.split(' M').map((part, i) => <path key={i} d={i === 0 ? part : `M${part}`} />)}
+  </svg>
+);
+
 // The trip as the page title: the title opens the trips menu, the line under it holds the trip notes
 export const TripHeader: React.FC = () => {
   const {
@@ -23,10 +30,14 @@ export const TripHeader: React.FC = () => {
   const notes = cruiseDescription || PRESETS[activePresetId]?.description || '';
   const newestFirst = [...trips].reverse();
 
+  const tripProgress = (trip: TripMeta) => {
+    const data = trip.id === activeTrip.id ? { categories, checkedItems } : loadTripData(trip.id);
+    return data ? countLeafItems(data.categories.flatMap(c => c.items), data.checkedItems) : { packed: 0, total: 0 };
+  };
+
   // "12/38 packed", plus where it came from when the name no longer says so
   const describeTrip = (trip: TripMeta) => {
-    const data = trip.id === activeTrip.id ? { categories, checkedItems } : loadTripData(trip.id);
-    const { packed, total } = data ? countLeafItems(data.categories.flatMap(c => c.items), data.checkedItems) : { packed: 0, total: 0 };
+    const { packed, total } = tripProgress(trip);
     const presetName = trip.presetId ? PRESETS[trip.presetId]?.name : undefined;
     const origin = presetName && !trip.name.startsWith(presetName) ? ` · from ${presetName}` : '';
     return `${total ? `${packed}/${total} packed` : 'No items yet'}${origin}`;
@@ -133,77 +144,93 @@ export const TripHeader: React.FC = () => {
         {isMenuOpen && (
           <div className="trip-menu" role="menu" aria-label="Packlists">
             <div className="trip-menu-section">
-            <div className="trip-menu-label">My packlists</div>
-            {newestFirst.map(trip => {
-              const isActive = trip.id === activeTrip.id;
-              const row = (
-                <button
-                  key={trip.id}
-                  role="menuitemradio"
-                  aria-checked={isActive}
-                  className={`trip-menu-option trip-option ${isActive ? 'active' : ''}`}
-                  onClick={() => run(() => switchTrip(trip.id))}
-                >
-                  <span className="trip-menu-check" aria-hidden="true">{isActive ? '✓' : ''}</span>
-                  <span className="trip-menu-text">
-                    <span className="trip-menu-name">{trip.name}</span>
-                    <span className="trip-menu-desc">{describeTrip(trip)}</span>
-                  </span>
-                </button>
-              );
-              if (!isActive) return row;
-              // The open trip carries its own actions, so it's clear what they apply to
-              return (
-                <div key={trip.id} className="trip-active-card">
-                  {row}
-                  <div className="trip-actions" aria-label={`Actions for ${trip.name}`}>
-                    <button role="menuitem" className="trip-action" onClick={() => run(() => setIsRenaming(true))}>✎ Rename</button>
-                    <button role="menuitem" className="trip-action" onClick={handleShare} title="Copy a link that recreates this packlist">🔗 Share</button>
-                    <button role="menuitem" className="trip-action" onClick={handleExportPreset} title="Download this packlist as a preset file (YAML)">⬇ Export</button>
-                    <button role="menuitem" className="trip-action danger" onClick={handleDelete}>🗑 Delete</button>
+              <div className="trip-menu-label">My packlists</div>
+              {newestFirst.map(trip => {
+                const isActive = trip.id === activeTrip.id;
+                const { packed, total } = tripProgress(trip);
+                const row = (
+                  <button
+                    key={trip.id}
+                    role="menuitemradio"
+                    aria-checked={isActive}
+                    className={`trip-menu-option trip-option ${isActive ? 'active' : ''}`}
+                    onClick={() => run(() => switchTrip(trip.id))}
+                  >
+                    <span
+                      className={`menu-tile progress-ring ${total > 0 && packed === total ? 'done' : ''}`}
+                      style={{ '--pct': total ? packed / total : 0 } as React.CSSProperties}
+                      aria-hidden="true"
+                    />
+                    <span className="trip-menu-text">
+                      <span className="trip-menu-name">{trip.name}</span>
+                      <span className="trip-menu-desc">{describeTrip(trip)}</span>
+                    </span>
+                  </button>
+                );
+                if (!isActive) return row;
+                // The open packlist carries its own actions, so it's clear what they apply to
+                return (
+                  <div key={trip.id} className="trip-active-card">
+                    {row}
+                    <div className="trip-actions" aria-label={`Actions for ${trip.name}`}>
+                      <button role="menuitem" className="trip-action" onClick={() => run(() => setIsRenaming(true))}>
+                        <Icon d="M4 20h4L19 9l-4-4L4 16v4z M13.5 6.5l4 4" />Rename
+                      </button>
+                      <button role="menuitem" className="trip-action" onClick={handleShare} title="Copy a link that recreates this packlist">
+                        <Icon d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1 M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />Share
+                      </button>
+                      <button role="menuitem" className="trip-action" onClick={handleExportPreset} title="Download this packlist as a preset file (YAML)">
+                        <Icon d="M12 4v11 M7 10l5 5 5-5 M5 20h14" />Export
+                      </button>
+                      <button role="menuitem" className="trip-action danger" onClick={handleDelete}>
+                        <Icon d="M4 7h16 M10 11v6 M14 11v6 M6 7l1 13h10l1-13 M9 7V4h6v3" />Delete
+                      </button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-
+                );
+              })}
             </div>
 
             <div className="trip-menu-divider" />
             <div className="trip-menu-section trip-menu-new">
-              <div className="trip-menu-label">New packlist</div>
-              <button role="menuitem" className="trip-menu-option new-empty-card" onClick={startEmptyTrip}>
-                <span className="new-empty-plus" aria-hidden="true">+</span>
-                <span className="trip-menu-name">Empty packlist</span>
+              <div className="trip-menu-label">Start a new packlist</div>
+              <button role="menuitem" className="trip-menu-option new-option" onClick={startEmptyTrip}>
+                <span className="menu-tile tile-empty" aria-hidden="true">+</span>
+                <span className="trip-menu-text">
+                  <span className="trip-menu-name">Empty packlist</span>
+                  <span className="trip-menu-desc">Start from scratch</span>
+                </span>
               </button>
-
-              <div className="trip-menu-label">From a preset</div>
-              <div className="preset-cards">
-                {Object.entries(PRESETS).map(([id, data]) => {
-                  const needsRole = !data.disableRoles;
-                  const text = (
-                    <>
+              {Object.entries(PRESETS).map(([id, data]) => {
+                const needsRole = !data.disableRoles;
+                const content = (
+                  <>
+                    <span className="menu-tile tile-preset" aria-hidden="true">
+                      <Icon d="M12 3v14 M12 4l7 11h-7 M12 7l-5 8h5 M4 19h16l-2 2H6z" />
+                    </span>
+                    <span className="trip-menu-text">
                       <span className="trip-menu-name">{data.name || id}</span>
-                      {data.description && <span className="preset-desc">{data.description}</span>}
-                    </>
-                  );
-                  // Presets with separate crew / captain lists: pick one; the others start with one click
-                  return needsRole ? (
-                    <div key={id} className="preset-option preset-card" role="none">
-                      <div className="preset-card-text">{text}</div>
-                      <div className="role-pills">
-                        <button role="menuitem" className="role-pill" onClick={() => run(() => createTripFromPreset(id, 'crew'))}>Crew</button>
-                        <button role="menuitem" className="role-pill" onClick={() => run(() => createTripFromPreset(id, 'captain'))}>Captain</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div key={id} className="preset-option" role="none">
-                      <button role="menuitem" className="preset-option-main preset-card" onClick={() => run(() => createTripFromPreset(id, 'crew'))}>
-                        {text}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+                      {data.description && <span className="trip-menu-desc">{data.description}</span>}
+                    </span>
+                  </>
+                );
+                // Presets with separate crew / captain lists: pick one; the others start with one click
+                return needsRole ? (
+                  <div key={id} className="trip-menu-option new-option preset-option" role="none">
+                    {content}
+                    <span className="role-pills">
+                      <button role="menuitem" className="role-pill" onClick={() => run(() => createTripFromPreset(id, 'crew'))}>Crew</button>
+                      <button role="menuitem" className="role-pill" onClick={() => run(() => createTripFromPreset(id, 'captain'))}>Captain</button>
+                    </span>
+                  </div>
+                ) : (
+                  <div key={id} className="preset-option" role="none">
+                    <button role="menuitem" className="trip-menu-option new-option preset-option-main" onClick={() => run(() => createTripFromPreset(id, 'crew'))}>
+                      {content}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

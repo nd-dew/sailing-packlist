@@ -2,10 +2,12 @@ import React, { useEffect, useRef } from 'react';
 import { usePacklist } from '../../context/PacklistContext';
 import type { Category, PackItem } from '../../types';
 import { ItemRow } from './ItemRow';
+import { AddItemInput } from './AddItemInput';
 import { countLeafItems } from '../../utils/countUtils';
-import { useDroppable, useDraggable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { categoryDropId, categoryDragId, justFinishedDrag, type CategoryDropPosition } from '../../hooks/useListDrag';
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { categoryDropId, categoryDragId, justFinishedDrag } from '../../hooks/useListDrag';
 
 const priorityLabel = (priority: string) => {
   const text = priority.replace(/-/g, ' ');
@@ -15,13 +17,11 @@ const priorityLabel = (priority: string) => {
 interface CategoryBlockProps {
   cat: Category;
   dragEnabled?: boolean;
-  // While another category is dragged over this one: where it would land
-  dropIndicator?: CategoryDropPosition;
 }
 
-export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat, dragEnabled = false, dropIndicator }) => {
+export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat, dragEnabled = false }) => {
   const {
-    filter, handleCreateItem, showPriorityToast, activeToastId,
+    filter, addItem, showPriorityToast, activeToastId,
     changes, luggages, itemLuggage, itemViewFilter, checkedItems, setSelectedCategoryId,
     collapsedCats, setCatCollapsed, selectedItemId
   } = usePacklist();
@@ -32,8 +32,11 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat, dragEnabled =
 
   // The whole card accepts drops, so items can go into empty or collapsed categories
   const { setNodeRef: setDropRef, isOver, active } = useDroppable({ id: categoryDropId(cat.id), disabled: !dragEnabled });
-  // The header is the handle for moving the whole category
-  const { setNodeRef: setDragRef, listeners: dragListeners, isDragging: isCategoryDragged } = useDraggable({
+  // The header is the handle for moving the whole category. It is also what gets measured, so the
+  // drag works with header-sized boxes; the movement (making room for the dragged one) applies to the card.
+  const {
+    setNodeRef: setDragRef, listeners: dragListeners, transform, transition, isDragging: isCategoryDragged
+  } = useSortable({
     id: categoryDragId(cat.id),
     data: { type: 'category', catId: cat.id },
     disabled: !dragEnabled,
@@ -101,10 +104,15 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat, dragEnabled =
   return (
     <div
       ref={setDropRef}
-      className={`category-block ${isCollapsed ? 'is-collapsed' : ''} ${isItemOver ? 'is-drop-target' : ''} ${isCategoryDragged ? 'is-drag-source' : ''} ${dropIndicator ? `drop-${dropIndicator}` : ''}`}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
+      className={`category-block ${isCollapsed ? 'is-collapsed' : ''} ${isItemOver ? 'is-drop-target' : ''} ${isCategoryDragged ? 'is-drag-source' : ''}`}
     >
       <div
         ref={setDragRef}
+        data-category-header={cat.id}
+        data-nav="category"
+        data-cat-id={cat.id}
+        tabIndex={-1}
         className={`category-header ${isDone ? 'done' : ''}`}
         {...dragListeners}
         onClick={(e) => {
@@ -115,7 +123,6 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat, dragEnabled =
         <div className="category-title-area">
           <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
             <h3 onClick={() => { if (!justFinishedDrag()) setSelectedCategoryId(cat.id); }} style={{ cursor: 'pointer' }} title="Edit Category">{cat.title}</h3>
-            <button className="btn-add-item-header" onClick={() => handleCreateItem(cat.id)} title="Add custom item">+</button>
           </div>
           <div className="category-meta">
             {catTotal > 0 && <span className="cat-progress">{isDone ? '✓ ' : ''}{catPacked}/{catTotal}</span>}
@@ -175,6 +182,15 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat, dragEnabled =
                 />
               );
             })}
+            {itemViewFilter === 'all' && (
+              <li className="add-item-row">
+                <AddItemInput
+                  placeholder="Add item"
+                  onAdd={(name) => addItem(cat.id, name)}
+                  dataAttrs={{ 'data-add-item-for': cat.id }}
+                />
+              </li>
+            )}
           </ul>
           </SortableContext>
         </div>

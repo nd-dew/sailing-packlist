@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import { PacklistProvider, usePacklist } from './context/PacklistContext';
 import { Header } from './components/layout/Header';
 import { SettingsMenu } from './components/layout/SettingsMenu';
@@ -11,10 +11,14 @@ import { decompressPayload } from './utils/shareUtils';
 import { PRESETS } from './utils/presetUtils';
 import { countLeafItems } from './utils/countUtils';
 import { getPresetIdFromPath, replacePresetPath, clearUrlHash } from './utils/urlUtils';
-import { useListDrag, listCollisionDetection } from './hooks/useListDrag';
-import { DndContext, DragOverlay, MeasuringStrategy } from '@dnd-kit/core';
+import { useListDrag, listCollisionDetection, categoryDragId } from './hooks/useListDrag';
+import { DndContext, DragOverlay, MeasuringStrategy, type DragStartEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ItemDragPreview } from './components/core/ItemDragPreview';
 import { HoverTooltips } from './components/core/HoverTooltips';
+import { AddItemInput } from './components/core/AddItemInput';
+import { ShortcutsHelp } from './components/core/ShortcutsHelp';
+import { useListKeyboard } from './hooks/useListKeyboard';
 import type { Category } from './types';
 import './App.css';
 
@@ -58,8 +62,12 @@ const AppContent: React.FC = () => {
     handleCreateCategory, triggerConfirm,
     checkedItems, collapsedCats, setSwipeHintItemId,
     activePresetId, layoutColumns, density, commitAction, setCategories, luggages, itemLuggage, changes,
-    trips, activeTrip, switchTrip, createTripFromPreset, openSharedTrip
+    trips, activeTrip, switchTrip, createTripFromPreset, openSharedTrip, addLooseItem
   } = usePacklist();
+
+  const [showShortcuts, setShowShortcuts] = React.useState(false);
+  const toggleShortcuts = React.useCallback(() => setShowShortcuts(open => !open), []);
+  useListKeyboard(toggleShortcuts);
 
   // What the page was opened with, captured before the effect below rewrites the address bar.
   // `linkedPresetId` is a preset link (path or old #p=) to a preset other than the open trip's.
@@ -107,7 +115,7 @@ const AppContent: React.FC = () => {
       decompressPayload(token)
         .then(shared => {
           openSharedTrip(shared, token);
-          triggerConfirm('⛵ Opened the shared list as a new trip', '', () => {});
+          triggerConfirm('⛵ Opened the shared packlist as a new one', '', () => {});
         })
         .catch(err => {
           console.error("Failed to parse shared URL:", err);
@@ -129,19 +137,51 @@ const AppContent: React.FC = () => {
   };
 
   const effectiveColumns = useEffectiveColumns(layoutColumns);
-  const drag = useListDrag(categories, (next, message) => {
+  // Columns are decided from the real list, so item drags don't make categories jump between columns
+  const columnIds = splitIntoColumns(categories, effectiveColumns).map(col => col.map(cat => cat.id));
+  const drag = useListDrag(categories, columnIds, (next, message) => {
     commitAction(message);
     setCategories(next);
   });
   const dragEnabled = itemViewFilter === 'all';
 
-  // Columns are decided from the real list so categories don't jump between columns mid-drag
+  // During a category drag the columns follow the drag preview
   const shownById = new Map(drag.shownCategories.map(cat => [cat.id, cat]));
-  const columns = splitIntoColumns(categories, effectiveColumns)
-    .map(col => col.map(cat => shownById.get(cat.id) ?? cat));
+  const columns = (drag.columnsPreview ?? columnIds).map(col => col.map(id => shownById.get(id)!).filter(Boolean));
   // "Add Category" goes under the last column that has categories (the first one on an empty trip)
   const addCategoryColumn = Math.max(0, columns.map(col => col.length > 0).lastIndexOf(true));
   const draggedCategory = drag.draggedCategoryId ? categories.find(c => c.id === drag.draggedCategoryId) : undefined;
+  // Reordering categories folds every card to its header, which moves the grabbed header away from the
+  // pointer. Put it back under the pointer: keep the page as tall as before (so it can't shrink and jump
+  // the scroll), scroll by the difference, and where scrolling can't go far enough, push the list down.
+  const gridRef = useRef<HTMLDivElement>(null);
+  const grabTopRef = useRef<number | null>(null);
+  const categoryHeader = (catId: string) => document.querySelector(`[data-category-header="${catId}"]`);
+  const handleDragStart = (event: DragStartEvent) => {
+    const catId = event.active.data.current?.type === 'category' ? event.active.data.current.catId : null;
+    if (catId && gridRef.current) {
+      // measured now, before anything folds
+      grabTopRef.current = categoryHeader(catId)?.getBoundingClientRect().top ?? null;
+      gridRef.current.style.minHeight = `${gridRef.current.offsetHeight}px`;
+    }
+    drag.handlers.onDragStart(event);
+  };
+  useLayoutEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+    if (!drag.draggedCategoryId) {
+      grid.style.minHeight = '';
+      grid.style.paddingTop = '';
+      return;
+    }
+    const header = categoryHeader(drag.draggedCategoryId);
+    const grabTop = grabTopRef.current;
+    if (!header || grabTop === null) return;
+    window.scrollBy(0, header.getBoundingClientRect().top - grabTop);
+    const stillAbove = grabTop - header.getBoundingClientRect().top;
+    if (stillAbove > 0) grid.style.paddingTop = `${stillAbove}px`;
+  }, [drag.draggedCategoryId]);
+
   const draggedItem = drag.activeId ? drag.shownCategories.flatMap(c => c.items).find(i => i.id === drag.activeId) : undefined;
 
   const { total: totalItems, packed: packedItems } = countLeafItems(categories.flatMap(cat => cat.items), checkedItems);
@@ -196,6 +236,8 @@ const AppContent: React.FC = () => {
         </div>
       )}
 
+      {showShortcuts && <ShortcutsHelp onClose={() => setShowShortcuts(false)} />}
+
       <SettingsMenu />
       <BaggageMenu />
 
@@ -203,6 +245,12 @@ const AppContent: React.FC = () => {
       <CategoryModal />
 
       <TripHeader />
+      <AddItemInput
+        className="quick-add"
+        placeholder="Add an item (no category needed)"
+        onAdd={(name) => addLooseItem(name)}
+        dataAttrs={{ 'data-quick-add': '' }}
+      />
 
       {allPacked && (
         <div className="all-packed-banner" role="status">
@@ -220,18 +268,18 @@ const AppContent: React.FC = () => {
         // categories fold up when a category drag starts, so drop targets must be re-measured as they move
         measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
         {...drag.handlers}
+        onDragStart={handleDragStart}
       >
-        <div className={`checklist-grid cols-${effectiveColumns} ${drag.activeId || draggedCategory ? 'is-dragging' : ''} ${draggedCategory ? 'is-reordering-categories' : ''}`}>
+        <div
+          ref={gridRef}
+          className={`checklist-grid cols-${effectiveColumns} ${drag.activeId || draggedCategory ? 'is-dragging' : ''} ${draggedCategory ? 'is-reordering-categories' : ''}`}>
           {columns.map((col, colIndex) => (
             <div className="checklist-column" key={colIndex}>
-              {col.map(cat => (
-                <CategoryBlock
-                  key={cat.id}
-                  cat={cat}
-                  dragEnabled={dragEnabled}
-                  dropIndicator={drag.categoryDrop?.catId === cat.id ? drag.categoryDrop.position : undefined}
-                />
-              ))}
+              <SortableContext items={col.map(cat => categoryDragId(cat.id))} strategy={verticalListSortingStrategy}>
+                {col.map(cat => (
+                  <CategoryBlock key={cat.id} cat={cat} dragEnabled={dragEnabled} />
+                ))}
+              </SortableContext>
               {colIndex === addCategoryColumn && (
                 <div className="category-block btn-add-category-block" onClick={() => handleCreateCategory()}>
                   <div className="category-header add-category-header">
@@ -266,6 +314,8 @@ const AppContent: React.FC = () => {
       </DndContext>
 
       <footer className="app-footer">
+        <button className="btn-shortcuts desktop-only" onClick={toggleShortcuts} title="Keyboard shortcuts (?)">⌨ Shortcuts</button>
+        <span className="footer-sep desktop-only">|</span>
         <a href="https://www.sailingcommunity.be/" target="_blank" rel="noopener noreferrer">
           <img src={`${import.meta.env.BASE_URL}bsc.ico`} alt="BSC" style={{ width: '20px', height: '20px', marginRight: '8px' }} />
           Belgian Sailing Community

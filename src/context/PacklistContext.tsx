@@ -78,10 +78,14 @@ interface PacklistContextType {
   exportActiveTripAsPreset: () => { fileName: string; yaml: string };
   resetAll: () => void;
   handleCreateItem: (categoryId: string) => void;
+  addItem: (categoryId: string, name: string) => string;
+  addLooseItem: (name: string) => string;
   handleAddSubItem: (parentId: string, name?: string) => void;
   updateItem: (id: string, updates: Partial<PackItem>) => void;
   deleteItem: (id: string, parentId?: string) => void;
   moveItemCategory: (itemId: string, newCategoryId: string) => void;
+  moveItemBy: (itemId: string, delta: 1 | -1) => void;
+  moveCategoryBy: (categoryId: string, delta: 1 | -1) => void;
   updateLuggage: (id: string, updates: Partial<Luggage>) => void;
   handleAddLuggage: () => void;
   getMissingCount: (priority: string) => number;
@@ -122,6 +126,7 @@ interface PacklistContextType {
 }
 
 export type LayoutColumns = 1 | 2 | 3;
+export const OTHER_CATEGORY_ID = 'cat_other';
 export type Density = 'comfortable' | 'compact';
 
 const PacklistContext = createContext<PacklistContextType | undefined>(undefined);
@@ -438,6 +443,9 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // inside a text field, Ctrl+Z undoes the typing, not the list
+      const el = e.target as HTMLElement;
+      if (el.isContentEditable || el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && (el as HTMLInputElement).type === 'text')) return;
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
       if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); }
     };
@@ -624,8 +632,8 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     let virtIndex = currentIndex === -1 ? 0 : currentIndex + 1;
     let nextVirt = (virtIndex + direction) % total;
     if (nextVirt < 0) nextVirt += total;
-    if (nextVirt === 0) return 'Unassign luggage';
-    return `Put in ${luggages[nextVirt - 1]?.name}` || 'Unassign luggage';
+    if (nextVirt === 0 || !luggages[nextVirt - 1]) return 'Take out of bag';
+    return `Put in ${luggages[nextVirt - 1].name}`;
   };
 
   // Put a trip's list on screen. Undo history belongs to the list it was made in, so it starts fresh.
@@ -669,7 +677,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const createEmptyTrip = () => {
-    addTrip({ name: uniqueTripName('New trip', trips), presetId: null }, buildEmptyTripData(defaultPresetId));
+    addTrip({ name: uniqueTripName('New packlist', trips), presetId: null }, buildEmptyTripData(defaultPresetId));
   };
 
   const renameTrip = (id: string, name: string) => {
@@ -681,7 +689,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     removeTripData(id);
     if (remaining.length === 0) {
       // Never end up without a list: start over from the default preset
-      const fresh: TripMeta = { id: newTripId(), name: PRESETS[defaultPresetId]?.name || 'My trip', presetId: defaultPresetId, createdAt: Date.now() };
+      const fresh: TripMeta = { id: newTripId(), name: PRESETS[defaultPresetId]?.name || 'My packlist', presetId: defaultPresetId, createdAt: Date.now() };
       const data = buildPresetTripData(defaultPresetId, 'crew');
       saveTripData(fresh.id, data);
       setTrips([fresh]);
@@ -809,8 +817,29 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       return;
     }
     const basePresetId = PRESETS[shared.p] ? shared.p : defaultPresetId;
-    const name = uniqueTripName(shared.n || PRESETS[basePresetId]?.name || 'Shared trip', trips);
+    const name = uniqueTripName(shared.n || PRESETS[basePresetId]?.name || 'Shared packlist', trips);
     addTrip({ name, presetId: basePresetId, sourceToken: token }, buildSharedTripData(shared, defaultPresetId));
+  };
+
+  const addItem = (categoryId: string, name: string) => {
+    commitAction(`Added ${name}`);
+    const newId = `custom_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    setCategories(prev => prev.map(cat => (cat.id === categoryId ? { ...cat, items: [...cat.items, { id: newId, name }] } : cat)));
+    return newId;
+  };
+
+  // Items added without picking a category land in "Other", created on first use at the top
+  const addLooseItem = (name: string) => {
+    commitAction(`Added ${name}`);
+    const newId = `custom_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    setCategories(prev => {
+      const item = { id: newId, name };
+      if (prev.some(cat => cat.id === OTHER_CATEGORY_ID)) {
+        return prev.map(cat => (cat.id === OTHER_CATEGORY_ID ? { ...cat, items: [...cat.items, item] } : cat));
+      }
+      return [{ id: OTHER_CATEGORY_ID, title: '📦 Other', isCustom: true, items: [item] }, ...prev];
+    });
+    return newId;
   };
 
   const handleCreateItem = (categoryId: string) => {
@@ -949,6 +978,50 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
       return { ...c, items: c.items.filter(i => i.id !== id) };
     }));
+  };
+
+  // One step up or down; at the edge of a category it continues into the neighbouring one
+  const moveItemBy = (itemId: string, delta: 1 | -1) => {
+    const catIndex = categories.findIndex(c => c.items.some(i => i.id === itemId));
+    if (catIndex < 0) return;
+    const cat = categories[catIndex];
+    const index = cat.items.findIndex(i => i.id === itemId);
+    const item = cat.items[index];
+    const target = index + delta;
+
+    if (target >= 0 && target < cat.items.length) {
+      commitAction(`Moved ${item.name}`);
+      setCategories(prev => prev.map(c => {
+        if (c.id !== cat.id) return c;
+        const items = [...c.items];
+        [items[index], items[target]] = [items[target], items[index]];
+        return { ...c, items };
+      }));
+      return;
+    }
+
+    const neighbour = categories[catIndex + delta];
+    if (!neighbour) return;
+    commitAction(`Moved ${item.name} to ${neighbour.title}`);
+    setCatCollapsed(neighbour.id, false);
+    setCategories(prev => prev.map(c => {
+      if (c.id === cat.id) return { ...c, items: c.items.filter(i => i.id !== itemId) };
+      // entering from above lands at the top, from below at the bottom
+      if (c.id === neighbour.id) return { ...c, items: delta > 0 ? [item, ...c.items] : [...c.items, item] };
+      return c;
+    }));
+  };
+
+  const moveCategoryBy = (categoryId: string, delta: 1 | -1) => {
+    const index = categories.findIndex(c => c.id === categoryId);
+    const target = index + delta;
+    if (index < 0 || target < 0 || target >= categories.length) return;
+    commitAction(`Moved ${categories[index].title}`);
+    setCategories(prev => {
+      const next = [...prev];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
   };
 
   const moveItemCategory = (itemId: string, newCategoryId: string) => {
@@ -1105,8 +1178,8 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       layoutColumns, setLayoutColumns, density, setDensity,
       filter, setFilter, itemViewFilter, setItemViewFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, toggleParentItem,
       cycleLuggage, getNextLuggageHint, activePresetId, resetAll,
-      trips, activeTrip, switchTrip, createTripFromPreset, createEmptyTrip, renameTrip, deleteTrip, openSharedTrip, exportActiveTripAsPreset, handleCreateItem, handleAddSubItem,
-      updateItem, deleteItem, moveItemCategory, updateCategory, deleteCategory, handleCreateCategory, setCategoryLuggage, packCategory, unpackCategoryItemsAction, updateLuggage, deleteLuggage, reorderLuggage, packLuggageItems, unpackLuggageItems, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
+      trips, activeTrip, switchTrip, createTripFromPreset, createEmptyTrip, renameTrip, deleteTrip, openSharedTrip, exportActiveTripAsPreset, handleCreateItem, handleAddSubItem, addItem, addLooseItem,
+      updateItem, deleteItem, moveItemCategory, moveItemBy, moveCategoryBy, updateCategory, deleteCategory, handleCreateCategory, setCategoryLuggage, packCategory, unpackCategoryItemsAction, updateLuggage, deleteLuggage, reorderLuggage, packLuggageItems, unpackLuggageItems, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles,
       particles, triggerParticle, theme, setTheme, importData, getSharePayload,

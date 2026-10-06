@@ -1273,6 +1273,79 @@ button:active,
   .list-item { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
 }
 
+.btn-close-item {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: var(--divider);
+  color: var(--text);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-close-item:hover { background: color-mix(in srgb, var(--navy) 14%, transparent); }
+
+/* Keyboard cursor */
+.list-item[data-nav]:focus { outline: none; }
+/* the ring sits on the row itself: it's opaque and stacked above the list item */
+.list-item[data-nav]:focus-visible .item-row {
+  background-color: var(--surface-hover);
+  box-shadow: inset 0 0 0 2px var(--navy);
+}
+.category-header[data-nav]:focus { outline: none; }
+.category-header[data-nav]:focus-visible { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85); }
+
+/* "+ Add …" lines */
+.add-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 14px;
+}
+
+.add-item-plus {
+  width: 24px;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 1.15em;
+  font-weight: 700;
+  color: var(--muted);
+  transition: color 0.15s;
+}
+
+.add-item-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.95em;
+  color: var(--text);
+  padding: 6px 0;
+}
+
+.add-item-input::placeholder { color: var(--muted); opacity: 0.85; }
+.add-item:focus-within .add-item-plus { color: var(--green); }
+
+.add-item-row { list-style: none; }
+.add-item-row .add-item { min-height: 42px; }
+
+/* list-level quick add, for items without a category */
+.quick-add {
+  margin: 4px 0 12px;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+  transition: box-shadow 0.15s;
+}
+
+.quick-add:focus-within { box-shadow: 0 0 0 2px color-mix(in srgb, var(--green) 45%, transparent); }
+
 /* Item opened in place */
 .list-item.is-expanded {
   background: var(--surface);
@@ -1454,14 +1527,22 @@ button.sub-item-stats {
 }
 
 /* Reordering categories: everything folds to its header, a line shows where the category will land */
-.checklist-grid.is-reordering-categories .category-body { grid-template-rows: 0fr; }
+/* folding is instant here, so positions are settled before the drag starts tracking them */
+.checklist-grid.is-reordering-categories .category-body { grid-template-rows: 0fr; transition: none; }
 .checklist-grid.is-reordering-categories .cat-progress-bar { display: none; }
 
 .category-block.is-drag-source { opacity: 0.35; }
 
-/* The drop line is an outer shadow, so the card can keep clipping its rounded corners */
-.category-block.drop-before { box-shadow: 0 -8px 0 -4px var(--green), 0 1px 2px rgba(16, 24, 40, 0.06); }
-.category-block.drop-after { box-shadow: 0 8px 0 -4px var(--green), 0 1px 2px rgba(16, 24, 40, 0.06); }
+/* the gap where the dragged category will land */
+.checklist-grid.is-reordering-categories .category-block.is-drag-source {
+  opacity: 1;
+  background: none;
+  box-shadow: none;
+  outline: 2px dashed color-mix(in srgb, var(--navy) 30%, transparent);
+  outline-offset: -2px;
+}
+
+.checklist-grid.is-reordering-categories .category-block.is-drag-source > * { visibility: hidden; }
 
 .category-drag-overlay {
   margin: 0;
@@ -1703,6 +1784,19 @@ button.sub-item-stats {
 
 .trip-menu-divider { height: 1px; margin: 4px 8px; background: var(--divider); }
 
+/* Desktop: room for both halves side by side */
+@media (min-width: 900px) {
+  .trip-menu {
+    width: min(780px, calc(100vw - 48px));
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+    padding: 8px;
+  }
+  .trip-menu > .trip-menu-divider { display: none; }
+  .trip-menu-new { border-left: 1px solid var(--divider); padding-left: 6px; }
+}
+
 .trip-menu-label {
   padding: 8px 10px 2px 38px;
   font-size: 0.68em;
@@ -1713,6 +1807,15 @@ button.sub-item-stats {
 }
 
 .trip-menu-option .trip-menu-check:not(:empty) { text-align: center; }
+
+.new-empty-option .trip-menu-check { font-size: 1.1em; }
+
+.trip-menu-sublabel {
+  padding: 8px 10px 0 38px;
+  font-size: 0.75em;
+  font-weight: 600;
+  color: var(--muted);
+}
 
 /* Preset row: the row starts a trip; role presets also offer crew / captain */
 .preset-option { padding: 0; align-items: center; }
@@ -1959,6 +2062,15 @@ button.sub-item-stats {
   cursor: pointer;
   transition: background-color 0.15s;
 }
+
+.item-row .luggage-badge.is-empty {
+  background: none;
+  box-shadow: inset 0 0 0 1.5px var(--check-border);
+  opacity: 0.8;
+}
+
+.item-row .luggage-badge.is-empty .luggage-icon,
+.item-row .luggage-badge.is-empty svg { opacity: 0.7; }
 
 .item-row .luggage-badge:hover {
   background: color-mix(in srgb, var(--lug-color) 22%, transparent);
@@ -2578,3 +2690,91 @@ button.sub-item-stats {
   color: #0b1a2b;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
+
+/* Keyboard shortcuts panel */
+.shortcuts-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  background: rgba(11, 26, 43, 0.45);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.shortcuts-card {
+  width: min(820px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(11, 26, 43, 0.3);
+  padding: 20px 24px 24px;
+  text-align: left;
+}
+
+.shortcuts-head { display: flex; align-items: center; justify-content: space-between; }
+.shortcuts-head h3 { margin: 0; font-size: 1.15em; color: var(--navy); }
+.shortcuts-head .btn-close-menu { background: var(--divider); color: var(--text); }
+.shortcuts-intro { margin: 6px 0 16px; font-size: 0.88em; color: var(--muted); }
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: 18px 28px;
+}
+
+.shortcuts-grid h4 {
+  margin: 0 0 6px;
+  font-size: 0.72em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.shortcuts-grid dl { margin: 0; }
+
+.shortcut-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--divider);
+  font-size: 0.86em;
+}
+
+.shortcut-row dt { display: flex; align-items: center; gap: 3px; flex-shrink: 0; white-space: nowrap; }
+.shortcut-row dd { margin: 0; color: var(--text); text-align: right; }
+
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--bg);
+  box-shadow: inset 0 -2px 0 var(--border), 0 0 0 1px var(--border);
+  font-family: inherit;
+  font-size: 0.85em;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+}
+
+.kbd-or { color: var(--muted); font-size: 0.8em; margin: 0 2px; }
+
+.btn-shortcuts {
+  background: none;
+  border: none;
+  color: #666;
+  font: inherit;
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-shortcuts:hover { color: var(--navy); }
+.footer-sep { margin: 0 10px; color: #ccc; }

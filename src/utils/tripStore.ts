@@ -139,7 +139,7 @@ const migrateLegacyList = (defaultPresetId: string): { meta: TripMeta; data: Tri
   };
   const meta: TripMeta = {
     id: newTripId(),
-    name: PRESETS[presetId]?.name || 'My trip',
+    name: PRESETS[presetId]?.name || 'My packlist',
     presetId: PRESETS[presetId] ? presetId : null,
     createdAt: Date.now(),
   };

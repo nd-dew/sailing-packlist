@@ -19,7 +19,7 @@ export const TripHeader: React.FC = () => {
   const rootRef = useRef<HTMLElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
 
-  const tripName = activeTrip?.name || 'My trip';
+  const tripName = activeTrip?.name || 'My packlist';
   const notes = cruiseDescription || PRESETS[activePresetId]?.description || '';
   const newestFirst = [...trips].reverse();
 
@@ -63,11 +63,11 @@ export const TripHeader: React.FC = () => {
 
   const startEmptyTrip = () => run(() => {
     createEmptyTrip();
-    setIsRenaming(true); // a blank list needs a name first
+    setIsRenaming(true); // a blank packlist needs a name first
   });
 
   const finishRename = (value: string) => {
-    if (!value.trim()) renameTrip(activeTrip.id, 'Untitled trip');
+    if (!value.trim()) renameTrip(activeTrip.id, 'Untitled packlist');
     setIsRenaming(false);
   };
 
@@ -111,8 +111,8 @@ export const TripHeader: React.FC = () => {
             onFocus={(e) => e.target.select()}
             onBlur={(e) => finishRename(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') (e.target as HTMLInputElement).blur(); }}
-            placeholder="Trip name"
-            aria-label="Trip name"
+            placeholder="Packlist name"
+            aria-label="Packlist name"
           />
         ) : (
           <button
@@ -120,7 +120,7 @@ export const TripHeader: React.FC = () => {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-haspopup="menu"
             aria-expanded={isMenuOpen}
-            title="Your trips"
+            title="Your packlists"
           >
             <span className="trip-title-text">{tripName}</span>
             <svg className="trip-title-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -130,8 +130,9 @@ export const TripHeader: React.FC = () => {
         )}
 
         {isMenuOpen && (
-          <div className="trip-menu" role="menu" aria-label="Trips">
-            <div className="trip-menu-label">My trips</div>
+          <div className="trip-menu" role="menu" aria-label="Packlists">
+            <div className="trip-menu-section">
+            <div className="trip-menu-label">My packlists</div>
             {newestFirst.map(trip => {
               const isActive = trip.id === activeTrip.id;
               const row = (
@@ -156,16 +157,27 @@ export const TripHeader: React.FC = () => {
                   {row}
                   <div className="trip-actions" aria-label={`Actions for ${trip.name}`}>
                     <button role="menuitem" className="trip-action" onClick={() => run(() => setIsRenaming(true))}>✎ Rename</button>
-                    <button role="menuitem" className="trip-action" onClick={handleShare} title="Copy a link that recreates this trip">🔗 Share</button>
-                    <button role="menuitem" className="trip-action" onClick={handleExportPreset} title="Download this trip as a preset file (YAML)">⬇ Export</button>
+                    <button role="menuitem" className="trip-action" onClick={handleShare} title="Copy a link that recreates this packlist">🔗 Share</button>
+                    <button role="menuitem" className="trip-action" onClick={handleExportPreset} title="Download this packlist as a preset file (YAML)">⬇ Export</button>
                     <button role="menuitem" className="trip-action danger" onClick={handleDelete}>🗑 Delete</button>
                   </div>
                 </div>
               );
             })}
 
+            </div>
+
             <div className="trip-menu-divider" />
-            <div className="trip-menu-label">New trip</div>
+            <div className="trip-menu-section trip-menu-new">
+            <div className="trip-menu-label">New packlist</div>
+            <button role="menuitem" className="trip-menu-option new-empty-option" onClick={startEmptyTrip}>
+              <span className="trip-menu-check" aria-hidden="true">+</span>
+              <span className="trip-menu-text">
+                <span className="trip-menu-name">Empty packlist</span>
+                <span className="trip-menu-desc">Start from scratch</span>
+              </span>
+            </button>
+            <div className="trip-menu-sublabel">or start from a preset</div>
             {Object.entries(PRESETS).map(([id, data]) => {
               const needsRole = !data.disableRoles;
               return (
@@ -176,7 +188,7 @@ export const TripHeader: React.FC = () => {
                     onClick={() => run(() => createTripFromPreset(id, 'crew'))}
                     title={needsRole ? 'Start from this preset (crew list)' : 'Start from this preset'}
                   >
-                    <span className="trip-menu-check" aria-hidden="true">+</span>
+                    <span className="trip-menu-check" aria-hidden="true" />
                     <span className="trip-menu-text">
                       <span className="trip-menu-name">{data.name || id}</span>
                       {data.description && <span className="trip-menu-desc">{data.description}</span>}
@@ -191,14 +203,7 @@ export const TripHeader: React.FC = () => {
                 </div>
               );
             })}
-            <button role="menuitem" className="trip-menu-option" onClick={startEmptyTrip}>
-              <span className="trip-menu-check" aria-hidden="true">+</span>
-              <span className="trip-menu-text">
-                <span className="trip-menu-name">Empty list</span>
-                <span className="trip-menu-desc">Start from scratch</span>
-              </span>
-            </button>
-
+            </div>
           </div>
         )}
       </div>
@@ -213,8 +218,8 @@ export const TripHeader: React.FC = () => {
           onChange={(e) => setCruiseDescription(e.target.value)}
           onBlur={() => setIsEditingNotes(false)}
           onKeyDown={(e) => { if (e.key === 'Escape') (e.target as HTMLTextAreaElement).blur(); }}
-          placeholder="Trip notes: dates, boat, meeting point…"
-          aria-label="Trip notes"
+          placeholder="Notes: dates, boat, meeting point…"
+          aria-label="Notes"
         />
       ) : (
         <p
@@ -223,9 +228,9 @@ export const TripHeader: React.FC = () => {
           tabIndex={0}
           onClick={() => setIsEditingNotes(true)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); setIsEditingNotes(true); } }}
-          title="Edit trip notes"
+          title="Edit notes"
         >
-          {notes || 'Add trip notes…'}
+          {notes || 'Add notes…'}
         </p>
       )}
     </section>

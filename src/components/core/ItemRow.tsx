@@ -28,8 +28,9 @@ interface ItemRowProps {
 export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLuggage, isSubItem, parentId, parentName, dragEnabled = false }) => {
   const { 
     checkedItems, toggleCheck, toggleParentItem, deleteItem, triggerConfirm, getNextLuggageHint, cycleLuggage, selectedItemId, setSelectedItemId, getSubItemCounts, playPopSound,
-    swipeHintItemId, setSwipeHintItemId, markSwipeLearned, updateItem
+    swipeHintItemId, setSwipeHintItemId, markSwipeLearned, updateItem, luggages
   } = usePacklist();
+  const hasBags = luggages.length > 0;
 
   const isExpanded = selectedItemId === item.id;
   const liRef = useRef<HTMLLIElement | null>(null);
@@ -80,6 +81,11 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
   }, [isExpanded]);
 
   const toggleExpanded = () => setSelectedItemId(isExpanded ? null : item.id);
+  // Closing hands the keyboard cursor back to the row
+  const close = () => {
+    setSelectedItemId(null);
+    requestAnimationFrame(() => liRef.current?.focus());
+  };
 
   const prevLuggageId = usePrevious(assignedLuggage?.id);
   const prevChecked = usePrevious(isItemChecked);
@@ -165,6 +171,9 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
   return (
     <li 
       ref={(el) => { setNodeRef(el); liRef.current = el; }}
+      tabIndex={-1}
+      data-nav={isSubItem ? 'sub-item' : 'item'}
+      data-item-id={item.id}
       style={{ transform: CSS.Translate.toString(transform), transition }}
       onMouseDown={(e) => listeners?.onMouseDown?.(e)}
       className={`list-item ${isDragging ? 'is-drag-source' : ''} ${isItemChecked ? 'checked' : ''} ${isSwipeActive ? 'is-swiping' : ''} ${isSubItem ? 'is-sub-item' : ''} ${checkPop ? 'pop-animate' : ''} ${isSwipeDemo ? 'swipe-demo' : ''} ${isExpanded ? 'is-expanded' : ''}`}
@@ -206,7 +215,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
                 value={item.name}
                 autoFocus={!item.name}
                 onChange={(e) => updateItem(item.id, { name: e.target.value })}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); setSelectedItemId(null); } }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); close(); } }}
                 placeholder="Item name"
                 aria-label="Item name"
               />
@@ -225,7 +234,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
                 {isSubItem && parentName && <span className="subitem-parent-prefix">{parentName} / </span>}
                 {item.name}
               </span>
-              {item.description?.trim() && <span className="item-note-hint" title="Has a note" aria-label="Has a note">≡</span>}
+              {item.description?.trim() && <span className="item-note-hint" title={item.description.trim()} aria-label={`Note: ${item.description.trim()}`}>≡</span>}
             </div>
           )}
         </div>
@@ -240,21 +249,29 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
             {subItemCounts.packed}/{subItemCounts.total}
           </button>
         )}
-        {assignedLuggage && (
+        {/* Always there (also without a bag), so an item taken out of its bag can be put back */}
+        {hasBags && (
           <button
             type="button"
-            className={`luggage-badge ${luggagePop ? 'pop-animate' : ''}`}
-            style={{ '--lug-color': assignedLuggage.color || '#666' } as React.CSSProperties}
-            title={`Bag: ${assignedLuggage.name} · click: ${getNextLuggageHint(item.id, 1).toLowerCase()}`}
-            aria-label={`Bag: ${assignedLuggage.name}. Click to move to ${getNextLuggageHint(item.id, 1)}`}
+            className={`luggage-badge ${assignedLuggage ? '' : 'is-empty'} ${luggagePop ? 'pop-animate' : ''}`}
+            style={{ '--lug-color': assignedLuggage?.color || '#8a94a3' } as React.CSSProperties}
+            title={`${assignedLuggage ? `Bag: ${assignedLuggage.name}` : 'No bag'} · click: ${getNextLuggageHint(item.id, 1).toLowerCase()}`}
+            aria-label={`${assignedLuggage ? `Bag: ${assignedLuggage.name}` : 'No bag'}. Click: ${getNextLuggageHint(item.id, 1)}`}
             onClick={() => { playPopSound('pop'); cycleLuggage(item.id, 1); }}
           >
-            <LuggageIcon type={assignedLuggage.icon || 'default'} color={assignedLuggage.color || '#666'} size={15} />
+            <LuggageIcon type={assignedLuggage?.icon || 'default'} color={assignedLuggage?.color || '#8a94a3'} size={15} />
+          </button>
+        )}
+        {isExpanded && (
+          <button className="btn-close-item" onClick={close} title="Close (Esc)" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m6 15 6-6 6 6" />
+            </svg>
           </button>
         )}
         <button className="btn-remove" onClick={handleDelete} title="Delete item" aria-label={`Delete ${item.name}`}>✕</button>
       </div>
-      {isExpanded && <ItemDetails item={item} isSubItem={isSubItem} onDone={() => setSelectedItemId(null)} />}
+      {isExpanded && <ItemDetails item={item} isSubItem={isSubItem} onDone={close} />}
     </li>
   );
 };

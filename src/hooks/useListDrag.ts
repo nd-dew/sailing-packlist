@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import {
-  MouseSensor, TouchSensor, useSensor, useSensors, closestCorners, closestCenter, pointerWithin,
-  type Active, type Over, type CollisionDetection,
-  type DragStartEvent, type DragOverEvent, type DragMoveEvent, type DragEndEvent, type UniqueIdentifier
+  MouseSensor, TouchSensor, useSensor, useSensors, closestCorners, closestCenter,
+  type Active, type CollisionDetection,
+  type DragStartEvent, type DragOverEvent, type DragEndEvent, type UniqueIdentifier
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import type { Category } from '../types';
 
-// Droppable id for a whole category (items can be dropped into empty or collapsed ones; categories drop next to it)
+// Droppable id for a whole category card (items can be dropped into empty or collapsed ones)
 export const CATEGORY_DROP_PREFIX = 'cat:';
 export const categoryDropId = (catId: string) => `${CATEGORY_DROP_PREFIX}${catId}`;
-// Draggable id for a category, dragged by its header
-export const categoryDragId = (catId: string) => `catdrag:${catId}`;
 
-export type CategoryDropPosition = 'before' | 'after';
+// Sortable id for a category, dragged by its header
+const CATEGORY_DRAG_PREFIX = 'catdrag:';
+export const categoryDragId = (catId: string) => `${CATEGORY_DRAG_PREFIX}${catId}`;
+const catIdFromDragId = (id: UniqueIdentifier) => String(id).slice(CATEGORY_DRAG_PREFIX.length);
 
 // A drag ends with a mouseup that can land on what it started from; clicks use this to ignore that mouseup
 let lastDragEndAt = 0;
@@ -30,43 +31,36 @@ const findCategoryId = (cats: Category[], id: UniqueIdentifier) => {
   return cats.find(c => c.items.some(i => i.id === key))?.id;
 };
 
+const findColumn = (columns: string[][], catId: string) => columns.findIndex(col => col.includes(catId));
+
 const orderSignature = (cats: Category[]) => cats.map(c => `${c.id}:${c.items.map(i => i.id).join(',')}`).join('|');
 
-// Categories only land next to other categories; items use the usual sortable behaviour
+// Categories only sort among categories, items only among items (and into category cards)
 export const listCollisionDetection: CollisionDetection = (args) => {
-  if (!isCategoryDrag(args.active)) return closestCorners(args);
-  const droppableContainers = args.droppableContainers.filter(c => String(c.id).startsWith(CATEGORY_DROP_PREFIX));
-  const hits = pointerWithin({ ...args, droppableContainers });
-  return hits.length ? hits : closestCenter({ ...args, droppableContainers });
-};
-
-const dropPosition = (active: Active, over: Over): CategoryDropPosition => {
-  const dragged = active.rect.current.translated;
-  if (!dragged) return 'after';
-  const draggedCenter = dragged.top + dragged.height / 2;
-  return draggedCenter < over.rect.top + over.rect.height / 2 ? 'before' : 'after';
-};
-
-const moveCategory = (cats: Category[], draggedId: string, targetId: string, position: CategoryDropPosition) => {
-  const dragged = cats.find(c => c.id === draggedId);
-  if (!dragged || draggedId === targetId) return cats;
-  const rest = cats.filter(c => c.id !== draggedId);
-  const index = rest.findIndex(c => c.id === targetId) + (position === 'after' ? 1 : 0);
-  return [...rest.slice(0, index), dragged, ...rest.slice(index)];
+  const categoryDrag = isCategoryDrag(args.active);
+  const droppableContainers = args.droppableContainers.filter(c =>
+    String(c.id).startsWith(CATEGORY_DRAG_PREFIX) === categoryDrag
+  );
+  return categoryDrag
+    ? closestCenter({ ...args, droppableContainers })
+    : closestCorners({ ...args, droppableContainers });
 };
 
 /**
  * Drag & drop for the list: items within and across categories, and whole categories.
- * Item drags work on a preview copy so the real list (and undo history) only changes once, on drop.
+ * Drags work on preview copies, so the real list (and undo history) only changes once, on drop.
  */
 export const useListDrag = (
   categories: Category[],
+  // category ids per column, as currently shown
+  categoryColumns: string[][],
   onCommit: (next: Category[], message: string) => void
 ) => {
   const [preview, setPreview] = useState<Category[] | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
-  const [categoryDrop, setCategoryDrop] = useState<{ catId: string; position: CategoryDropPosition } | null>(null);
+  // While a category is dragged: the column layout, updated live when it moves to another column
+  const [columnsPreview, setColumnsPreview] = useState<string[][] | null>(null);
 
   const sensors = useSensors(
     // Mouse: start after a small move so clicks and checkbox taps still work
@@ -79,7 +73,7 @@ export const useListDrag = (
     setPreview(null);
     setActiveId(null);
     setDraggedCategoryId(null);
-    setCategoryDrop(null);
+    setColumnsPreview(null);
     lastDragEndAt = Date.now();
     dragActive = false;
   };
@@ -88,36 +82,34 @@ export const useListDrag = (
     dragActive = true;
     navigator.vibrate?.(15);
     if (isCategoryDrag(active)) {
-      setDraggedCategoryId(active.data.current?.catId);
+      setDraggedCategoryId(catIdFromDragId(active.id));
+      setColumnsPreview(categoryColumns);
       return;
     }
     setActiveId(String(active.id));
     setPreview(categories);
   };
 
-  const trackCategoryDrop = (active: Active, over: Over | null) => {
-    const targetId = over ? findCategoryId(categories, over.id) : undefined;
-    const draggedId = active.data.current?.catId;
-    if (!over || !targetId || targetId === draggedId) {
-      setCategoryDrop(null);
-      return;
-    }
-    const position = dropPosition(active, over);
-    setCategoryDrop(prev => (prev?.catId === targetId && prev.position === position ? prev : { catId: targetId, position }));
-  };
-
-  // The before/after half can change while staying over the same category
-  const onDragMove = ({ active, over }: DragMoveEvent) => {
-    if (isCategoryDrag(active)) trackCategoryDrop(active, over);
-  };
-
-  // Moving an item into another category happens live, so the list opens a gap where it will land
   const onDragOver = ({ active, over }: DragOverEvent) => {
+    if (!over) return;
+
     if (isCategoryDrag(active)) {
-      trackCategoryDrop(active, over);
+      // Within a column the sortable list makes room by itself; across columns we move it over live
+      const draggedId = catIdFromDragId(active.id);
+      const targetId = catIdFromDragId(over.id);
+      setColumnsPreview(prev => {
+        if (!prev) return prev;
+        const from = findColumn(prev, draggedId);
+        const to = findColumn(prev, targetId);
+        if (from < 0 || to < 0 || from === to) return prev;
+        const next = prev.map(col => col.filter(id => id !== draggedId));
+        next[to].splice(next[to].indexOf(targetId), 0, draggedId);
+        return next;
+      });
       return;
     }
-    if (!over) return;
+
+    // Moving an item into another category happens live, so the list opens a gap where it will land
     setPreview(prev => {
       if (!prev) return prev;
       const fromId = findCategoryId(prev, active.id);
@@ -142,11 +134,20 @@ export const useListDrag = (
 
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (isCategoryDrag(active)) {
-      const draggedId = active.data.current?.catId;
-      if (over && categoryDrop) {
-        const next = moveCategory(categories, draggedId, categoryDrop.catId, categoryDrop.position);
-        if (next !== categories && next.map(c => c.id).join() !== categories.map(c => c.id).join()) {
-          onCommit(next, `Moved ${categories.find(c => c.id === draggedId)?.title || 'category'}`);
+      const draggedId = catIdFromDragId(active.id);
+      if (over && columnsPreview) {
+        const targetId = catIdFromDragId(over.id);
+        const columns = columnsPreview.map(col => [...col]);
+        const colIndex = findColumn(columns, draggedId);
+        if (colIndex >= 0 && colIndex === findColumn(columns, targetId)) {
+          const col = columns[colIndex];
+          columns[colIndex] = arrayMove(col, col.indexOf(draggedId), col.indexOf(targetId));
+        }
+        // The new order reads like the page: first column top to bottom, then the next
+        const order = columns.flat();
+        if (order.join() !== categories.map(c => c.id).join()) {
+          const byId = new Map(categories.map(c => [c.id, c]));
+          onCommit(order.map(id => byId.get(id)!), `Moved ${byId.get(draggedId)?.title || 'category'}`);
         }
       }
       reset();
@@ -177,8 +178,8 @@ export const useListDrag = (
     sensors,
     activeId,
     draggedCategoryId,
-    categoryDrop,
+    columnsPreview,
     shownCategories: preview ?? categories,
-    handlers: { onDragStart, onDragMove, onDragOver, onDragEnd, onDragCancel: reset },
+    handlers: { onDragStart, onDragOver, onDragEnd, onDragCancel: reset },
   };
 };

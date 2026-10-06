@@ -21,6 +21,7 @@ export const getInitialLuggageAssignments = (cruiseId: string) => {
   if (data && data.categories) {
     data.categories.forEach((cat: Category) => {
       cat.items.forEach(item => {
+        if (item.defaultBag === 'none') return; // explicitly in no bag
         if (item.defaultBag) {
           assignments[item.id] = item.defaultBag;
         } else {

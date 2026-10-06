@@ -62,7 +62,7 @@ categories:
 *   `description`: (Optional) Advice or warning text.
 *   `qty`: (Optional) Default number.
 *   `captainOnly`: (Optional) Set to `true` to restrict this item to the Captain preset.
-*   `defaultBag`: (Optional) The `id` of the luggage this item should automatically be assigned to.
+*   `defaultBag`: (Optional) The `id` of the luggage this item should automatically be assigned to. Use `"none"` for no bag; without the field it goes into `lug_1`.
 *   `subItems`: (Optional) A list of `{ id, name }` items packed as part of this one (e.g. the chargers in "Charging & Cables").
 
 ### Step 3: That's it

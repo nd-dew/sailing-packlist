@@ -195,7 +195,8 @@ export const tripToPresetYaml = (meta: TripMeta, data: TripData) => {
         name: item.name,
         qty: item.qty,
         description: item.description || undefined,
-        defaultBag: data.itemLuggage[item.id],
+        // "none" keeps it out of every bag (leaving it out would mean the preset's fallback bag)
+        defaultBag: data.itemLuggage[item.id] ?? 'none',
         subItems: item.subItems?.length ? item.subItems.map(sub => ({ id: sub.id, name: sub.name })) : undefined,
       })),
     })),

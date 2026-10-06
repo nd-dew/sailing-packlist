@@ -3,104 +3,174 @@ import { PacklistProvider, usePacklist } from './context/PacklistContext';
 import { Header } from './components/layout/Header';
 import { SettingsMenu } from './components/layout/SettingsMenu';
 import { BaggageMenu } from './components/layout/BaggageMenu';
+import { TripHeader } from './components/layout/TripHeader';
 import { CategoryBlock } from './components/core/CategoryBlock';
-import { ItemModal } from './components/modals/ItemModal';
 import { BagModal } from './components/modals/BagModal';
 import { CategoryModal } from './components/modals/CategoryModal';
 import { decompressPayload } from './utils/shareUtils';
 import { PRESETS } from './utils/presetUtils';
+import { countLeafItems } from './utils/countUtils';
+import { getPresetIdFromPath, replacePresetPath, clearUrlHash } from './utils/urlUtils';
+import { useListDrag, listCollisionDetection } from './hooks/useListDrag';
+import { DndContext, DragOverlay, MeasuringStrategy } from '@dnd-kit/core';
+import { ItemDragPreview } from './components/core/ItemDragPreview';
+import { HoverTooltips } from './components/core/HoverTooltips';
+import type { Category } from './types';
 import './App.css';
+
+// Split categories into N columns with similar height, keeping list order
+// (first column top to bottom, then the next) so reading order matches mobile
+const splitIntoColumns = (cats: Category[], columns: number): Category[][] => {
+  const weights = cats.map(cat => cat.items.length + 3); // item count + header padding
+  const total = weights.reduce((a, b) => a + b, 0) || 1;
+  const result: Category[][] = Array.from({ length: columns }, () => []);
+  let before = 0;
+  cats.forEach((cat, i) => {
+    // place each category in the column its vertical midpoint falls into
+    const col = Math.min(columns - 1, Math.floor(((before + weights[i] / 2) / total) * columns));
+    result[col].push(cat);
+    before += weights[i];
+  });
+  return result;
+};
+
+// How many columns actually fit: phones get one, mid-size screens at most two
+const useEffectiveColumns = (preferred: number) => {
+  const query = () => (window.innerWidth <= 850 ? 1 : window.innerWidth < 1100 ? Math.min(preferred, 2) : preferred);
+  const [cols, setCols] = React.useState(query);
+  useEffect(() => {
+    const update = () => setCols(query());
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preferred]);
+  return cols;
+};
+
+// The URL is read once per page load (React dev mode runs mount effects twice; this must not create two trips)
+let urlHandled = false;
 
 const AppContent: React.FC = () => {
   const { 
     activeMenu, setActiveMenu, confirmToast, categories, itemViewFilter,
     handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd,
-    loadSharedState, handleCreateCategory,
-    pendingPreset, setPendingPreset, executeApplyPreset
+    handleCreateCategory, triggerConfirm,
+    checkedItems, collapsedCats, setSwipeHintItemId,
+    activePresetId, layoutColumns, density, commitAction, setCategories, luggages, itemLuggage, changes,
+    trips, activeTrip, switchTrip, createTripFromPreset, openSharedTrip
   } = usePacklist();
 
-  const [pendingSharePayload, setPendingSharePayload] = React.useState<any>(null);
-  const [pendingPresetId, setPendingPresetId] = React.useState<string | null>(null);
+  // What the page was opened with, captured before the effect below rewrites the address bar.
+  // `linkedPresetId` is a preset link (path or old #p=) to a preset other than the open trip's.
+  const [openedWith] = React.useState(() => {
+    const hash = window.location.hash;
+    const presetId = hash.startsWith('#p=') ? hash.substring(3) : hash.startsWith('#s=') ? null : getPresetIdFromPath();
+    const linkedPresetId = presetId && PRESETS[presetId] && presetId !== activePresetId ? presetId : null;
+    return { hash, linkedPresetId };
+  });
+  const linkedExistingTrip = openedWith.linkedPresetId
+    ? [...trips].reverse().find(t => t.presetId === openedWith.linkedPresetId)
+    : undefined;
+
+  // A link to a preset with separate crew/captain lists (and no trip from it yet): ask which one
+  const [rolePromptPresetId, setRolePromptPresetId] = React.useState<string | null>(() => {
+    const id = openedWith.linkedPresetId;
+    return id && !linkedExistingTrip && !PRESETS[id].disableRoles ? id : null;
+  });
+
+  // Keep the address bar on the open trip's preset (plain base path for trips without one)
+  useEffect(() => {
+    if (!rolePromptPresetId) replacePresetPath(activePresetId);
+  }, [activePresetId, rolePromptPresetId]);
 
   useEffect(() => {
-    const handleUrlHash = async () => {
-      const hash = window.location.hash;
-      if (hash.startsWith('#s=')) {
-        const shareToken = hash.substring(3);
-        try {
-          const unpacked = await decompressPayload(shareToken);
-          setPendingSharePayload(unpacked);
-        } catch (err) {
+    document.title = activeTrip?.name ? `${activeTrip.name} · BSC Packing List` : 'BSC Packing List';
+  }, [activeTrip?.name]);
+
+  // Wider page for 3 columns, narrower for 1 (the fixed header follows the same width)
+  useEffect(() => {
+    const width = layoutColumns === 3 ? '1400px' : layoutColumns === 1 ? '720px' : '1000px';
+    document.documentElement.style.setProperty('--app-max-width', width);
+  }, [layoutColumns]);
+
+  // Links never overwrite your list: a preset link opens your trip from that preset (or starts one),
+  // a shared link opens as a trip of its own
+  useEffect(() => {
+    if (urlHandled) return;
+    urlHandled = true;
+    const { hash, linkedPresetId } = openedWith;
+
+    if (hash.startsWith('#s=')) {
+      const token = hash.substring(3);
+      clearUrlHash();
+      decompressPayload(token)
+        .then(shared => {
+          openSharedTrip(shared, token);
+          triggerConfirm('⛵ Opened the shared list as a new trip', '', () => {});
+        })
+        .catch(err => {
           console.error("Failed to parse shared URL:", err);
           alert("Failed to parse shared URL. The link might be invalid or broken.");
-          window.history.replaceState(null, '', window.location.pathname);
-        }
-      } else if (hash.startsWith('#p=')) {
-        const presetId = hash.substring(3);
-        if (PRESETS[presetId]) {
-          setPendingPresetId(presetId);
-        } else {
-          console.warn("Preset not found:", presetId);
-          window.history.replaceState(null, '', window.location.pathname);
-        }
-      }
-    };
-    handleUrlHash();
+        });
+      return;
+    }
+
+    if (hash.startsWith('#p=')) clearUrlHash();
+    if (!linkedPresetId || rolePromptPresetId) return;
+    if (linkedExistingTrip) switchTrip(linkedExistingTrip.id);
+    else createTripFromPreset(linkedPresetId, 'crew');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleAcceptShare = () => {
-    if (pendingSharePayload) {
-      loadSharedState(pendingSharePayload);
-    }
-    setPendingSharePayload(null);
-    window.history.replaceState(null, '', window.location.pathname);
+  const startPresetTrip = (role: 'crew' | 'captain') => {
+    if (rolePromptPresetId) createTripFromPreset(rolePromptPresetId, role);
+    setRolePromptPresetId(null);
   };
 
-  const handleCancelShare = () => {
-    setPendingSharePayload(null);
-    window.history.replaceState(null, '', window.location.pathname);
-  };
-
-  const handleApplyPresetUrl = (role: 'crew' | 'captain') => {
-    if (pendingPresetId) {
-      executeApplyPreset(pendingPresetId, role);
-    }
-    setPendingPresetId(null);
-    window.history.replaceState(null, '', window.location.pathname);
-  };
-
-  const handleCancelPresetUrl = () => {
-    setPendingPresetId(null);
-    window.history.replaceState(null, '', window.location.pathname);
-  };
-
-  // Dynamically balance categories into two columns for desktop view
-  const leftCol: typeof categories = [];
-  const rightCol: typeof categories = [];
-  let leftWeight = 0;
-  let rightWeight = 0;
-
-  categories.forEach(cat => {
-    const weight = cat.items.length + 3; // weight is proportional to item count + header padding
-    if (leftWeight <= rightWeight) {
-      leftCol.push(cat);
-      leftWeight += weight;
-    } else {
-      rightCol.push(cat);
-      rightWeight += weight;
-    }
+  const effectiveColumns = useEffectiveColumns(layoutColumns);
+  const drag = useListDrag(categories, (next, message) => {
+    commitAction(message);
+    setCategories(next);
   });
+  const dragEnabled = itemViewFilter === 'all';
+
+  // Columns are decided from the real list so categories don't jump between columns mid-drag
+  const shownById = new Map(drag.shownCategories.map(cat => [cat.id, cat]));
+  const columns = splitIntoColumns(categories, effectiveColumns)
+    .map(col => col.map(cat => shownById.get(cat.id) ?? cat));
+  // "Add Category" goes under the last column that has categories (the first one on an empty trip)
+  const addCategoryColumn = Math.max(0, columns.map(col => col.length > 0).lastIndexOf(true));
+  const draggedCategory = drag.draggedCategoryId ? categories.find(c => c.id === drag.draggedCategoryId) : undefined;
+  const draggedItem = drag.activeId ? drag.shownCategories.flatMap(c => c.items).find(i => i.id === drag.activeId) : undefined;
+
+  const { total: totalItems, packed: packedItems } = countLeafItems(categories.flatMap(cat => cat.items), checkedItems);
+  const allPacked = totalItems > 0 && packedItems === totalItems;
+
+  // On touch devices, demo the swipe gestures on the first item until the user has swiped once
+  useEffect(() => {
+    if (!window.matchMedia('(pointer: coarse)').matches) return;
+    if (localStorage.getItem('sailingPacklist_swipe_learned')) return;
+    const firstItem = categories
+      .filter(cat => !collapsedCats[cat.id])
+      .flatMap(cat => cat.items)[0];
+    if (!firstItem) return;
+    const t = setTimeout(() => setSwipeHintItemId(firstItem.id), 1500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
       <div className={`filter-glow-frame ${itemViewFilter === 'packed' ? 'packed' : itemViewFilter === 'unpacked' ? 'unpacked' : ''}`} />
       <div 
-        className="app-container" 
+        className={`app-container density-${density}`} 
         onTouchStart={handleGlobalTouchStart} 
         onTouchMove={handleGlobalTouchMove} 
         onTouchEnd={handleGlobalTouchEnd}
       >
       <Header />
+      <HoverTooltips />
       
       {activeMenu !== 'main' && <div className="menu-overlay" onClick={() => setActiveMenu('main')} />}
 
@@ -112,87 +182,16 @@ const AppContent: React.FC = () => {
         </div>
       )}
 
-      {pendingSharePayload && (
-        <div className="share-confirm-overlay">
-          <div className="share-confirm-card">
-            <span className="share-confirm-icon">⛵</span>
-            <h3>Shared Packlist Detected</h3>
-            <p>Seems like someone gave you a link with an included packlist configured. Do you want to open it? (it will override whatever you currently have?)</p>
+      {rolePromptPresetId && (
+        <div className="share-confirm-overlay" onClick={() => setRolePromptPresetId(null)}>
+          <div className="share-confirm-card role-card" onClick={(e) => e.stopPropagation()}>
+            <h3>{PRESETS[rolePromptPresetId]?.name}</h3>
+            <p>Which packing list do you need?</p>
             <div className="share-confirm-actions">
-              <button onClick={handleCancelShare} className="btn-share-confirm cancel">Cancel</button>
-              <button onClick={handleAcceptShare} className="btn-share-confirm confirm">Yes, Load</button>
+              <button onClick={() => startPresetTrip('crew')} className="btn-share-confirm confirm">Crew</button>
+              <button onClick={() => startPresetTrip('captain')} className="btn-share-confirm confirm">Captain</button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {pendingPreset && (
-        <div className="share-confirm-overlay">
-          <div className="share-confirm-card warning-card">
-            <span className="share-confirm-icon warning-icon">⚠️</span>
-            <h3>Load Preset?</h3>
-            <p>This will completely factory reset your list to the <strong>{PRESETS[pendingPreset.cruise]?.name || pendingPreset.cruise}</strong> preset. All custom items, bag assignments, and packing progress will be permanently lost!</p>
-            {PRESETS[pendingPreset.cruise]?.disableRoles ? (
-              <div className="share-confirm-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: '15px' }}>
-                <button onClick={() => executeApplyPreset(pendingPreset.cruise, 'crew')} className="btn-share-confirm confirm" style={{ width: '100%' }}>
-                  Load Preset
-                </button>
-                <button onClick={() => setPendingPreset(null)} className="btn-share-confirm cancel" style={{ width: '100%' }}>Cancel</button>
-              </div>
-            ) : (
-              <>
-                <p style={{ fontWeight: 'bold', marginTop: '12px', marginBottom: '8px', textAlign: 'center' }}>How would you like to load it?</p>
-                <div className="share-confirm-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
-                  <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                    <button onClick={() => executeApplyPreset(pendingPreset.cruise, 'crew')} className="btn-share-confirm confirm" style={{ flex: 1 }}>
-                      Load as Crew
-                    </button>
-                    <button onClick={() => executeApplyPreset(pendingPreset.cruise, 'captain')} className="btn-share-confirm confirm" style={{ flex: 1, background: 'var(--accent)', color: '#121212' }}>
-                      Load as Captain
-                    </button>
-                  </div>
-                  <button onClick={() => setPendingPreset(null)} className="btn-share-confirm cancel" style={{ width: '100%' }}>Cancel</button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {pendingPresetId && (
-        <div className="share-confirm-overlay">
-          <div className="share-confirm-card">
-            <span className="share-confirm-icon">⛵</span>
-            <h3>Preset Detected</h3>
-            <p style={{ margin: '0 0 8px 0' }}>This link contains the following preset:</p>
-            <div className="preset-detected-badge">
-              {PRESETS[pendingPresetId]?.name || pendingPresetId}
-            </div>
-            {PRESETS[pendingPresetId]?.disableRoles ? (
-              <div className="share-confirm-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: '15px' }}>
-                <button onClick={() => handleApplyPresetUrl('crew')} className="btn-share-confirm confirm" style={{ width: '100%' }}>
-                  Load Preset
-                </button>
-                <button onClick={handleCancelPresetUrl} className="btn-share-confirm cancel" style={{ width: '100%' }}>Cancel</button>
-              </div>
-            ) : (
-              <>
-                <p style={{ margin: '8px 0 15px 0' }}>How would you like to load it?</p>
-                <div className="share-confirm-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
-                  <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                    <button onClick={() => handleApplyPresetUrl('crew')} className="btn-share-confirm confirm" style={{ flex: 1 }}>
-                      Load as Crew
-                    </button>
-                    <button onClick={() => handleApplyPresetUrl('captain')} className="btn-share-confirm confirm" style={{ flex: 1 }}>
-                      Load as Captain
-                    </button>
-                  </div>
-                  <button onClick={handleCancelPresetUrl} className="btn-share-confirm cancel" style={{ width: '100%' }}>
-                    Cancel
-                  </button>
-                </div>
-              </>
-            )}
+            <button onClick={() => setRolePromptPresetId(null)} className="btn-role-skip">Not now</button>
           </div>
         </div>
       )}
@@ -200,30 +199,71 @@ const AppContent: React.FC = () => {
       <SettingsMenu />
       <BaggageMenu />
 
-      <ItemModal />
       <BagModal />
       <CategoryModal />
 
-      <div className="checklist-grid">
-        <div className="checklist-column">
-          {leftCol.map(cat => (
-            <CategoryBlock key={cat.id} cat={cat} />
-          ))}
-        </div>
-        <div className="checklist-column">
-          {rightCol.map(cat => (
-            <CategoryBlock key={cat.id} cat={cat} />
-          ))}
-          
-          <div className="category-block btn-add-category-block" onClick={() => handleCreateCategory()}>
-            <div className="category-header add-category-header">
-              <div className="category-title-area add-category-title-area">
-                <h3>Add Category</h3>
-              </div>
-            </div>
+      <TripHeader />
+
+      {allPacked && (
+        <div className="all-packed-banner" role="status">
+          <span className="all-packed-icon">⛵</span>
+          <div>
+            <strong>All packed!</strong>
+            <span>Ready to sail.</span>
           </div>
         </div>
-      </div>
+      )}
+
+      <DndContext
+        sensors={drag.sensors}
+        collisionDetection={listCollisionDetection}
+        // categories fold up when a category drag starts, so drop targets must be re-measured as they move
+        measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+        {...drag.handlers}
+      >
+        <div className={`checklist-grid cols-${effectiveColumns} ${drag.activeId || draggedCategory ? 'is-dragging' : ''} ${draggedCategory ? 'is-reordering-categories' : ''}`}>
+          {columns.map((col, colIndex) => (
+            <div className="checklist-column" key={colIndex}>
+              {col.map(cat => (
+                <CategoryBlock
+                  key={cat.id}
+                  cat={cat}
+                  dragEnabled={dragEnabled}
+                  dropIndicator={drag.categoryDrop?.catId === cat.id ? drag.categoryDrop.position : undefined}
+                />
+              ))}
+              {colIndex === addCategoryColumn && (
+                <div className="category-block btn-add-category-block" onClick={() => handleCreateCategory()}>
+                  <div className="category-header add-category-header">
+                    <div className="category-title-area add-category-title-area">
+                      <h3>Add Category</h3>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
+          {draggedCategory && (
+            <div className="category-block category-drag-overlay">
+              <div className="category-header">
+                <div className="category-title-area">
+                  <h3>{draggedCategory.title}</h3>
+                </div>
+              </div>
+            </div>
+          )}
+          {draggedItem && (
+            <ItemDragPreview
+              item={draggedItem}
+              checked={!!checkedItems[draggedItem.id]}
+              qty={draggedItem.id.startsWith('base_') && /underwear|socks|tshirt/.test(draggedItem.id) ? changes : draggedItem.qty}
+              luggage={luggages.find(l => l.id === itemLuggage[draggedItem.id])}
+            />
+          )}
+        </DragOverlay>
+      </DndContext>
 
       <footer className="app-footer">
         <a href="https://www.sailingcommunity.be/" target="_blank" rel="noopener noreferrer">

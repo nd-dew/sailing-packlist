@@ -5,7 +5,7 @@ import { LuggageIcon } from '../core/LuggageIcon';
 export const BagModal: React.FC = () => {
   const { 
     selectedLuggageId, setSelectedLuggageId, luggages, updateLuggage,
-    deleteLuggage, packAndHideLuggageItems, unpackLuggageItems, hideLuggageItems
+    deleteLuggage, packLuggageItems, unpackLuggageItems
   } = usePacklist();
 
   if (!selectedLuggageId) return null;
@@ -62,22 +62,16 @@ export const BagModal: React.FC = () => {
             <label>Bulk Actions</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button 
-                onClick={() => { packAndHideLuggageItems(lug.id); closeBagModal(); }}
+                onClick={() => { packLuggageItems(lug.id); closeBagModal(); }}
                 style={{ padding: '10px', background: '#d4edda', border: '1px solid #c3e6cb', borderRadius: '6px', color: '#155724', cursor: 'pointer', fontWeight: 'bold' }}
               >
-                ✓ Pack & Hide All Items
+                ✓ Pack All Items
               </button>
               <button 
                 onClick={() => { unpackLuggageItems(lug.id); closeBagModal(); }}
                 style={{ padding: '10px', background: '#fff3cd', border: '1px solid #ffeeba', borderRadius: '6px', color: '#856404', cursor: 'pointer', fontWeight: 'bold' }}
               >
                 ⨯ Unpack All Items
-              </button>
-              <button 
-                onClick={() => { hideLuggageItems(lug.id); closeBagModal(); }}
-                style={{ padding: '10px', background: '#e2e3e5', border: '1px solid #d6d8db', borderRadius: '6px', color: '#383d41', cursor: 'pointer', fontWeight: 'bold' }}
-              >
-                🙈 Hide All Items
               </button>
             </div>
           </div>

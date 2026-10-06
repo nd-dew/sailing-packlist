@@ -5,7 +5,7 @@ import { LuggageIcon } from '../core/LuggageIcon';
 export const CategoryModal: React.FC = () => {
   const { 
     selectedCategoryId, setSelectedCategoryId, categories, updateCategory, deleteCategory,
-    setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, unpackCategoryItemsAction, luggages
+    setCategoryLuggage, packCategory, unpackCategoryItemsAction, luggages
   } = usePacklist();
 
   if (!selectedCategoryId) return null;
@@ -83,22 +83,16 @@ export const CategoryModal: React.FC = () => {
             <label>Bulk Actions</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button 
-                onClick={() => { packAndHideCategory(category.id); closeCategoryModal(); }}
+                onClick={() => { packCategory(category.id); closeCategoryModal(); }}
                 style={{ padding: '10px', background: '#d4edda', border: '1px solid #c3e6cb', borderRadius: '6px', color: '#155724', cursor: 'pointer', fontWeight: 'bold' }}
               >
-                ✓ Pack & Hide All Items
+                ✓ Pack All Items
               </button>
               <button 
                 onClick={() => { unpackCategoryItemsAction(category.id); closeCategoryModal(); }}
                 style={{ padding: '10px', background: '#fff3cd', border: '1px solid #ffeeba', borderRadius: '6px', color: '#856404', cursor: 'pointer', fontWeight: 'bold' }}
               >
                 ⨯ Unpack All Items
-              </button>
-              <button 
-                onClick={() => { hideCategoryItemsAction(category.id); closeCategoryModal(); }}
-                style={{ padding: '10px', background: '#e2e3e5', border: '1px solid #d6d8db', borderRadius: '6px', color: '#383d41', cursor: 'pointer', fontWeight: 'bold' }}
-              >
-                🙈 Hide All Items
               </button>
             </div>
           </div>

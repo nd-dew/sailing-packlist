@@ -2,16 +2,15 @@ import React, { useRef } from 'react';
 import { usePacklist } from '../../context/PacklistContext';
 import { PRESETS } from '../../utils/presetUtils';
 import { parse, stringify } from 'yaml';
-import { compressPayload } from '../../utils/shareUtils';
 
 export const SettingsMenu: React.FC = () => {
   const { 
     activeMenu, setActiveMenu, changes, updateChanges,
     deferredPrompt, handleInstallClick, past,
-    getMenuStyles, categories, luggages, itemLuggage, checkedItems, hiddenItems,
+    getMenuStyles, categories, luggages, itemLuggage, checkedItems,
     theme, setTheme, importData, soundEnabled, setSoundEnabled,
-    getSharePayload, playPopSound, cruiseDescription, setCruiseDescription, triggerConfirm,
-    activePresetId, pendingPreset, setPendingPreset
+    activePresetId, activeTrip, cruiseDescription, warnings,
+    layoutColumns, setLayoutColumns, density, setDensity
   } = usePacklist();
 
   const { leftMenuStyle, isMenuSwiping } = getMenuStyles();
@@ -22,12 +21,14 @@ export const SettingsMenu: React.FC = () => {
     const data = {
       version: '1.0',
       timestamp: new Date().toISOString(),
+      name: activeTrip.name,
+      description: cruiseDescription,
       changes,
+      warnings,
       categories,
       luggages,
       itemLuggage,
-      checkedItems,
-      hiddenItems
+      checkedItems
     };
     const yamlStr = stringify(data);
     const blob = new Blob([yamlStr], { type: 'text/yaml' });
@@ -39,34 +40,6 @@ export const SettingsMenu: React.FC = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
-
-  const handleShareList = async () => {
-    playPopSound('click');
-    try {
-      const payload = getSharePayload();
-      const hash = await compressPayload(payload);
-      const shareUrl = `${window.location.origin}${window.location.pathname}#s=${hash}`;
-      await navigator.clipboard.writeText(shareUrl);
-      alert("📋 Shareable list layout copied to clipboard! Send it to your crew.");
-    } catch (err) {
-      console.error("Failed to generate share link:", err);
-      alert("Failed to generate share link.");
-    }
-  };
-
-  const handleSharePreset = async () => {
-    playPopSound('click');
-    const currentPreset = pendingPreset ? pendingPreset.cruise : activePresetId;
-    try {
-      const shareUrl = `${window.location.origin}${window.location.pathname}#p=${currentPreset}`;
-      await navigator.clipboard.writeText(shareUrl);
-      triggerConfirm(`📋 Link to "${PRESETS[currentPreset]?.name || currentPreset}" copied to clipboard!`, '', () => {});
-    } catch (err) {
-      console.error("Failed to copy preset link:", err);
-      const shareUrl = `${window.location.origin}${window.location.pathname}#p=${currentPreset}`;
-      alert(`📋 Preset Link:\n${shareUrl}`);
-    }
   };
 
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,160 +58,117 @@ export const SettingsMenu: React.FC = () => {
     reader.readAsText(file);
   };
 
-  const currentPreviewPreset = pendingPreset ? pendingPreset.cruise : activePresetId;
-  const currentPresetData = PRESETS[currentPreviewPreset];
-  const hideShowers = currentPresetData?.hideShowers === true;
-  const selectedPresetDesc = currentPresetData?.description || "No description available.";
+  const hideShowers = PRESETS[activePresetId]?.hideShowers === true;
 
   return (
     <div className={`side-menu left-menu ${activeMenu === 'settings' ? 'open' : ''} ${isMenuSwiping ? 'is-swiping' : ''}`} style={leftMenuStyle}>
       <div className="menu-header">
         <h2>Settings</h2>
-        <button className="btn-close-menu" onClick={() => setActiveMenu('main')}>✕</button>
+        <button className="btn-close-menu" onClick={() => setActiveMenu('main')} aria-label="Close menu">✕</button>
       </div>
-      <div className="menu-content" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        
-        {/* 1. Cruise Preset at the TOP */}
-        <div className="menu-section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <label style={{ margin: 0 }}>Cruise Preset</label>
-            <button 
-              className="btn-preset-copy-inline" 
-              onClick={handleSharePreset}
-              title="Copy link to this preset"
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: '4px 8px',
-                fontSize: '1em',
-                cursor: 'pointer',
-                opacity: 0.7,
-                transition: 'opacity 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                color: 'var(--text)'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
-            >
-              🔗 <span style={{ fontSize: '0.85em', textDecoration: 'underline' }}>Copy Link</span>
-            </button>
-          </div>
-          <div className="preset-selectors" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <select 
-              className="modal-select" 
-              style={{ width: '100%', margin: 0 }} 
-              value={currentPreviewPreset} 
-              onChange={(e) => setPendingPreset({ cruise: e.target.value, role: null })}
-            >
-              {Object.entries(PRESETS).map(([id, data]) => (
-                <option key={id} value={id}>{data.name || id}</option>
-              ))}
-            </select>
-            <p style={{ margin: '4px 0 2px 0', fontSize: '0.85em', fontWeight: 'bold', color: 'var(--text)', textAlign: 'left' }}>
-              Active Preset: {PRESETS[currentPreviewPreset]?.name || currentPreviewPreset}
-            </p>
-            <textarea
-              className="preset-description-textarea"
-              value={cruiseDescription || selectedPresetDesc}
-              onChange={(e) => setCruiseDescription(e.target.value)}
-              placeholder="Describe your cruise details here..."
-              title="Click to edit trip description"
-            />
-          </div>
-        </div>
+      <div className="menu-content settings-menu">
 
-        {/* 2. Expected Showers */}
+        {/* Showers */}
         {!hideShowers && (
-          <div className="menu-section">
-            <label>Expected Showers</label>
-            <div className="stepper-control" style={{ margin: '8px 0' }}>
-              <button className="stepper-btn" onClick={() => updateChanges(Math.max(1, changes - 1))} disabled={changes <= 1}>−</button>
-              <input type="number" className="stepper-input" value={changes} onChange={(e) => updateChanges(parseInt(e.target.value) || 1)} min={1} max={14} />
-              <button className="stepper-btn" onClick={() => updateChanges(Math.min(14, changes + 1))} disabled={changes >= 14}>+</button>
+          <section className="menu-group">
+            <span className="menu-group-label">Packing</span>
+            <div className="menu-card">
+              <div className="menu-row">
+                <div className="menu-row-text">
+                  <span className="menu-row-title">Expected showers</span>
+                  <span className="menu-row-hint">{baseSetQty}× underwear, socks &amp; t-shirts</span>
+                </div>
+                <div className="stepper-control">
+                  <button className="stepper-btn" onClick={() => updateChanges(Math.max(1, changes - 1))} disabled={changes <= 1} aria-label="Fewer showers">−</button>
+                  <input type="number" className="stepper-input" value={changes} onChange={(e) => updateChanges(parseInt(e.target.value) || 1)} min={1} max={14} aria-label="Expected showers" />
+                  <button className="stepper-btn" onClick={() => updateChanges(Math.min(14, changes + 1))} disabled={changes >= 14} aria-label="More showers">+</button>
+                </div>
+              </div>
             </div>
-            <p className="controls-desc">Estimation: <strong>{baseSetQty} Base Sets</strong>. Calculated dynamically.</p>
-          </div>
+          </section>
         )}
 
-        {/* 3. Appearance & Sound Compact Toggle Buttons Row (No Title Labels) */}
-        <div className="menu-section" style={{ borderTop: '1px solid var(--border)', paddingTop: '15px' }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button 
-              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} 
-              className="btn-preset" 
-              style={{ flex: 1, padding: '10px 12px', fontSize: '0.9em', fontWeight: 'bold', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-            >
-              {theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
-            </button>
-            <button 
-              onClick={() => setSoundEnabled(!soundEnabled)} 
-              className="btn-preset" 
-              style={{ flex: 1, padding: '10px 12px', fontSize: '0.9em', fontWeight: 'bold', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-              title={soundEnabled ? 'Mute Sounds' : 'Unmute Sounds'}
-            >
-              {soundEnabled ? '🔊 Sounds On' : '🔇 Muted'}
-            </button>
-          </div>
-        </div>
-
-        {/* 4. Data & Sharing Category */}
-        <div className="menu-section global-actions-menu" style={{ borderTop: '1px solid var(--border)', paddingTop: '15px' }}>
-          <label>Data & Sharing</label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-            <button onClick={handleShareList} className="btn-preset share-btn" style={{ width: '100%', padding: '10px', background: 'var(--navy)', color: 'white', fontWeight: 'bold' }}>
-              🔗 Share Current Setup Link
-            </button>
-            
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={handleExport} className="btn-preset" style={{ flex: 1, padding: '8px 10px', fontSize: '0.9em' }}>
-                💾 Export to YAML
-              </button>
-              <input type="file" accept=".yaml,.yml" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileImport} />
-              <button onClick={() => fileInputRef.current?.click()} className="btn-preset" style={{ flex: 1, padding: '8px 10px', fontSize: '0.9em' }}>
-                📂 Import from YAML
+        {/* Appearance & layout */}
+        <section className="menu-group">
+          <span className="menu-group-label">Appearance</span>
+          <div className="menu-card menu-card-rows">
+            <div className="menu-row">
+              <span className="menu-row-title">Theme</span>
+              <div className="segmented" role="radiogroup" aria-label="Theme">
+                <button role="radio" aria-checked={theme === 'light'} className={theme === 'light' ? 'active' : ''} onClick={() => setTheme('light')}>☀️ Light</button>
+                <button role="radio" aria-checked={theme === 'dark'} className={theme === 'dark' ? 'active' : ''} onClick={() => setTheme('dark')}>🌙 Dark</button>
+              </div>
+            </div>
+            <div className="menu-row">
+              <span className="menu-row-title">Density</span>
+              <div className="segmented" role="radiogroup" aria-label="Density">
+                <button role="radio" aria-checked={density === 'comfortable'} className={density === 'comfortable' ? 'active' : ''} onClick={() => setDensity('comfortable')}>Comfy</button>
+                <button role="radio" aria-checked={density === 'compact'} className={density === 'compact' ? 'active' : ''} onClick={() => setDensity('compact')}>Compact</button>
+              </div>
+            </div>
+            <div className="menu-row desktop-only">
+              <span className="menu-row-title">Columns</span>
+              <div className="segmented" role="radiogroup" aria-label="Columns">
+                {([1, 2, 3] as const).map(n => (
+                  <button key={n} role="radio" aria-checked={layoutColumns === n} className={layoutColumns === n ? 'active' : ''} onClick={() => setLayoutColumns(n)} title={`${n} column${n > 1 ? 's' : ''}`}>
+                    <span className="col-icon" aria-hidden="true">{Array.from({ length: n }, (_, i) => <i key={i} />)}</span>
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="menu-row">
+              <span className="menu-row-title">Sounds</span>
+              <button
+                role="switch"
+                aria-checked={soundEnabled}
+                className={`switch ${soundEnabled ? 'on' : ''}`}
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                title={soundEnabled ? 'Mute Sounds' : 'Unmute Sounds'}
+              >
+                <span className="switch-knob" />
               </button>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* 5. Minimalist App Installation */}
-        {deferredPrompt && (
-          <div className="menu-section" style={{ borderTop: '1px solid var(--border)', paddingTop: '15px' }}>
-            <button 
-              onClick={handleInstallClick} 
-              className="btn-preset" 
-              style={{ width: '100%', padding: '8px', background: 'var(--accent)', color: '#121212', borderColor: 'var(--accent)', fontWeight: 'bold', fontSize: '0.9em' }}
-            >
-              📱 Install App
+        {/* Data & sharing */}
+        <section className="menu-group">
+          <span className="menu-group-label">Backup</span>
+          <div className="menu-card menu-card-rows menu-list">
+            <button onClick={handleExport} className="menu-list-btn">
+              <span>💾</span> Export to YAML
             </button>
+            <input type="file" accept=".yaml,.yml" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileImport} />
+            <button onClick={() => fileInputRef.current?.click()} className="menu-list-btn">
+              <span>📂</span> Import from YAML
+            </button>
+            {deferredPrompt && (
+              <button onClick={handleInstallClick} className="menu-list-btn">
+                <span>📱</span> Install App
+              </button>
+            )}
           </div>
-        )}
+        </section>
 
-        {/* 6. Collapsible Action History */}
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '15px', marginTop: '10px' }}>
-          <details className="history-disclosure">
-            <summary style={{ fontSize: '0.85em', fontWeight: 'bold', color: '#888', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              📜 View Action History ({past.length})
-            </summary>
-            <div style={{ maxHeight: '150px', overflowY: 'auto', marginTop: '10px', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px', background: 'rgba(0,0,0,0.02)' }}>
-              {past.length === 0 ? (
-                <p className="controls-desc" style={{ margin: 0 }}>No actions taken yet.</p>
-              ) : (
-                <ul className="history-log" style={{ margin: 0, padding: 0 }}>
-                  {[...past].reverse().slice(0, 30).map((entry) => (
-                    <li key={entry.id} style={{ fontSize: '0.8em', padding: '4px 0', borderBottom: '1px solid rgba(0,0,0,0.05)', listStyle: 'none' }}>
-                      <span className="log-time" style={{ color: '#888', marginRight: '6px' }}>{new Date(entry.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
-                      <span className="log-msg" style={{ color: 'var(--text)' }}>{entry.message}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </details>
-        </div>
+        {/* Action history */}
+        <details className="history-disclosure">
+          <summary>📜 Action history ({past.length})</summary>
+          <div className="history-panel">
+            {past.length === 0 ? (
+              <p className="controls-desc" style={{ margin: 0 }}>No actions taken yet.</p>
+            ) : (
+              <ul className="history-log">
+                {[...past].reverse().slice(0, 30).map((entry) => (
+                  <li key={entry.id}>
+                    <span className="log-time">{new Date(entry.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
+                    <span className="log-msg">{entry.message}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </details>
 
       </div>
     </div>

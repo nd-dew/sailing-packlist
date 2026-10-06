@@ -36,7 +36,6 @@ export interface AppSnapshot {
   categories: Category[];
   warnings: Warning[];
   checkedItems: Record<string, boolean>;
-  hiddenItems: Record<string, boolean>;
   luggages: Luggage[];
   itemLuggage: Record<string, string>;
 }

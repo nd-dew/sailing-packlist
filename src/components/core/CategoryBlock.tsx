@@ -1,47 +1,83 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { usePacklist } from '../../context/PacklistContext';
 import type { Category, PackItem } from '../../types';
 import { ItemRow } from './ItemRow';
+import { countLeafItems } from '../../utils/countUtils';
+import { useDroppable, useDraggable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { categoryDropId, categoryDragId, justFinishedDrag, type CategoryDropPosition } from '../../hooks/useListDrag';
+
+const priorityLabel = (priority: string) => {
+  const text = priority.replace(/-/g, ' ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
 
 interface CategoryBlockProps {
   cat: Category;
+  dragEnabled?: boolean;
+  // While another category is dragged over this one: where it would land
+  dropIndicator?: CategoryDropPosition;
 }
 
-export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
-  const { 
-    filter, hiddenItems, showHiddenCats, handleCreateItem, showPriorityToast, 
-    activeToastId, triggerConfirm, unhideAllInCategory, toggleCatHidden, 
-    changes, luggages, itemLuggage, unhideItem, commitAction, setCategories,
-    itemViewFilter, checkedItems, setSelectedItemId, setSelectedCategoryId
+export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat, dragEnabled = false, dropIndicator }) => {
+  const {
+    filter, handleCreateItem, showPriorityToast, activeToastId,
+    changes, luggages, itemLuggage, itemViewFilter, checkedItems, setSelectedCategoryId,
+    collapsedCats, setCatCollapsed, selectedItemId
   } = usePacklist();
+
+  const { total: catTotal, packed: catPacked } = countLeafItems(cat.items, checkedItems);
+  const isDone = catTotal > 0 && catPacked === catTotal;
+  const isCollapsed = !!collapsedCats[cat.id];
+
+  // The whole card accepts drops, so items can go into empty or collapsed categories
+  const { setNodeRef: setDropRef, isOver, active } = useDroppable({ id: categoryDropId(cat.id), disabled: !dragEnabled });
+  // The header is the handle for moving the whole category
+  const { setNodeRef: setDragRef, listeners: dragListeners, isDragging: isCategoryDragged } = useDraggable({
+    id: categoryDragId(cat.id),
+    data: { type: 'category', catId: cat.id },
+    disabled: !dragEnabled,
+  });
+  const isItemOver = isOver && active?.data.current?.type !== 'category';
+
+  // Fold the category away shortly after its last item gets packed, and open it again if it gets unpacked
+  const prevDone = useRef(isDone);
+  useEffect(() => {
+    if (prevDone.current === isDone) return;
+    prevDone.current = isDone;
+    const t = setTimeout(() => setCatCollapsed(cat.id, isDone), isDone ? 700 : 0);
+    return () => clearTimeout(t);
+  }, [isDone, cat.id, setCatCollapsed]);
+
+  // Opening an item that sits in a collapsed category (new item, bag list) unfolds the category
+  const holdsSelected = !!selectedItemId && cat.items.some(i => i.id === selectedItemId || i.subItems?.some(s => s.id === selectedItemId));
+  useEffect(() => {
+    if (holdsSelected && isCollapsed) setCatCollapsed(cat.id, false);
+  }, [holdsSelected, isCollapsed, cat.id, setCatCollapsed]);
 
   if (filter !== 'all' && cat.priority !== filter) return null;
 
-  const itemsToRender: { item: PackItem, isSubItem: boolean, parentName?: string }[] = [];
+  const itemsToRender: { item: PackItem, isSubItem: boolean, parentId?: string, parentName?: string }[] = [];
 
   cat.items.forEach(item => {
-    const isHidden = hiddenItems[item.id];
-
     if (itemViewFilter === 'all') {
-      if (!isHidden) {
-        itemsToRender.push({ item, isSubItem: false });
-      }
+      itemsToRender.push({ item, isSubItem: false });
     } else { // 'packed' or 'unpacked'
       if (item.subItems && item.subItems.length > 0) {
         // Unroll sub-items when a filter is active
         item.subItems.forEach(subItem => {
           const isSubItemPacked = !!checkedItems[subItem.id];
-          const subItemMatchesFilter = 
+          const subItemMatchesFilter =
             (itemViewFilter === 'packed' && isSubItemPacked) ||
             (itemViewFilter === 'unpacked' && !isSubItemPacked);
 
           if (subItemMatchesFilter) {
-            itemsToRender.push({ item: subItem, isSubItem: true, parentName: item.name });
+            itemsToRender.push({ item: subItem, isSubItem: true, parentId: item.id, parentName: item.name });
           }
         });
       } else { // Regular item (no sub-items)
         const isPacked = !!checkedItems[item.id];
-        const regularItemMatchesFilter = 
+        const regularItemMatchesFilter =
           (itemViewFilter === 'packed' && isPacked) ||
           (itemViewFilter === 'unpacked' && !isPacked);
 
@@ -51,124 +87,98 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat }) => {
       }
     }
   });
-    
-  const hiddenCatItems = cat.items.filter(item => hiddenItems[item.id]);
-  const isShowingHidden = showHiddenCats[cat.id];
-  const baseSetQty = changes;
 
-  // Calculate if category is entirely "done"
-  let catTotal = 0;
-  let catPacked = 0;
-  cat.items.forEach(item => {
-    if (item.subItems && item.subItems.length > 0) {
-      const countRecursive = (subItems: PackItem[]) => {
-        subItems.forEach(subItem => {
-          if (subItem.subItems) {
-            countRecursive(subItem.subItems);
-          } else {
-            catTotal++;
-            if (checkedItems[subItem.id]) catPacked++;
-          }
-        });
-      };
-      countRecursive(item.subItems);
-    } else {
-      catTotal++;
-      if (checkedItems[item.id]) catPacked++;
-    }
-  });
-  
-  const isDone = catTotal > 0 && catPacked === catTotal;
+  const baseSetQty = changes;
   const isCustomCategory = cat.id.startsWith('cat_custom_') || (cat as any).isCustom;
 
   if (cat.items.length === 0 && !isCustomCategory) return null; // Only hide completely empty preset categories
 
   // Hide the category entirely if we're filtering and there are no matching items
   if (itemViewFilter !== 'all' && itemsToRender.length === 0) return null;
-  // If not filtering, and there's nothing to render, and no hidden items, hide it
-  if (itemViewFilter === 'all' && itemsToRender.length === 0 && hiddenCatItems.length === 0 && !isCustomCategory) return null;
+
+  const toggleCollapsed = () => setCatCollapsed(cat.id, !isCollapsed);
 
   return (
-    <div className="category-block">
-      <div className={`category-header ${isDone ? 'done' : ''}`}>
+    <div
+      ref={setDropRef}
+      className={`category-block ${isCollapsed ? 'is-collapsed' : ''} ${isItemOver ? 'is-drop-target' : ''} ${isCategoryDragged ? 'is-drag-source' : ''} ${dropIndicator ? `drop-${dropIndicator}` : ''}`}
+    >
+      <div
+        ref={setDragRef}
+        className={`category-header ${isDone ? 'done' : ''}`}
+        {...dragListeners}
+        onClick={(e) => {
+          if (justFinishedDrag()) return;
+          if (!(e.target as HTMLElement).closest('button, h3, .stars-badge')) toggleCollapsed();
+        }}
+      >
         <div className="category-title-area">
           <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-            <h3 onClick={() => setSelectedCategoryId(cat.id)} style={{ cursor: 'pointer' }} title="Edit Category">{cat.title}</h3>
+            <h3 onClick={() => { if (!justFinishedDrag()) setSelectedCategoryId(cat.id); }} style={{ cursor: 'pointer' }} title="Edit Category">{cat.title}</h3>
             <button className="btn-add-item-header" onClick={() => handleCreateItem(cat.id)} title="Add custom item">+</button>
           </div>
-          {cat.priority && (
-            <div style={{position: 'relative'}}>
-              <span 
-                className="stars-badge" 
-                title={cat.priority.replace('-', ' ').toUpperCase()}
-                onClick={() => showPriorityToast(cat.id)}
-              >
-                {cat.priority === 'must-have' ? '★★★' : cat.priority === 'nice-to-have' ? '★☆☆' : '★★☆'}
-              </span>
-              {activeToastId === cat.id && (
-                <div className="priority-toast">
-                  {cat.priority.replace('-', ' ').toUpperCase()}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {isShowingHidden && (
-            <button 
-              className="btn-restore-all" 
-              onClick={() => triggerConfirm('Click again to restore items', `restore_${cat.id}`, () => unhideAllInCategory(cat.id))}
+          <div className="category-meta">
+            {catTotal > 0 && <span className="cat-progress">{isDone ? '✓ ' : ''}{catPacked}/{catTotal}</span>}
+            {cat.priority && (
+              <div style={{position: 'relative'}}>
+                <span
+                  className="stars-badge"
+                  title={priorityLabel(cat.priority)}
+                  onClick={() => showPriorityToast(cat.id)}
+                >
+                  {cat.priority === 'must-have' ? '★★★' : cat.priority === 'nice-to-have' ? '★☆☆' : '★★☆'}
+                </span>
+                {activeToastId === cat.id && (
+                  <div className="priority-toast">
+                    {priorityLabel(cat.priority)}
+                  </div>
+                )}
+              </div>
+            )}
+            <button
+              className="btn-collapse-cat"
+              onClick={toggleCollapsed}
+              aria-expanded={!isCollapsed}
+              title={isCollapsed ? 'Expand' : 'Collapse'}
             >
-              ↺
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
             </button>
-          )}
-          {hiddenCatItems.length > 0 && (
-            <button className={`badge-hidden ${isShowingHidden ? 'active' : ''}`} onClick={() => toggleCatHidden(cat.id)}>
-              {isShowingHidden ? 'Hide' : `${hiddenCatItems.length} hidden`}
-            </button>
-          )}
+          </div>
         </div>
       </div>
-      <ul>
-        {itemsToRender.map(({ item, isSubItem, parentName }) => {
-          const isBaseItem = item.id.startsWith('base_') && (item.id.includes('underwear') || item.id.includes('socks') || item.id.includes('tshirt'));
-          const displayQty = isBaseItem ? baseSetQty : item.qty;
-          const assignedLuggage = luggages.find(l => l.id === itemLuggage[item.id]);
+      {catTotal > 0 && (
+        <div className="cat-progress-bar" aria-hidden="true">
+          <div className={`cat-progress-fill ${isDone ? 'done' : ''}`} style={{ width: `${(catPacked / catTotal) * 100}%` }} />
+        </div>
+      )}
+      <div className="category-body">
+        <div className="category-body-inner">
+          <SortableContext items={itemsToRender.map(({ item }) => item.id)} strategy={verticalListSortingStrategy}>
+          <ul>
+            {itemsToRender.map(({ item, isSubItem, parentId, parentName }) => {
+              const isBaseItem = item.id.startsWith('base_') && (item.id.includes('underwear') || item.id.includes('socks') || item.id.includes('tshirt'));
+              const displayQty = isBaseItem ? baseSetQty : item.qty;
+              const assignedLuggage = luggages.find(l => l.id === itemLuggage[item.id]);
 
-          return (
-            <ItemRow 
-              key={item.id} 
-              item={item} 
-              displayQty={displayQty} 
-              assignedLuggage={assignedLuggage}
-              isSubItem={isSubItem}
-              parentName={parentName}
-            />
-          );
-        })}
-        {isShowingHidden && hiddenCatItems.map(item => (
-          <li key={item.id} className={`list-item grayed-out clickable ${checkedItems[item.id] ? 'checked' : ''}`} onClick={() => setSelectedItemId(item.id)}>
-            <div className="item-row">
-              <div className="item-main" style={{ cursor: 'pointer' }}>
-                <span className="item-name" style={{ textDecoration: 'none' }}>{item.name}</span>
-              </div>
-              <div className="hidden-actions" onClick={(e) => e.stopPropagation()}>
-                <button className="btn-unhide" onClick={() => unhideItem(item.id)}>↺</button>
-                <button 
-                  className="btn-delete" 
-                  onClick={() => triggerConfirm(`Click again to delete ${item.name}`, `delete_${item.id}`, () => {
-                    commitAction(`Deleted ${item.name}`);
-                    setCategories(prev => prev.map(c => ({...c, items: c.items.filter(i => i.id !== item.id)})));
-                    unhideItem(item.id);
-                  })}
-                >
-                  🗑️
-                </button>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
+              return (
+                <ItemRow
+                  key={item.id}
+                  item={item}
+                  displayQty={displayQty}
+                  assignedLuggage={assignedLuggage}
+                  isSubItem={isSubItem}
+                  parentId={parentId}
+                  parentName={parentName}
+                  dragEnabled={dragEnabled && !isSubItem}
+                />
+              );
+            })}
+          </ul>
+          </SortableContext>
+        </div>
+      </div>
     </div>
   );
 };

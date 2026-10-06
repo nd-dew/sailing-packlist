@@ -16,6 +16,12 @@ import {
   getPresetCategories 
 } from '../utils/presetUtils';
 import type { SharedPayload } from '../utils/shareUtils';
+import {
+  loadInitialTrips, loadTripData, saveTripData, saveTripIndex, removeTripData, newTripId, uniqueTripName,
+  buildPresetTripData, buildEmptyTripData, buildSharedTripData, tripToPresetYaml,
+  type TripMeta, type TripData
+} from '../utils/tripStore';
+import { isDragActive } from '../hooks/useListDrag';
 
 interface PacklistContextType {
   changes: number;
@@ -26,7 +32,6 @@ interface PacklistContextType {
   warnings: Warning[];
   checkedItems: Record<string, boolean>;
   setCheckedItems: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-  hiddenItems: Record<string, boolean>;
   luggages: Luggage[];
   setLuggages: React.Dispatch<React.SetStateAction<Luggage[]>>;
   itemLuggage: Record<string, string>;
@@ -37,8 +42,15 @@ interface PacklistContextType {
   setSelectedLuggageId: (id: string | null) => void;
   newLuggageName: string;
   setNewLuggageName: (name: string) => void;
-  showHiddenCats: Record<string, boolean>;
-  toggleCatHidden: (catId: string) => void;
+  collapsedCats: Record<string, boolean>;
+  setCatCollapsed: (catId: string, collapsed: boolean) => void;
+  swipeHintItemId: string | null;
+  setSwipeHintItemId: (id: string | null) => void;
+  markSwipeLearned: () => void;
+  layoutColumns: LayoutColumns;
+  setLayoutColumns: (cols: LayoutColumns) => void;
+  density: Density;
+  setDensity: (density: Density) => void;
   filter: 'all' | 'must-have' | 'should-have' | 'nice-to-have';
   setFilter: (filter: 'all' | 'must-have' | 'should-have' | 'nice-to-have') => void;
   itemViewFilter: ItemViewFilter;
@@ -52,18 +64,21 @@ interface PacklistContextType {
   commitAction: (message: string) => void;
   toggleCheck: (id: string, e?: React.MouseEvent | React.TouchEvent | Event) => void;
   toggleParentItem: (id: string, willBeChecked: boolean, e?: React.MouseEvent | React.TouchEvent | Event) => void;
-  hideItem: (id: string) => void;
-  unhideItem: (id: string) => void;
-  unhideAllInCategory: (catId: string) => void;
   cycleLuggage: (itemId: string, direction: 1 | -1) => void;
   getNextLuggageHint: (itemId: string, direction: 1 | -1) => string;
   activePresetId: string;
-  executeApplyPreset: (cruise: string, role: 'crew' | 'captain') => void;
-  pendingPreset: { cruise: string, role: 'crew' | 'captain' | null } | null;
-  setPendingPreset: (preset: { cruise: string, role: 'crew' | 'captain' | null } | null) => void;
+  trips: TripMeta[];
+  activeTrip: TripMeta;
+  switchTrip: (id: string) => void;
+  createTripFromPreset: (presetId: string, role: 'crew' | 'captain') => void;
+  createEmptyTrip: () => void;
+  renameTrip: (id: string, name: string) => void;
+  deleteTrip: (id: string) => void;
+  openSharedTrip: (shared: SharedPayload, token: string) => void;
+  exportActiveTripAsPreset: () => { fileName: string; yaml: string };
   resetAll: () => void;
   handleCreateItem: (categoryId: string) => void;
-  handleAddSubItem: (parentId: string) => void;
+  handleAddSubItem: (parentId: string, name?: string) => void;
   updateItem: (id: string, updates: Partial<PackItem>) => void;
   deleteItem: (id: string, parentId?: string) => void;
   moveItemCategory: (itemId: string, newCategoryId: string) => void;
@@ -85,14 +100,12 @@ interface PacklistContextType {
   deleteCategory: (id: string) => void;
   handleCreateCategory: (title?: string) => void;
   setCategoryLuggage: (categoryId: string, luggageId: string) => void;
-  packAndHideCategory: (categoryId: string) => void;
-  hideCategoryItemsAction: (categoryId: string) => void;
+  packCategory: (categoryId: string) => void;
   unpackCategoryItemsAction: (categoryId: string) => void;
   deleteLuggage: (id: string) => void;
   reorderLuggage: (id: string, direction: 1 | -1) => void;
-  packAndHideLuggageItems: (luggageId: string) => void;
+  packLuggageItems: (luggageId: string) => void;
   unpackLuggageItems: (luggageId: string) => void;
-  hideLuggageItems: (luggageId: string) => void;
   getSubItemCounts: (item: PackItem) => { packed: number, total: number };
   getMenuStyles: () => { leftMenuStyle: React.CSSProperties, rightMenuStyle: React.CSSProperties, isMenuSwiping: boolean };
   particles: { id: number; x: number; y: number; type: 'to-green' | 'to-red' }[];
@@ -103,11 +116,13 @@ interface PacklistContextType {
   soundEnabled: boolean;
   setSoundEnabled: (enabled: boolean) => void;
   playPopSound: (type?: 'click' | 'pop') => void;
-  loadSharedState: (shared: SharedPayload) => void;
   getSharePayload: () => SharedPayload;
   cruiseDescription: string;
   setCruiseDescription: (desc: string) => void;
 }
+
+export type LayoutColumns = 1 | 2 | 3;
+export type Density = 'comfortable' | 'compact';
 
 const PacklistContext = createContext<PacklistContextType | undefined>(undefined);
 
@@ -193,16 +208,16 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
   }, []);
 
-  const [changes, setChanges] = useState<number>(() => {
-    const saved = localStorage.getItem('sailingPacklist_showers_v16');
-    return saved ? parseInt(saved) : (getPresetData(defaultPresetId).showers || 3);
-  });
+  // Trips: the open trip's list lives in the state below; every trip is saved under its own key
+  const [initialTrips] = useState(() => loadInitialTrips(defaultPresetId));
+  const [trips, setTrips] = useState<TripMeta[]>(initialTrips.index.trips);
+  const [activeTripId, setActiveTripId] = useState<string>(initialTrips.index.activeTripId);
+  const activeTrip = trips.find(t => t.id === activeTripId) ?? trips[0];
+  const activePresetId = activeTrip?.presetId ?? '';
+
+  const [changes, setChanges] = useState<number>(initialTrips.data.changes);
   
   const [showHeader, setShowHeader] = useState(true);
-
-  useEffect(() => {
-    localStorage.setItem('sailingPacklist_showers_v16', changes.toString());
-  }, [changes]);
 
   useEffect(() => {
     let lastScrollY = window.scrollY;
@@ -232,64 +247,43 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const [categories, setCategories] = useState<Category[]>(() => {
-    const saved = localStorage.getItem('sailingPacklist_structure_v16');
-    return saved ? JSON.parse(saved) : getPresetCategories(defaultPresetId, 'crew');
-  });
-  const [warnings, setWarnings] = useState<Warning[]>(() => {
-    const saved = localStorage.getItem('sailingPacklist_warnings_v16');
-    return saved ? JSON.parse(saved) : getPresetData(defaultPresetId).warnings || [];
-  });
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>(() => {
-    const saved = localStorage.getItem('sailingPacklist_checked_v16');
-    return saved ? JSON.parse(saved) : {};
-  });
-  const [hiddenItems, setHiddenItems] = useState<Record<string, boolean>>(() => {
-    const saved = localStorage.getItem('sailingPacklist_hidden_v16');
-    return saved ? JSON.parse(saved) : {};
-  });
-  const [luggages, setLuggages] = useState<Luggage[]>(() => {
-    const saved = localStorage.getItem('sailingPacklist_luggages_v16');
-    let loaded = saved ? JSON.parse(saved) : getPresetData(defaultPresetId).luggages || [];
-    // Migrate old emoji icons to new string IDs
-    loaded = loaded.map((lug: Luggage) => {
-      if (lug.icon === '🧳') return { ...lug, icon: 'duffel' };
-      if (lug.icon === '🎒') return { ...lug, icon: 'backpack' };
-      if (lug.icon === '🧍') return { ...lug, icon: 'on_person' };
-      return lug;
-    });
-    return loaded;
-  });
-  const [itemLuggage, setItemLuggage] = useState<Record<string, string>>(() => {
-    const saved = localStorage.getItem('sailingPacklist_itemLuggage_v16');
-    return saved ? JSON.parse(saved) : getInitialLuggageAssignments(defaultPresetId);
-  });
+  const [categories, setCategories] = useState<Category[]>(initialTrips.data.categories);
+  const [warnings, setWarnings] = useState<Warning[]>(initialTrips.data.warnings);
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>(initialTrips.data.checkedItems);
+  const [luggages, setLuggages] = useState<Luggage[]>(initialTrips.data.luggages);
+  const [itemLuggage, setItemLuggage] = useState<Record<string, string>>(initialTrips.data.itemLuggage);
 
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  // The item currently opened in place in the list
+  const [selectedItemId, setSelectedItemIdRaw] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedLuggageId, setSelectedLuggageId] = useState<string | null>(null);
   const [newLuggageName, setNewLuggageName] = useState('');
-  const [showHiddenCats, setShowHiddenCats] = useState<Record<string, boolean>>({});
+  const [collapsedCats, setCollapsedCats] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem('sailingPacklist_collapsed_v16');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [swipeHintItemId, setSwipeHintItemId] = useState<string | null>(null);
+  const [layoutColumns, setLayoutColumns] = useState<LayoutColumns>(() => {
+    const saved = Number(localStorage.getItem('sailingPacklist_columns'));
+    return saved === 1 || saved === 3 ? saved : 2;
+  });
+  const [density, setDensity] = useState<Density>(() =>
+    localStorage.getItem('sailingPacklist_density') === 'compact' ? 'compact' : 'comfortable'
+  );
+  useEffect(() => { localStorage.setItem('sailingPacklist_columns', String(layoutColumns)); }, [layoutColumns]);
+  useEffect(() => { localStorage.setItem('sailingPacklist_density', density); }, [density]);
   const [filter, setFilter] = useState<'all' | 'must-have' | 'should-have' | 'nice-to-have'>('all');
   const [itemViewFilter, setItemViewFilter] = useState<ItemViewFilter>('all');
   const [activeMenu, setActiveMenu] = useState<'main' | 'settings' | 'baggage'>('main');
-  const [pendingPreset, setPendingPreset] = useState<{ cruise: string, role: 'crew' | 'captain' | null } | null>(null);
-  const [activePresetId, setActivePresetId] = useState<string>(() => {
-    const saved = localStorage.getItem('sailingPacklist_activePresetId_v16');
-    return saved || defaultPresetId;
-  });
+  const [cruiseDescription, setCruiseDescription] = useState<string>(initialTrips.data.description);
 
+  // Save the open trip whenever any part of it changes, and the trip list when it changes
   useEffect(() => {
-    localStorage.setItem('sailingPacklist_activePresetId_v16', activePresetId);
-  }, [activePresetId]);
-  const [cruiseDescription, setCruiseDescription] = useState<string>(() => {
-    const saved = localStorage.getItem('sailingPacklist_cruiseDescription_v16');
-    return saved !== null ? saved : '';
-  });
-
+    saveTripData(activeTripId, { categories, warnings, checkedItems, luggages, itemLuggage, changes, description: cruiseDescription });
+  }, [activeTripId, categories, warnings, checkedItems, luggages, itemLuggage, changes, cruiseDescription]);
   useEffect(() => {
-    localStorage.setItem('sailingPacklist_cruiseDescription_v16', cruiseDescription);
-  }, [cruiseDescription]);
+    saveTripIndex({ activeTripId, trips });
+  }, [activeTripId, trips]);
 
   const [activeToastId, setActiveToastId] = useState<string | null>(null);
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; type: 'to-green' | 'to-red' }[]>([]);
@@ -325,6 +319,12 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const handleGlobalTouchMove = (e: React.TouchEvent) => {
     if (!menuTouchStart) return;
+    if (isDragActive()) {
+      // a long-press drag (e.g. of a category header) is not a menu swipe
+      setMenuTouchStart(null);
+      setMenuSwipeOffset(0);
+      return;
+    }
     const dx = e.touches[0].clientX - menuTouchStart.x;
     setMenuSwipeOffset(dx);
   };
@@ -401,42 +401,40 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [future, setFuture] = useState<HistoryEntry[]>([]);
 
   const commitAction = useCallback((message: string) => {
-    const snapshot: AppSnapshot = { changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage };
+    const snapshot: AppSnapshot = { changes, categories, warnings, checkedItems, luggages, itemLuggage };
     setPast(prev => [...prev.slice(-29), { id: `${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, message, timestamp: Date.now(), snapshot }]);
     setFuture([]);
-  }, [changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage]);
+  }, [changes, categories, warnings, checkedItems, luggages, itemLuggage]);
 
   const redo = useCallback(() => {
     if (future.length === 0) return;
     playPopSound('click');
     const next = future[0];
-    const currentSnapshot: AppSnapshot = { changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage };
+    const currentSnapshot: AppSnapshot = { changes, categories, warnings, checkedItems, luggages, itemLuggage };
     setPast(prev => [...prev, { id: `${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, message: next.message, timestamp: Date.now(), snapshot: currentSnapshot }]);
     setChanges(next.snapshot.changes);
     setCategories(next.snapshot.categories);
     setWarnings(next.snapshot.warnings);
     setCheckedItems(next.snapshot.checkedItems);
-    setHiddenItems(next.snapshot.hiddenItems);
     setLuggages(next.snapshot.luggages);
     setItemLuggage(next.snapshot.itemLuggage);
     setFuture(prev => prev.slice(1));
-  }, [future, changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage]);
+  }, [future, changes, categories, warnings, checkedItems, luggages, itemLuggage]);
 
   const undo = useCallback(() => {
     if (past.length === 0) return;
     playPopSound('click');
     const last = past[past.length - 1];
-    const currentSnapshot: AppSnapshot = { changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage };
+    const currentSnapshot: AppSnapshot = { changes, categories, warnings, checkedItems, luggages, itemLuggage };
     setFuture(prev => [{ id: `${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, message: last.message, timestamp: Date.now(), snapshot: currentSnapshot }, ...prev]);
     setChanges(last.snapshot.changes);
     setCategories(last.snapshot.categories);
     setWarnings(last.snapshot.warnings);
     setCheckedItems(last.snapshot.checkedItems);
-    setHiddenItems(last.snapshot.hiddenItems);
     setLuggages(last.snapshot.luggages);
     setItemLuggage(last.snapshot.itemLuggage);
     setPast(prev => prev.slice(0, -1));
-  }, [past, changes, categories, warnings, checkedItems, hiddenItems, luggages, itemLuggage]);
+  }, [past, changes, categories, warnings, checkedItems, luggages, itemLuggage]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -447,16 +445,48 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo]);
 
-  useEffect(() => { localStorage.setItem('sailingPacklist_structure_v16', JSON.stringify(categories)); }, [categories]);
-  useEffect(() => { localStorage.setItem('sailingPacklist_warnings_v16', JSON.stringify(warnings)); }, [warnings]);
-  useEffect(() => { localStorage.setItem('sailingPacklist_checked_v16', JSON.stringify(checkedItems)); }, [checkedItems]);
-  useEffect(() => { localStorage.setItem('sailingPacklist_hidden_v16', JSON.stringify(hiddenItems)); }, [hiddenItems]);
-  useEffect(() => { localStorage.setItem('sailingPacklist_luggages_v16', JSON.stringify(luggages)); }, [luggages]);
-  useEffect(() => { localStorage.setItem('sailingPacklist_itemLuggage_v16', JSON.stringify(itemLuggage)); }, [itemLuggage]);
+  useEffect(() => { localStorage.setItem('sailingPacklist_collapsed_v16', JSON.stringify(collapsedCats)); }, [collapsedCats]);
+  // Hiding items was removed; drop any leftover hidden state so those items show up again.
+  useEffect(() => { localStorage.removeItem('sailingPacklist_hidden_v16'); }, []);
+
+  const setCatCollapsed = useCallback((catId: string, collapsed: boolean) =>
+    setCollapsedCats(prev => ({ ...prev, [catId]: collapsed })), []);
+
+  const markSwipeLearned = () => {
+    localStorage.setItem('sailingPacklist_swipe_learned', '1');
+    setSwipeHintItemId(null);
+  };
 
   const updateChanges = (newVal: number) => {
     commitAction(`Changed showers to ${newVal}`);
     setChanges(newVal);
+  };
+
+  // Opening another item (or closing) drops what was left unnamed in the one being closed,
+  // e.g. a freshly added item or sub-item that never got a name
+  const setSelectedItemId = (id: string | null) => {
+    const closing = selectedItemId;
+    if (closing && closing !== id) {
+      setCategories(prev => {
+        let changed = false;
+        const next = prev.map(cat => {
+          const items = cat.items
+            .filter(item => {
+              const drop = item.id === closing && !item.name.trim();
+              if (drop) changed = true;
+              return !drop;
+            })
+            .map(item => {
+              if (item.id !== closing || !item.subItems?.some(sub => !sub.name.trim())) return item;
+              changed = true;
+              return { ...item, subItems: item.subItems.filter(sub => sub.name.trim()) };
+            });
+          return { ...cat, items };
+        });
+        return changed ? next : prev;
+      });
+    }
+    setSelectedItemIdRaw(id);
   };
 
   const findItemDeep = (id: string): PackItem | undefined => {
@@ -476,6 +506,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     const item = findItemDeep(id);
     const willBeChecked = !checkedItems[id];
     commitAction(willBeChecked ? `Checked ${item?.name || 'item'}` : `Unchecked ${item?.name || 'item'}`);
+    navigator.vibrate?.(10);
     
     if (e && willBeChecked) {
       let clientX = 0;
@@ -519,6 +550,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (!parent || !parent.subItems) return;
 
     commitAction(willBeChecked ? `Checked all in ${parent.name}` : `Unchecked all in ${parent.name}`);
+    navigator.vibrate?.(10);
 
     setCheckedItems(prev => {
       const next = { ...prev };
@@ -568,32 +600,6 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
   
-  const hideItem = (id: string) => {
-    const item = findItemDeep(id);
-    commitAction(`Hid ${item?.name || 'item'}`);
-    setHiddenItems(prev => ({ ...prev, [id]: true }));
-  };
-  
-  const unhideItem = (id: string) => {
-    const item = findItemDeep(id);
-    commitAction(`Restored ${item?.name || 'item'}`);
-    setHiddenItems(prev => { const next = {...prev}; delete next[id]; return next; });
-  };
-  
-  const toggleCatHidden = (catId: string) => setShowHiddenCats(prev => ({ ...prev, [catId]: !prev[catId] }));
-
-  const unhideAllInCategory = (catId: string) => {
-    const cat = categories.find(c => c.id === catId);
-    if (!cat) return;
-    commitAction(`Restored all items in ${cat.title}`);
-    setHiddenItems(prev => {
-      const next = { ...prev };
-      cat.items.forEach(item => delete next[item.id]);
-      return next;
-    });
-    setShowHiddenCats(prev => ({ ...prev, [catId]: false }));
-  };
-
   const cycleLuggage = (itemId: string, direction: 1 | -1) => {
     const item = findItemDeep(itemId);
     commitAction(`Changed bag for ${item?.name || 'item'}`);
@@ -622,27 +628,84 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     return `Put in ${luggages[nextVirt - 1]?.name}` || 'Unassign luggage';
   };
 
-  const executeApplyPreset = (cruise: string, role: 'crew' | 'captain') => {
-    setCategories(getPresetCategories(cruise, role));
-    setWarnings(getPresetData(cruise).warnings || []);
-    setHiddenItems({});
-    setCheckedItems({});
-    setItemLuggage(getInitialLuggageAssignments(cruise));
-    setLuggages(getPresetData(cruise).luggages || []);
-    setCruiseDescription(''); // reset custom description to fallback to new preset defaults
-    setActivePresetId(cruise);
-    setChanges(getPresetData(cruise).showers || 1);
-    commitAction(`Reset list to ${role.toUpperCase()} preset`);
-    setPendingPreset(null);
+  // Put a trip's list on screen. Undo history belongs to the list it was made in, so it starts fresh.
+  const showTripData = (data: TripData) => {
+    setCategories(data.categories);
+    setWarnings(data.warnings);
+    setCheckedItems(data.checkedItems);
+    setLuggages(data.luggages);
+    setItemLuggage(data.itemLuggage);
+    setChanges(data.changes);
+    setCruiseDescription(data.description);
+    setPast([]);
+    setFuture([]);
+    setSelectedItemIdRaw(null);
+    setItemViewFilter('all');
     setActiveMenu('main');
   };
+
+  const switchTrip = (id: string) => {
+    const target = trips.find(t => t.id === id);
+    if (!target || id === activeTripId) return;
+    const data = loadTripData(id)
+      ?? (target.presetId ? buildPresetTripData(target.presetId, 'crew') : buildEmptyTripData(defaultPresetId));
+    showTripData(data);
+    setActiveTripId(id);
+  };
+
+  const addTrip = (meta: Omit<TripMeta, 'id' | 'createdAt'>, data: TripData) => {
+    const trip: TripMeta = { ...meta, id: newTripId(), createdAt: Date.now() };
+    saveTripData(trip.id, data);
+    setTrips(prev => [...prev, trip]);
+    showTripData(data);
+    setActiveTripId(trip.id);
+    playPopSound('click');
+  };
+
+  const createTripFromPreset = (presetId: string, role: 'crew' | 'captain') => {
+    const baseName = PRESETS[presetId]?.name || presetId;
+    const name = uniqueTripName(role === 'captain' && !PRESETS[presetId]?.disableRoles ? `${baseName} (captain)` : baseName, trips);
+    addTrip({ name, presetId }, buildPresetTripData(presetId, role));
+  };
+
+  const createEmptyTrip = () => {
+    addTrip({ name: uniqueTripName('New trip', trips), presetId: null }, buildEmptyTripData(defaultPresetId));
+  };
+
+  const renameTrip = (id: string, name: string) => {
+    setTrips(prev => prev.map(t => (t.id === id ? { ...t, name } : t)));
+  };
+
+  const deleteTrip = (id: string) => {
+    const remaining = trips.filter(t => t.id !== id);
+    removeTripData(id);
+    if (remaining.length === 0) {
+      // Never end up without a list: start over from the default preset
+      const fresh: TripMeta = { id: newTripId(), name: PRESETS[defaultPresetId]?.name || 'My trip', presetId: defaultPresetId, createdAt: Date.now() };
+      const data = buildPresetTripData(defaultPresetId, 'crew');
+      saveTripData(fresh.id, data);
+      setTrips([fresh]);
+      showTripData(data);
+      setActiveTripId(fresh.id);
+      return;
+    }
+    setTrips(remaining);
+    if (id === activeTripId) {
+      const next = remaining[remaining.length - 1];
+      showTripData(loadTripData(next.id) ?? (next.presetId ? buildPresetTripData(next.presetId, 'crew') : buildEmptyTripData(defaultPresetId)));
+      setActiveTripId(next.id);
+    }
+  };
+
+  const exportActiveTripAsPreset = () => tripToPresetYaml(activeTrip, {
+    categories, warnings, checkedItems, luggages, itemLuggage, changes, description: cruiseDescription
+  });
 
   const resetAll = () => {
     if (confirm("Reset everything to default?")) {
       setCategories(getPresetCategories(defaultPresetId, 'crew'));
       setWarnings(getPresetData(defaultPresetId).warnings || []);
-      setHiddenItems({});
-      setCheckedItems({});
+        setCheckedItems({});
       setItemLuggage(getInitialLuggageAssignments(defaultPresetId));
       setLuggages(getPresetData(defaultPresetId).luggages || []);
       localStorage.clear();
@@ -655,20 +718,22 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       alert('Invalid or incompatible packing list data file.');
       return;
     }
-    if (confirm('Importing this data will overwrite your current list. Continue?')) {
-      setChanges(data.changes || 3);
-      setCategories(data.categories || []);
-      setLuggages(data.luggages || []);
-      setItemLuggage(data.itemLuggage || {});
-      setCheckedItems(data.checkedItems || {});
-      setHiddenItems(data.hiddenItems || {});
-      commitAction('Imported list data');
-      setActiveMenu('main');
-    }
+    // An import becomes a trip of its own, so nothing gets overwritten
+    addTrip({ name: uniqueTripName(data.name || 'Imported list', trips), presetId: null }, {
+      categories: data.categories || [],
+      warnings: data.warnings || [],
+      checkedItems: data.checkedItems || {},
+      luggages: data.luggages || [],
+      itemLuggage: data.itemLuggage || {},
+      changes: data.changes || 3,
+      description: data.description || '',
+    });
   };
 
   const getSharePayload = (): SharedPayload => {
-    const defaultData = getPresetData(defaultPresetId);
+    // Encode relative to the trip's own preset, so its items travel as compact references
+    const basePresetId = PRESETS[activePresetId] ? activePresetId : defaultPresetId;
+    const defaultData = getPresetData(basePresetId);
     
     const presetItemIds: string[] = [];
     defaultData.categories.forEach((cat: any) => {
@@ -692,12 +757,10 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     const luggageIdArray = luggages.map(lug => lug.id);
     const luggageIndices = presetItemIds.map(itemId => {
-      // Check if item is present in categories and NOT hidden
       const isPresent = categories.some((cat: Category) => cat.items.some((item: PackItem) => item.id === itemId));
-      const isHidden = !!hiddenItems[itemId];
 
-      if (!isPresent || isHidden) {
-        return -2; // Special value indicating deleted or hidden default item!
+      if (!isPresent) {
+        return -2; // Special value indicating a deleted default item
       }
 
       const assignedLuggageId = itemLuggage[itemId];
@@ -723,8 +786,9 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     return {
       v: 1,
-      p: defaultPresetId,
+      p: basePresetId,
       d: cruiseDescription || undefined,
+      n: activeTrip?.name,
       lugs: luggages.map(lug => ({
         id: lug.id,
         name: lug.name,
@@ -737,94 +801,16 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
   };
 
-  const loadSharedState = (shared: SharedPayload) => {
-    playPopSound('click');
-
-    const newLuggages: Luggage[] = shared.lugs.map(lug => ({
-      id: lug.id,
-      name: lug.name,
-      icon: lug.icon,
-      color: lug.color
-    }));
-    setLuggages(newLuggages);
-
-    const basePresetId = shared.p || defaultPresetId;
-    const baseCategories = getPresetCategories(basePresetId, 'crew'); 
-    
-    const defaultData = getPresetData(basePresetId);
-    const presetItems: PackItem[] = [];
-    defaultData.categories.forEach((cat: any) => {
-      cat.items.forEach((item: any) => {
-        presetItems.push(item);
-      });
-    });
-
-    const newLocalItemLuggage: Record<string, string> = {};
-    const newHiddenItems: Record<string, boolean> = {};
-
-    shared.l.forEach((bagIndex, itemIndex) => {
-      const presetItem = presetItems[itemIndex];
-      if (presetItem) {
-        if (bagIndex === -2) {
-          newHiddenItems[presetItem.id] = true;
-        } else if (bagIndex >= 0 && bagIndex < newLuggages.length) {
-          const targetBagId = newLuggages[bagIndex].id;
-          newLocalItemLuggage[presetItem.id] = targetBagId;
-        }
-      }
-    });
-
-    const finalCategories: Category[] = [];
-    shared.cats.forEach((catRef: any) => {
-      if (typeof catRef === 'string') {
-        const baseCat = baseCategories.find((c: Category) => c.id === catRef);
-        if (baseCat) {
-          finalCategories.push({
-            ...baseCat,
-            items: [...baseCat.items]
-          });
-        }
-      } else {
-        finalCategories.push({
-          id: catRef.id,
-          title: catRef.title,
-          priority: catRef.priority,
-          items: []
-        });
-      }
-    });
-
-    if (shared.c) {
-      shared.c.forEach(custom => {
-        let targetCat = finalCategories.find((c: Category) => c.id === custom.cat);
-        if (!targetCat) {
-          targetCat = finalCategories.find((c: Category) => c.title.toLowerCase().includes(custom.cat.toLowerCase()));
-        }
-        
-        if (targetCat) {
-          const customId = `custom_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-          targetCat.items.push({
-            id: customId,
-            name: custom.n,
-            qty: 1
-          });
-
-          if (custom.b >= 0 && custom.b < newLuggages.length) {
-            newLocalItemLuggage[customId] = newLuggages[custom.b].id;
-          }
-        }
-      });
+  // A shared link opens as a trip of its own; opening the same link again goes back to that trip
+  const openSharedTrip = (shared: SharedPayload, token: string) => {
+    const existing = trips.find(t => t.sourceToken === token);
+    if (existing) {
+      switchTrip(existing.id);
+      return;
     }
-
-    setCategories(finalCategories);
-    setItemLuggage(newLocalItemLuggage);
-    setCheckedItems({});
-    setHiddenItems(newHiddenItems);
-    setCruiseDescription(shared.d || '');
-    setActivePresetId(basePresetId);
-    
-    commitAction('Loaded shared list from Skipper');
-    setActiveMenu('main');
+    const basePresetId = PRESETS[shared.p] ? shared.p : defaultPresetId;
+    const name = uniqueTripName(shared.n || PRESETS[basePresetId]?.name || 'Shared trip', trips);
+    addTrip({ name, presetId: basePresetId, sourceToken: token }, buildSharedTripData(shared, defaultPresetId));
   };
 
   const handleCreateItem = (categoryId: string) => {
@@ -834,8 +820,8 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setSelectedItemId(newId);
   };
 
-  const handleAddSubItem = (parentId: string) => {
-    commitAction('Added new sub-item');
+  const handleAddSubItem = (parentId: string, name = '') => {
+    commitAction(name ? `Added ${name}` : 'Added new sub-item');
     const newId = `custom_sub_${Date.now()}`;
     setCategories(prev => prev.map(cat => ({
       ...cat,
@@ -843,13 +829,12 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
         if (item.id === parentId) {
           return {
             ...item,
-            subItems: [...(item.subItems || []), { id: newId, name: '' }]
+            subItems: [...(item.subItems || []), { id: newId, name }]
           };
         }
         return item;
       })
     })));
-    setSelectedItemId(newId);
   };
 
   const updateCategory = (id: string, updates: Partial<Category>) => {
@@ -907,11 +892,11 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     });
   };
 
-  const packAndHideCategory = (categoryId: string) => {
+  const packCategory = (categoryId: string) => {
     const cat = categories.find(c => c.id === categoryId);
     if (!cat) return;
     playPopSound('click');
-    commitAction(`Packed & hid ${cat.title}`);
+    commitAction(`Packed all in ${cat.title}`);
     setCheckedItems(prevChecked => {
       const nextChecked = { ...prevChecked };
       const applyCheck = (items: PackItem[]) => {
@@ -922,35 +907,6 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       };
       applyCheck(cat.items);
       return nextChecked;
-    });
-    setHiddenItems(prevHidden => {
-      const nextHidden = { ...prevHidden };
-      const applyHide = (items: PackItem[]) => {
-        items.forEach(item => {
-          nextHidden[item.id] = true;
-          if (item.subItems) applyHide(item.subItems);
-        });
-      };
-      applyHide(cat.items);
-      return nextHidden;
-    });
-  };
-
-  const hideCategoryItemsAction = (categoryId: string) => {
-    const cat = categories.find(c => c.id === categoryId);
-    if (!cat) return;
-    playPopSound('pop');
-    commitAction(`Hid all in ${cat.title}`);
-    setHiddenItems(prevHidden => {
-      const nextHidden = { ...prevHidden };
-      const applyHide = (items: PackItem[]) => {
-        items.forEach(item => {
-          nextHidden[item.id] = true;
-          if (item.subItems) applyHide(item.subItems);
-        });
-      };
-      applyHide(cat.items);
-      return nextHidden;
     });
   };
 
@@ -1057,20 +1013,15 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     commitAction('Reordered luggage');
   };
 
-  const packAndHideLuggageItems = (luggageId: string) => {
+  const packLuggageItems = (luggageId: string) => {
     const lug = luggages.find(l => l.id === luggageId);
     if (!lug) return;
     playPopSound('click');
-    commitAction(`Packed & hid bag ${lug.name}`);
+    commitAction(`Packed bag ${lug.name}`);
     
     const itemsInBag = Object.keys(itemLuggage).filter(itemId => itemLuggage[itemId] === luggageId);
     
     setCheckedItems(prev => {
-      const next = { ...prev };
-      itemsInBag.forEach(id => next[id] = true);
-      return next;
-    });
-    setHiddenItems(prev => {
       const next = { ...prev };
       itemsInBag.forEach(id => next[id] = true);
       return next;
@@ -1087,20 +1038,6 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setCheckedItems(prev => {
       const next = { ...prev };
       itemsInBag.forEach(id => next[id] = false);
-      return next;
-    });
-  };
-
-  const hideLuggageItems = (luggageId: string) => {
-    const lug = luggages.find(l => l.id === luggageId);
-    if (!lug) return;
-    playPopSound('pop');
-    commitAction(`Hid bag ${lug.name}`);
-    
-    const itemsInBag = Object.keys(itemLuggage).filter(itemId => itemLuggage[itemId] === luggageId);
-    setHiddenItems(prev => {
-      const next = { ...prev };
-      itemsInBag.forEach(id => next[id] = true);
       return next;
     });
   };
@@ -1124,7 +1061,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     return categories
       .filter(c => priority === 'all' || c.priority === priority)
       .flatMap(c => c.items)
-      .filter(i => !hiddenItems[i.id] && !checkedItems[i.id])
+      .filter(i => !checkedItems[i.id])
       .length;
   };
 
@@ -1161,15 +1098,18 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   return (
     <PacklistContext.Provider value={{
       changes, updateChanges, showHeader, categories, setCategories, warnings, checkedItems, setCheckedItems,
-      hiddenItems, luggages, setLuggages, itemLuggage, setItemLuggage, selectedItemId, setSelectedItemId,
+      luggages, setLuggages, itemLuggage, setItemLuggage, selectedItemId, setSelectedItemId,
       selectedCategoryId, setSelectedCategoryId,
-      selectedLuggageId, setSelectedLuggageId, newLuggageName, setNewLuggageName, showHiddenCats, toggleCatHidden,
-      filter, setFilter, itemViewFilter, setItemViewFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, toggleParentItem, hideItem,
-      unhideItem, unhideAllInCategory, cycleLuggage, getNextLuggageHint, activePresetId, executeApplyPreset, pendingPreset, setPendingPreset, resetAll, handleCreateItem, handleAddSubItem,
-      updateItem, deleteItem, moveItemCategory, updateCategory, deleteCategory, handleCreateCategory, setCategoryLuggage, packAndHideCategory, hideCategoryItemsAction, unpackCategoryItemsAction, updateLuggage, deleteLuggage, reorderLuggage, packAndHideLuggageItems, unpackLuggageItems, hideLuggageItems, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
+      selectedLuggageId, setSelectedLuggageId, newLuggageName, setNewLuggageName,
+      collapsedCats, setCatCollapsed, swipeHintItemId, setSwipeHintItemId, markSwipeLearned,
+      layoutColumns, setLayoutColumns, density, setDensity,
+      filter, setFilter, itemViewFilter, setItemViewFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, toggleParentItem,
+      cycleLuggage, getNextLuggageHint, activePresetId, resetAll,
+      trips, activeTrip, switchTrip, createTripFromPreset, createEmptyTrip, renameTrip, deleteTrip, openSharedTrip, exportActiveTripAsPreset, handleCreateItem, handleAddSubItem,
+      updateItem, deleteItem, moveItemCategory, updateCategory, deleteCategory, handleCreateCategory, setCategoryLuggage, packCategory, unpackCategoryItemsAction, updateLuggage, deleteLuggage, reorderLuggage, packLuggageItems, unpackLuggageItems, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles,
-      particles, triggerParticle, theme, setTheme, importData, loadSharedState, getSharePayload,
+      particles, triggerParticle, theme, setTheme, importData, getSharePayload,
       cruiseDescription, setCruiseDescription,
       soundEnabled, setSoundEnabled, playPopSound
       }}>

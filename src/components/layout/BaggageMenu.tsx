@@ -6,8 +6,15 @@ export const BaggageMenu: React.FC = () => {
   const { 
     activeMenu, setActiveMenu, luggages, categories, itemLuggage, checkedItems, 
     setSelectedItemId, setSelectedLuggageId, newLuggageName, setNewLuggageName, handleAddLuggage, changes,
-    getMenuStyles, reorderLuggage
+    getMenuStyles, reorderLuggage, setItemViewFilter
   } = usePacklist();
+
+  // Jump to the item in the list and open it there
+  const openItem = (id: string) => {
+    setItemViewFilter('all');
+    setActiveMenu('main');
+    setSelectedItemId(id);
+  };
 
   const { rightMenuStyle, isMenuSwiping } = getMenuStyles();
   const baseSetQty = changes;
@@ -58,7 +65,7 @@ export const BaggageMenu: React.FC = () => {
                     const isBaseItem = (pi.id.startsWith('base_') && (pi.id.includes('underwear') || pi.id.includes('socks') || pi.id.includes('tshirt')));
                     const displayQty = isBaseItem ? baseSetQty : pi.qty;
                     return (
-                      <li key={pi.id} className={`${checkedItems[pi.id] ? 'packed ' : ''}clickable`} onClick={() => setSelectedItemId(pi.id)}>
+                      <li key={pi.id} className={`${checkedItems[pi.id] ? 'packed ' : ''}clickable`} onClick={() => openItem(pi.id)}>
                         {displayQty ? <span className="pi-qty">{displayQty}x </span> : null}
                         {pi.name} {checkedItems[pi.id] && '✓'}
                       </li>

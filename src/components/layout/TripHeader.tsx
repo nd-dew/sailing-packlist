@@ -170,40 +170,40 @@ export const TripHeader: React.FC = () => {
 
             <div className="trip-menu-divider" />
             <div className="trip-menu-section trip-menu-new">
-            <div className="trip-menu-label">New packlist</div>
-            <button role="menuitem" className="trip-menu-option new-empty-option" onClick={startEmptyTrip}>
-              <span className="trip-menu-check" aria-hidden="true">+</span>
-              <span className="trip-menu-text">
+              <div className="trip-menu-label">New packlist</div>
+              <button role="menuitem" className="trip-menu-option new-empty-card" onClick={startEmptyTrip}>
+                <span className="new-empty-plus" aria-hidden="true">+</span>
                 <span className="trip-menu-name">Empty packlist</span>
-                <span className="trip-menu-desc">Start from scratch</span>
-              </span>
-            </button>
-            <div className="trip-menu-sublabel">or start from a preset</div>
-            {Object.entries(PRESETS).map(([id, data]) => {
-              const needsRole = !data.disableRoles;
-              return (
-                <div key={id} className="trip-menu-option preset-option" role="none">
-                  <button
-                    role="menuitem"
-                    className="preset-option-main"
-                    onClick={() => run(() => createTripFromPreset(id, 'crew'))}
-                    title={needsRole ? 'Start from this preset (crew list)' : 'Start from this preset'}
-                  >
-                    <span className="trip-menu-check" aria-hidden="true" />
-                    <span className="trip-menu-text">
+              </button>
+
+              <div className="trip-menu-label">From a preset</div>
+              <div className="preset-cards">
+                {Object.entries(PRESETS).map(([id, data]) => {
+                  const needsRole = !data.disableRoles;
+                  const text = (
+                    <>
                       <span className="trip-menu-name">{data.name || id}</span>
-                      {data.description && <span className="trip-menu-desc">{data.description}</span>}
-                    </span>
-                  </button>
-                  {needsRole && (
-                    <span className="role-pills">
-                      <button role="menuitem" className="role-pill" onClick={() => run(() => createTripFromPreset(id, 'crew'))}>Crew</button>
-                      <button role="menuitem" className="role-pill" onClick={() => run(() => createTripFromPreset(id, 'captain'))}>Captain</button>
-                    </span>
-                  )}
-                </div>
-              );
-            })}
+                      {data.description && <span className="preset-desc">{data.description}</span>}
+                    </>
+                  );
+                  // Presets with separate crew / captain lists: pick one; the others start with one click
+                  return needsRole ? (
+                    <div key={id} className="preset-option preset-card" role="none">
+                      <div className="preset-card-text">{text}</div>
+                      <div className="role-pills">
+                        <button role="menuitem" className="role-pill" onClick={() => run(() => createTripFromPreset(id, 'crew'))}>Crew</button>
+                        <button role="menuitem" className="role-pill" onClick={() => run(() => createTripFromPreset(id, 'captain'))}>Captain</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div key={id} className="preset-option" role="none">
+                      <button role="menuitem" className="preset-option-main preset-card" onClick={() => run(() => createTripFromPreset(id, 'crew'))}>
+                        {text}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

@@ -405,14 +405,26 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [past, setPast] = useState<HistoryEntry[]>([]);
   const [future, setFuture] = useState<HistoryEntry[]>([]);
 
+  // Text edits come one keystroke at a time; they're grouped into one undo step per field being edited.
+  // Any other action (or editing another field) starts a new step.
+  const editSessionRef = useRef<string | null>(null);
+
   const commitAction = useCallback((message: string) => {
+    editSessionRef.current = null;
     const snapshot: AppSnapshot = { changes, categories, warnings, checkedItems, luggages, itemLuggage };
     setPast(prev => [...prev.slice(-29), { id: `${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, message, timestamp: Date.now(), snapshot }]);
     setFuture([]);
   }, [changes, categories, warnings, checkedItems, luggages, itemLuggage]);
 
+  const commitEdit = (sessionKey: string, message: string) => {
+    if (editSessionRef.current === sessionKey) return;
+    commitAction(message);
+    editSessionRef.current = sessionKey;
+  };
+
   const redo = useCallback(() => {
     if (future.length === 0) return;
+    editSessionRef.current = null;
     playPopSound('click');
     const next = future[0];
     const currentSnapshot: AppSnapshot = { changes, categories, warnings, checkedItems, luggages, itemLuggage };
@@ -428,6 +440,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const undo = useCallback(() => {
     if (past.length === 0) return;
+    editSessionRef.current = null;
     playPopSound('click');
     const last = past[past.length - 1];
     const currentSnapshot: AppSnapshot = { changes, categories, warnings, checkedItems, luggages, itemLuggage };
@@ -470,29 +483,41 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setChanges(newVal);
   };
 
-  // Opening another item (or closing) drops what was left unnamed in the one being closed,
-  // e.g. a freshly added item or sub-item that never got a name
+  // Names of the open item (and its sub-items) as they were when it was opened
+  const namesAtOpenRef = useRef<Map<string, string>>(new Map());
+
+  // Closing an item never deletes it by surprise: a name that was cleared gets its old name back.
+  // Only something that never had a name (nothing to go back to) is dropped.
   const setSelectedItemId = (id: string | null) => {
     const closing = selectedItemId;
     if (closing && closing !== id) {
+      const namesAtOpen = namesAtOpenRef.current;
+      const fix = (item: PackItem): PackItem | null => {
+        if (item.name.trim()) return item;
+        const before = namesAtOpen.get(item.id);
+        return before?.trim() ? { ...item, name: before } : null;
+      };
       setCategories(prev => {
         let changed = false;
-        const next = prev.map(cat => {
-          const items = cat.items
-            .filter(item => {
-              const drop = item.id === closing && !item.name.trim();
-              if (drop) changed = true;
-              return !drop;
-            })
-            .map(item => {
-              if (item.id !== closing || !item.subItems?.some(sub => !sub.name.trim())) return item;
-              changed = true;
-              return { ...item, subItems: item.subItems.filter(sub => sub.name.trim()) };
-            });
-          return { ...cat, items };
-        });
+        const next = prev.map(cat => ({
+          ...cat,
+          items: cat.items.flatMap(item => {
+            let result: PackItem | null = item;
+            if (item.id === closing) result = fix(item);
+            if (result && result.subItems && (item.id === closing || result.subItems.some(sub => sub.id === closing))) {
+              const subItems = result.subItems.map(sub => (item.id === closing || sub.id === closing ? fix(sub) : sub)).filter((sub): sub is PackItem => !!sub);
+              if (subItems.length !== result.subItems.length || subItems.some((sub, i) => sub !== result!.subItems![i])) result = { ...result, subItems };
+            }
+            if (result !== item) changed = true;
+            return result ? [result] : [];
+          }),
+        }));
         return changed ? next : prev;
       });
+    }
+    if (id && id !== closing) {
+      const opened = findItemDeep(id);
+      namesAtOpenRef.current = new Map(opened ? [[opened.id, opened.name], ...(opened.subItems ?? []).map(sub => [sub.id, sub.name] as [string, string])] : []);
     }
     setSelectedItemIdRaw(id);
   };
@@ -650,6 +675,8 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setSelectedItemIdRaw(null);
     setItemViewFilter('all');
     setActiveMenu('main');
+    // a different packlist starts at its top (which also brings the auto-hidden header back)
+    window.scrollTo({ top: 0 });
   };
 
   const switchTrip = (id: string) => {
@@ -867,7 +894,8 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const updateCategory = (id: string, updates: Partial<Category>) => {
-    commitAction('Updated category');
+    const cat = categories.find(c => c.id === id);
+    commitEdit(`cat:${id}:${Object.keys(updates).join()}`, `Edited ${cat?.title || 'category'}`);
     setCategories(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
   };
 
@@ -958,6 +986,12 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const updateItem = (id: string, updates: Partial<PackItem>) => {
+    const item = findItemDeep(id);
+    // remember the name before its first edit, so clearing it and closing brings it back
+    if ('name' in updates && item && !namesAtOpenRef.current.has(id)) namesAtOpenRef.current.set(id, item.name);
+    const name = item?.name || 'item';
+    const message = 'name' in updates ? `Renamed ${name}` : 'description' in updates ? `Edited note of ${name}` : `Edited ${name}`;
+    commitEdit(`item:${id}:${Object.keys(updates).join()}`, message);
     setCategories(prev => prev.map(cat => ({
       ...cat,
       items: cat.items.map(item => {
@@ -1051,6 +1085,8 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const updateLuggage = (id: string, updates: Partial<Luggage>) => {
+    const lug = luggages.find(l => l.id === id);
+    commitEdit(`bag:${id}:${Object.keys(updates).join()}`, `Edited bag ${lug?.name || ''}`.trim());
     setLuggages(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
   };
 

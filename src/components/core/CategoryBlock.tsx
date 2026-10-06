@@ -188,7 +188,7 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat, dragEnabled =
                 <AddItemInput
                   placeholder="Add item"
                   onAdd={(name) => addItem(cat.id, name)}
-                  dataAttrs={{ 'data-add-item-for': cat.id }}
+                  dataAttrs={{ 'data-add-item-for': cat.id, 'data-shortcut': 'n' }}
                 />
               </li>
             )}

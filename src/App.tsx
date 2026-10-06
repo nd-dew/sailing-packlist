@@ -18,6 +18,7 @@ import { ItemDragPreview } from './components/core/ItemDragPreview';
 import { HoverTooltips } from './components/core/HoverTooltips';
 import { AddItemInput } from './components/core/AddItemInput';
 import { ShortcutsHelp } from './components/core/ShortcutsHelp';
+import { ShortcutOverlay } from './components/core/ShortcutOverlay';
 import { useListKeyboard } from './hooks/useListKeyboard';
 import type { Category } from './types';
 import './App.css';
@@ -211,6 +212,7 @@ const AppContent: React.FC = () => {
       >
       <Header />
       <HoverTooltips />
+      <ShortcutOverlay />
       
       {activeMenu !== 'main' && <div className="menu-overlay" onClick={() => setActiveMenu('main')} />}
 
@@ -279,7 +281,7 @@ const AppContent: React.FC = () => {
                   className="quick-add"
                   placeholder="Add item (no category)"
                   onAdd={(name) => addLooseItem(name)}
-                  dataAttrs={{ 'data-quick-add': '' }}
+                  dataAttrs={{ 'data-quick-add': '', 'data-shortcut': 'a' }}
                 />
               )}
               {colIndex === addCategoryColumn && (

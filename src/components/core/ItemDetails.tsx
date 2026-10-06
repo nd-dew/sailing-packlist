@@ -19,6 +19,8 @@ const autoSize = (el: HTMLTextAreaElement | null) => {
 export const ItemDetails: React.FC<ItemDetailsProps> = ({ item, isSubItem, onDone }) => {
   const { updateItem, checkedItems, toggleCheck, deleteItem, handleAddSubItem, playPopSound } = usePacklist();
   const [newSubName, setNewSubName] = useState('');
+  // sub-item names when the item was opened: an emptied one comes back on close
+  const [subNamesAtOpen] = useState(() => new Map((item.subItems ?? []).map(sub => [sub.id, sub.name])));
   const noteRef = useRef<HTMLTextAreaElement>(null);
 
   useLayoutEffect(() => autoSize(noteRef.current), [item.description]);
@@ -66,7 +68,7 @@ export const ItemDetails: React.FC<ItemDetailsProps> = ({ item, isSubItem, onDon
                     className="sub-item-name-input"
                     value={sub.name}
                     onChange={(e) => updateItem(sub.id, { name: e.target.value })}
-                    placeholder="Sub-item name"
+                    placeholder={subNamesAtOpen.get(sub.id) || 'Sub-item name'}
                     aria-label="Sub-item name"
                   />
                 </div>

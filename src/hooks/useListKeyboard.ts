@@ -41,6 +41,7 @@ export const SHORTCUT_GROUPS: { title: string; keys: [string, string][] }[] = [
       ['t', 'Packlists'],
       ['Ctrl+Z', 'Undo'],
       ['?', 'Shortcuts'],
+      ['Alt', 'Hold: show them in place'],
     ],
   },
 ];

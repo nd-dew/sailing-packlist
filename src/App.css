@@ -82,6 +82,10 @@ body {
   /* clip, not hidden: hidden would make this a scroll box and cut off the trip menu on short lists */
   overflow-x: clip;
   position: relative;
+  /* at least a screen tall, so the footer sits at the bottom of short lists */
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Confirmation Toast Overlay */
@@ -1074,6 +1078,7 @@ button:active,
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   margin-top: 8px;
+  margin-bottom: 32px;
   align-items: start;
 }
 
@@ -1742,6 +1747,7 @@ button.sub-item-stats {
   width: min(400px, calc(100vw - 32px));
   max-height: min(70vh, 640px);
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 6px;
   background: var(--surface);
   border-radius: 14px;
@@ -1793,7 +1799,8 @@ button.sub-item-stats {
   .trip-menu {
     width: min(780px, calc(100vw - 48px));
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    /* minmax(0, …): long one-line descriptions must not push the columns wider than the menu */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
     padding: 8px;
   }
@@ -1812,43 +1819,86 @@ button.sub-item-stats {
 
 .trip-menu-option .trip-menu-check:not(:empty) { text-align: center; }
 
-.new-empty-option .trip-menu-check { font-size: 1.1em; }
 
-.trip-menu-sublabel {
-  padding: 8px 10px 0 38px;
-  font-size: 0.75em;
-  font-weight: 600;
-  color: var(--muted);
+
+/* New packlist: an empty one, or a card per preset */
+.trip-menu-new { padding-bottom: 4px; }
+
+.new-empty-card {
+  align-items: center;
+  gap: 10px;
+  margin: 2px 4px 6px;
+  width: calc(100% - 8px);
+  padding: 12px 14px;
+  border: 1.5px dashed var(--check-border);
+  border-radius: 12px;
+  color: var(--text);
+  transition: border-color 0.15s, background-color 0.15s;
 }
 
-/* Preset row: the row starts a trip; role presets also offer crew / captain */
-.preset-option { padding: 0; align-items: center; }
+.new-empty-card:hover { border-color: var(--green); background: color-mix(in srgb, var(--green) 6%, transparent); }
 
-.preset-option-main {
+.new-empty-plus {
+  width: 24px; height: 24px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--green) 14%, transparent);
+  color: var(--green);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.preset-cards {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 4px 2px;
+}
+
+.preset-card {
+  box-sizing: border-box; /* the crew/captain card is a div, the others are buttons */
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
   min-width: 0;
-  padding: 9px 10px;
-  border: none;
-  background: none;
-  color: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
   font: inherit;
   text-align: left;
-  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
 }
 
-.role-pills { display: inline-flex; gap: 4px; padding-right: 8px; flex-shrink: 0; }
+button.preset-card { cursor: pointer; }
+button.preset-card:hover,
+.preset-card:has(.role-pill:hover) { border-color: color-mix(in srgb, var(--navy) 35%, transparent); background: var(--surface-hover); }
+
+.preset-card-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+
+.preset-desc {
+  font-size: 0.78em;
+  line-height: 1.4;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.preset-card .role-pills { display: flex; gap: 6px; padding: 6px 0 0; }
 
 .role-pill {
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
   font: inherit;
-  font-size: 0.72em;
+  font-size: 0.75em;
   font-weight: 700;
-  padding: 4px 9px;
+  padding: 5px 14px;
   border-radius: 999px;
   cursor: pointer;
 }
@@ -2356,7 +2406,7 @@ button.sub-item-stats {
 }
 
 .app-footer {
-  margin-top: 40px;
+  margin-top: auto;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -2799,3 +2849,60 @@ kbd {
 
 .btn-shortcuts:hover { color: var(--navy); }
 .footer-sep { margin: 0 10px; color: #ccc; }
+
+/* Holding Alt: shortcut badges on the things they act on */
+.shortcut-overlay { position: fixed; inset: 0; z-index: 9800; pointer-events: none; }
+
+.shortcut-badge {
+  position: fixed;
+  transform: translate(-50%, -30%);
+  min-width: 1.5em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #ffd166;
+  color: #1b1300;
+  box-shadow: 0 2px 6px rgba(11, 26, 43, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+  animation: shortcut-badge-in 0.12s ease-out;
+}
+
+@keyframes shortcut-badge-in {
+  from { opacity: 0; scale: 0.7; }
+  to { opacity: 1; scale: 1; }
+}
+
+.shortcut-strip {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 18px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #0b1a2b;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(11, 26, 43, 0.3);
+  animation: shortcut-badge-in 0.12s ease-out;
+}
+
+.shortcut-strip kbd {
+  min-width: 1.4em;
+  padding: 0 5px;
+  margin: 0 1px;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.2);
+  color: inherit;
+  font-size: 0.92em;
+}
+
+[data-theme="dark"] .shortcut-strip { background: #e8edf3; color: #0b1a2b; }
+[data-theme="dark"] .shortcut-strip kbd { background: rgba(11, 26, 43, 0.1); box-shadow: inset 0 -1px 0 rgba(11, 26, 43, 0.2); }

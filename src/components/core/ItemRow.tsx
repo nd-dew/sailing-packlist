@@ -33,6 +33,13 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
   const hasBags = luggages.length > 0;
 
   const isExpanded = selectedItemId === item.id;
+  // the name as it was when the item was opened
+  const [nameAtOpen, setNameAtOpen] = useState(item.name);
+  const [wasExpanded, setWasExpanded] = useState(isExpanded);
+  if (isExpanded !== wasExpanded) {
+    setWasExpanded(isExpanded);
+    if (isExpanded) setNameAtOpen(item.name);
+  }
   const liRef = useRef<HTMLLIElement | null>(null);
   const checkboxRef = useRef<HTMLInputElement>(null);
 
@@ -218,7 +225,8 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
                 autoFocus={!item.name}
                 onChange={(e) => updateItem(item.id, { name: e.target.value })}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); close(); } }}
-                placeholder="Item name"
+                // an emptied name comes back on close; the placeholder shows which one
+                placeholder={nameAtOpen || 'Item name'}
                 aria-label="Item name"
               />
             </div>
@@ -227,6 +235,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
               className="item-clickable-area" 
               role="button"
               tabIndex={0}
+              data-shortcut="Enter"
               aria-expanded={false}
               onClick={() => { if (!isSwipingRef.current && !justFinishedDrag()) toggleExpanded(); }}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpanded(); } }}

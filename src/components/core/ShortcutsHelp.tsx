@@ -18,7 +18,7 @@ export const ShortcutsHelp: React.FC<{ onClose: () => void }> = ({ onClose }) =>
           <h3>Keyboard shortcuts</h3>
           <button className="btn-close-menu" onClick={onClose} aria-label="Close">✕</button>
         </div>
-        <p className="shortcuts-intro">Move the cursor with the arrow keys, then act on the highlighted row with a single key. Esc always steps back.</p>
+        <p className="shortcuts-intro">Arrows move the highlight, single keys act on it.</p>
         <div className="shortcuts-grid">
           {SHORTCUT_GROUPS.map(group => (
             <section key={group.title}>
@@ -29,7 +29,7 @@ export const ShortcutsHelp: React.FC<{ onClose: () => void }> = ({ onClose }) =>
                     <dt>{keys.split(/\s{2,}/).map((part, i) => (
                       <React.Fragment key={i}>
                         {i > 0 && <span className="kbd-sep"> </span>}
-                        {part === 'or' || part === '/' ? <span className="kbd-or">{part}</span> : part.split(' ').map((k, j) => <kbd key={j}>{k}</kbd>)}
+                        {part === 'or' ? <span className="kbd-or">or</span> : part.split(' ').map((k, j) => <kbd key={j}>{k}</kbd>)}
                       </React.Fragment>
                     ))}</dt>
                     <dd>{what}</dd>

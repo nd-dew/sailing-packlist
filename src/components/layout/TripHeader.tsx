@@ -121,6 +121,7 @@ export const TripHeader: React.FC = () => {
             aria-haspopup="menu"
             aria-expanded={isMenuOpen}
             title="Your packlists"
+            data-shortcut="t"
           >
             <span className="trip-title-text">{tripName}</span>
             <svg className="trip-title-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

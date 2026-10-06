@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 interface Tip {
   text: string;
+  shortcut?: string;
   anchorX: number;
   anchorY: number;
   placement: 'top' | 'bottom';
@@ -30,7 +31,8 @@ export const HoverTooltips: React.FC = () => {
       const r = el.getBoundingClientRect();
       // Prefer above; go below when there's no room (e.g. the fixed header)
       const below = r.top < 48;
-      setTip({ text, anchorX: r.left + r.width / 2, anchorY: below ? r.bottom + GAP : r.top - GAP, placement: below ? 'bottom' : 'top' });
+      // elements can name their keyboard shortcut with data-shortcut; it's shown as a key badge
+      setTip({ text, shortcut: el.dataset.shortcut, anchorX: r.left + r.width / 2, anchorY: below ? r.bottom + GAP : r.top - GAP, placement: below ? 'bottom' : 'top' });
     };
 
     // Keep the browser tooltip suppressed if React re-renders the title while hovered (e.g. Expand -> Collapse)
@@ -125,6 +127,7 @@ export const HoverTooltips: React.FC = () => {
       } as React.CSSProperties}
     >
       {tip.text}
+      {tip.shortcut && tip.shortcut.split(' ').map(k => <kbd key={k} className="hover-tip-kbd">{k}</kbd>)}
     </div>
   );
 };

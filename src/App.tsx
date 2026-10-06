@@ -245,12 +245,6 @@ const AppContent: React.FC = () => {
       <CategoryModal />
 
       <TripHeader />
-      <AddItemInput
-        className="quick-add"
-        placeholder="Add an item (no category needed)"
-        onAdd={(name) => addLooseItem(name)}
-        dataAttrs={{ 'data-quick-add': '' }}
-      />
 
       {allPacked && (
         <div className="all-packed-banner" role="status">
@@ -280,6 +274,14 @@ const AppContent: React.FC = () => {
                   <CategoryBlock key={cat.id} cat={cat} dragEnabled={dragEnabled} />
                 ))}
               </SortableContext>
+              {colIndex === addCategoryColumn && (
+                <AddItemInput
+                  className="quick-add"
+                  placeholder="Add item (no category)"
+                  onAdd={(name) => addLooseItem(name)}
+                  dataAttrs={{ 'data-quick-add': '' }}
+                />
+              )}
               {colIndex === addCategoryColumn && (
                 <div className="category-block btn-add-category-block" onClick={() => handleCreateCategory()}>
                   <div className="category-header add-category-header">
@@ -314,7 +316,7 @@ const AppContent: React.FC = () => {
       </DndContext>
 
       <footer className="app-footer">
-        <button className="btn-shortcuts desktop-only" onClick={toggleShortcuts} title="Keyboard shortcuts (?)">⌨ Shortcuts</button>
+        <button className="btn-shortcuts desktop-only" onClick={toggleShortcuts} title="Keyboard shortcuts" data-shortcut="?">⌨ Shortcuts</button>
         <span className="footer-sep desktop-only">|</span>
         <a href="https://www.sailingcommunity.be/" target="_blank" rel="noopener noreferrer">
           <img src={`${import.meta.env.BASE_URL}bsc.ico`} alt="BSC" style={{ width: '20px', height: '20px', marginRight: '8px' }} />

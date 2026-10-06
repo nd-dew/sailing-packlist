@@ -122,7 +122,7 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat, dragEnabled =
       >
         <div className="category-title-area">
           <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-            <h3 onClick={() => { if (!justFinishedDrag()) setSelectedCategoryId(cat.id); }} style={{ cursor: 'pointer' }} title="Edit Category">{cat.title}</h3>
+            <h3 onClick={() => { if (!justFinishedDrag()) setSelectedCategoryId(cat.id); }} style={{ cursor: 'pointer' }} title="Edit category" data-shortcut="e">{cat.title}</h3>
           </div>
           <div className="category-meta">
             {catTotal > 0 && <span className="cat-progress">{isDone ? '✓ ' : ''}{catPacked}/{catTotal}</span>}
@@ -146,7 +146,8 @@ export const CategoryBlock: React.FC<CategoryBlockProps> = ({ cat, dragEnabled =
               className="btn-collapse-cat"
               onClick={toggleCollapsed}
               aria-expanded={!isCollapsed}
-              title={isCollapsed ? 'Expand' : 'Collapse'}
+              title={isCollapsed ? 'Unfold' : 'Fold'}
+              data-shortcut="c"
             >
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="m6 9 6 6 6-6" />

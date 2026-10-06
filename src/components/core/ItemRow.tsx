@@ -196,6 +196,8 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
           <input 
             ref={checkboxRef}
             type="checkbox" 
+            title={isItemChecked ? 'Unpack' : 'Pack'}
+            data-shortcut="Space"
             aria-label={item.name}
             checked={isItemChecked} 
             onChange={(e) => { 
@@ -255,6 +257,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
             type="button"
             className={`luggage-badge ${assignedLuggage ? '' : 'is-empty'} ${luggagePop ? 'pop-animate' : ''}`}
             style={{ '--lug-color': assignedLuggage?.color || '#8a94a3' } as React.CSSProperties}
+            data-shortcut="b"
             title={`${assignedLuggage ? `Bag: ${assignedLuggage.name}` : 'No bag'} · click: ${getNextLuggageHint(item.id, 1).toLowerCase()}`}
             aria-label={`${assignedLuggage ? `Bag: ${assignedLuggage.name}` : 'No bag'}. Click: ${getNextLuggageHint(item.id, 1)}`}
             onClick={() => { playPopSound('pop'); cycleLuggage(item.id, 1); }}
@@ -263,13 +266,13 @@ export const ItemRow: React.FC<ItemRowProps> = ({ item, displayQty, assignedLugg
           </button>
         )}
         {isExpanded && (
-          <button className="btn-close-item" onClick={close} title="Close (Esc)" aria-label="Close">
+          <button className="btn-close-item" onClick={close} title="Close" data-shortcut="Esc" aria-label="Close">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="m6 15 6-6 6 6" />
             </svg>
           </button>
         )}
-        <button className="btn-remove" onClick={handleDelete} title="Delete item" aria-label={`Delete ${item.name}`}>✕</button>
+        <button className="btn-remove" onClick={handleDelete} title="Delete item" data-shortcut="Del" aria-label={`Delete ${item.name}`}>✕</button>
       </div>
       {isExpanded && <ItemDetails item={item} isSubItem={isSubItem} onDone={close} />}
     </li>

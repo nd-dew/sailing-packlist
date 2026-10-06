@@ -828,7 +828,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     return newId;
   };
 
-  // Items added without picking a category land in "Other", created on first use at the top
+  // Items added without picking a category land in "Other", created on first use at the end (next to that field)
   const addLooseItem = (name: string) => {
     commitAction(`Added ${name}`);
     const newId = `custom_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -837,7 +837,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       if (prev.some(cat => cat.id === OTHER_CATEGORY_ID)) {
         return prev.map(cat => (cat.id === OTHER_CATEGORY_ID ? { ...cat, items: [...cat.items, item] } : cat));
       }
-      return [{ id: OTHER_CATEGORY_ID, title: '📦 Other', isCustom: true, items: [item] }, ...prev];
+      return [...prev, { id: OTHER_CATEGORY_ID, title: '📦 Other', isCustom: true, items: [item] }];
     });
     return newId;
   };

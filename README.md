@@ -7,8 +7,8 @@ This repository is made public to allow people to contribute new pack lists.
 
 Pack lists are driven by YAML files. To add a new one:
 
-1. Create a new `.yaml` file in `src/presets/` (e.g., `caribbean_cruise.yaml`). Use `src/presets/med_blueward_26.yaml` as a reference, or build the list in the app and use **Export** in the trip menu (tap the trip title) to get the file.
-2. That's it. The app will automatically discover it and offer it under **New trip** in the trip menu.
+1. Create a new `.yaml` file in `src/presets/` (e.g., `caribbean_cruise.yaml`). Use `src/presets/med_blueward_26.yaml` as a reference, or build the list in the app and use **Export** in the menu under the list title to get the file.
+2. That's it. The app will automatically discover it and offer it under **New packlist** in the menu under the list title.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full format.
 

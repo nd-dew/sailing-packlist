@@ -9,9 +9,9 @@ This app uses a highly flexible, data-driven preset system. This means non-devel
 All default lists and templates are defined in easy-to-read YAML files located in `src/presets/`.
 
 ### Easiest: build it in the app
-1. In the app, tap the trip title at the top and start a trip (from a preset or an **Empty list**).
+1. In the app, tap the list title at the top and start a new packlist (an **Empty packlist**, or from a preset).
 2. Edit the list until it's right: add, remove and drag items, set bags, add notes and sub-items.
-3. Open the trip title menu again and tap **⬇ Export**. You get a `.yaml` file in the preset format.
+3. Open the title menu again and tap **⬇ Export**. You get a `.yaml` file in the preset format.
 4. Put that file in `src/presets/` (rename it and its `id` if you like) and open a pull request.
 
 ### By hand
@@ -66,7 +66,7 @@ categories:
 *   `subItems`: (Optional) A list of `{ id, name }` items packed as part of this one (e.g. the chargers in "Charging & Cables").
 
 ### Step 3: That's it
-Presets are picked up automatically from `src/presets/`, nothing needs registering. Yours appears in the trip menu under **New trip**, and has its own link: `/sailing-packlist/north_sea_26`.
+Presets are picked up automatically from `src/presets/`, nothing needs registering. Yours appears in the title menu under **New packlist**, and has its own link: `/sailing-packlist/north_sea_26`.
 
 ## Development
 If you are contributing code (React/TypeScript):

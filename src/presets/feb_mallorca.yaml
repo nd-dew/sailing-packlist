@@ -1,0 +1,308 @@
+schema: 1
+name: Mallorca Bachata Birthday Sail 2027
+description: "13–20 February 2027: a week around Mallorca on two boats, combining winter sailing, exploring, bachata socials and a birthday celebration. Captain of Alissa. Route and nights ashore depend on weather, suitable ports and dance schedules."
+showers: 7
+warnings:
+  - id: warn_1
+    text: "No Hard Suitcases: Soft bags only! Rigid luggage is impossible to store on a boat. Bring a soft duffel."
+  - id: warn_2
+    text: "Winter sailing: bring warm layers and waterproof jacket and trousers. Keep a complete dry change for sleeping."
+  - id: warn_bedding
+    text: Bedding is expected to be provided; bring a sleeping bag for extra warmth and confirm cabin heating with the charter base.
+  - id: warn_dance
+    text: Pack separate clean dance shoes and fresh tops for bachata socials.
+  - id: warn_safety
+    text: Before departure, confirm that Alissa has properly fitted lifejackets for everyone and suitable harnesses/tethers and other safety equipment. Bring personal gear if the charter does not supply what you need.
+  - id: warn_skippers
+    text: Confirm the charter base accepts your skipper and radio documents. Agree weather decisions, daily rendezvous, communications and fallback ports with the other skipper.
+luggages:
+  - id: lug_3
+    name: On me
+    icon: on_person
+    color: "#B10DC9"
+  - id: lug_2
+    name: Backpack
+    icon: backpack
+    color: "#FF851B"
+  - id: lug_1
+    name: Duffel
+    icon: duffel
+    color: "#0074D9"
+categories:
+  - id: docs
+    title: 📄 Get Formal
+    priority: must-have
+    items:
+      - id: docs_passport
+        name: ID Card / Passport
+        bag: lug_2
+      - id: docs_health_insurance
+        name: Health Insurance Card (EHIC)
+        bag: lug_2
+      - id: docs_printed
+        name: Print Documents
+        captainOnly: true
+        subItems:
+          - id: docs_boarding_pass
+            name: Boarding pass (from charter)
+          - id: docs_logbook
+            name: Logbook
+          - id: docs_maps
+            name: Nautical Maps & Instruments
+          - id: docs_insurance
+            name: Boat Insurance / Charter Documents
+          - id: docs_songbook
+            name: Songbook
+          - id: docs_crew_list
+            name: Crew List
+          - id: docs_base_contacts
+            name: Charter Base & Emergency Contact Details
+          - id: docs_backup_copies
+            name: Backup Copies of Licences, ID & Charter Documents
+        bag: lug_2
+      - id: docs_license
+        name: Sailing License
+        description: Required for the Skipper. Not needed for crew.
+        captainOnly: true
+        bag: lug_3
+      - id: docs_vhf
+        name: VHF License
+        description: Official radio operator certificate.
+        captainOnly: true
+        bag: lug_2
+      - id: docs_diving
+        name: Diving License
+        description: If you plan to rent scuba gear.
+        bag: lug_2
+      - id: docs_cash
+        name: Cash (Euros)
+        description: For small purchases and splitting crew expenses.
+        bag: lug_3
+  - id: tough
+    title: ⚡ Get Warm
+    priority: must-have
+    items:
+      - id: base_thermal_top
+        name: Thermal Base Layer (Top)
+        description: Thermal underwear worn next to the skin for warmth. Two sets for the week; keep one dry for sleeping.
+        qty: 2
+        bag: lug_1
+      - id: base_thermal_bot
+        name: Thermal Base Layer (Bottom)
+        description: Thermal underwear worn next to the skin for warmth. Two sets for the week; keep one dry for sleeping.
+        qty: 2
+        bag: lug_1
+      - id: out_shoes_tough
+        name: Rain Boots
+        bag: lug_1
+      - id: out_mid_fleece
+        name: "Warm Mid-layer: Fleece / Puffer (Top)"
+        bag: lug_1
+      - id: out_mid_pants
+        name: "Warm Mid-layer: Sweatpants (Bottom)"
+        bag: lug_1
+      - id: out_wind_jacket
+        name: Waterproof Jacket (Top)
+        bag: lug_1
+      - id: out_wind_pants
+        name: Waterproof Pants (Bottom)
+        description: Decathlon bicycle overpants work well if you do not have dedicated sailing waterproofs.
+        bag: lug_1
+      - id: out_hat_warm
+        name: Warm Hat
+        bag: lug_1
+  - id: base
+    title: 👕 Get Dressed
+    priority: should-have
+    items:
+      - id: base_underwear
+        name: Underwear & Socks
+        qty: 0
+        bag: lug_1
+      - id: base_tshirt
+        name: T-Shirts
+        qty: 0
+        bag: lug_1
+      - id: out_shoes_deck
+        name: Sneakers
+        bag: lug_1
+      - id: out_buff
+        name: Neck Gaiter / Buff
+        bag: lug_1
+      - id: out_gloves
+        name: Sailing Gloves
+        description: Protects your hands from ropes and provides some warmth.
+        bag: lug_1
+      - id: out_nice_clothes
+        name: Bachata Outfits
+        description: For dancing and looking good in photos.
+        bag: lug_1
+        qty: 2
+      - id: out_sunglasses
+        name: Sunglasses
+        bag: lug_1
+      - id: out_dance_shoes
+        name: Dance Shoes
+        bag: lug_1
+  - id: toiletries
+    title: 🧴 Get Romantic
+    priority: should-have
+    items:
+      - id: out_sleeping_bag
+        name: Sleeping Bag
+        description: Bedding is expected to be provided, but bring a sleeping bag for extra warmth.
+        bag: lug_1
+      - id: toi_brush
+        name: Toothbrush & Paste
+        bag: lug_1
+      - id: toi_towel
+        name: Quick-dry Sports Towel
+        bag: lug_1
+      - id: med_gel
+        name: Universal Shower Gel
+        bag: lug_1
+      - id: toi_clipper
+        name: Nail Clippers
+        bag: lug_1
+      - id: toi_shave
+        name: Shaving Cream & Razor
+        bag: lug_1
+      - id: toi_earplugs
+        name: Earplugs
+        bag: lug_1
+      - id: toi_eyemask
+        name: Eye Mask
+        bag: lug_1
+      - id: med_sunscreen
+        name: Sunscreen
+        bag: lug_1
+      - id: toi_lip_balm
+        name: Lip Balm / Hand Cream
+        bag: lug_1
+      - id: toi_deodorant
+        name: Deodorant
+        bag: lug_1
+      - id: toi_flipflops
+        name: Shower Flip-flops
+        bag: lug_1
+      - id: toi_laundry_bag
+        name: Laundry / Wet Clothes Bag
+        bag: lug_1
+      - id: toi_hair_brush
+        name: Hair Brush
+        bag: lug_1
+      - id: toi_sanitary_pads
+        name: Sanitary pads
+        bag: lug_1
+  - id: tech
+    title: 🪛 Tech Kit
+    priority: should-have
+    items:
+      - id: tech_phone
+        name: Phone Kit
+        bag: lug_2
+      - id: tech_headlamp
+        name: Headlamp (Must have RED light)
+        description: Red light preserves night vision for everyone on deck.
+        bag: lug_1
+      - id: tech_headlamp_power
+        name: Headlamp Spare Batteries / Charging Cable
+        bag: lug_2
+      - id: tech_cables
+        name: Charging & Cables
+        subItems:
+          - id: tech_cables_laptop
+            name: Laptop Charger
+          - id: tech_cables_phone
+            name: Phone Charger
+          - id: tech_cables_watch
+            name: Watch Charger
+          - id: tech_cables_powerbank
+            name: Power bank
+          - id: tech_cables_adapter
+            name: USB-A to USB-C adapter
+          - id: tech_cables_radio_aux
+            name: Aux Cable for Radio
+        bag: lug_2
+      - id: tech_camera
+        name: Camera
+        bag: lug_1
+      - id: tech_radios
+        name: Radio
+        description: Optional. VHF best, walkie-talkie ok.
+        bag: lug_2
+      - id: tech_multitool
+        name: Multitool / Knife
+        description: Optional. Check-in luggage only!
+        bag: lug_1
+      - id: tech_laptop
+        name: Laptop
+        description: If you really are such a workaholic, otherwise you can skip it.
+        captainOnly: true
+        bag: lug_2
+      - id: tech_offline_nav
+        name: Offline Charts & Navigation Apps
+        description: Download charts before departure; check access without an internet connection.
+        captainOnly: true
+        bag: lug_2
+  - id: meds
+    title: 💊 Med Kit
+    priority: should-have
+    items:
+      - id: med_pain
+        name: Painkillers (Ibuprofen / Paracetamol)
+        bag: lug_1
+      - id: med_charcoal
+        name: Stomach Remedies
+        bag: lug_1
+      - id: med_personal
+        name: Personal Prescription Meds
+        bag: lug_1
+      - id: med_seasickness
+        name: Seasickness Remedy
+        bag: lug_1
+      - id: med_blister_plasters
+        name: Blister Plasters
+        bag: lug_1
+      - id: med_anti_allergens
+        name: Anti-Allergens
+        bag: lug_1
+      - id: med_thermometer
+        name: Thermometer
+        bag: lug_1
+  - id: fun
+    title: 📖 Chill
+    priority: nice-to-have
+    items:
+      - id: fun_book
+        name: Book / Kindle
+        bag: lug_1
+      - id: fun_edu_book
+        name: Educational Sailing Book
+        captainOnly: true
+        bag: lug_1
+      - id: fun_games
+        name: Card / Board Games
+        description: Align with the rest of the crew so everyone doesn't bring the same thing.
+        bag: lug_1
+      - id: fun_instrument
+        name: Musical Instrument
+        description: If you play on it.
+        bag: lug_1
+      - id: fun_pen_paper
+        name: Pen & Paper
+        bag: lug_1
+      - id: fun_water_bottle
+        name: Water Bottle / Thermal Cup
+        bag: lug_2
+  - id: additional
+    title: ➕ Optional Extras
+    priority: nice-to-have
+    items:
+      - id: out_swim
+        name: Swimwear / Wetsuit
+        bag: lug_1
+      - id: tech_drybag
+        name: Dry Bag / Waterproof Pouch
+        description: Optional, if you plan to get in the water and want to keep belongings dry.
+        bag: lug_2

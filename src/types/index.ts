@@ -6,7 +6,6 @@ export interface PackItem {
   description?: string;
   qty?: number;
   captainOnly?: boolean;
-  defaultBag?: string;
   subItems?: PackItem[];
 }
 

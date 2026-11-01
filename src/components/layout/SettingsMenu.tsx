@@ -1,62 +1,19 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { usePacklist } from '../../context/PacklistContext';
 import { PRESETS } from '../../utils/presetUtils';
-import { parse, stringify } from 'yaml';
 
 export const SettingsMenu: React.FC = () => {
   const { 
     activeMenu, setActiveMenu, changes, updateChanges,
     deferredPrompt, handleInstallClick, past,
-    getMenuStyles, categories, luggages, itemLuggage, checkedItems,
-    theme, setTheme, importData, soundEnabled, setSoundEnabled,
-    activePresetId, activeTrip, cruiseDescription, warnings,
+    getMenuStyles,
+    theme, setTheme, soundEnabled, setSoundEnabled,
+    activePresetId,
     layoutColumns, setLayoutColumns, density, setDensity, showPriorities, setShowPriorities
   } = usePacklist();
 
   const { leftMenuStyle, isMenuSwiping } = getMenuStyles();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const baseSetQty = changes;
-
-  const handleExport = () => {
-    const data = {
-      version: '1.0',
-      timestamp: new Date().toISOString(),
-      name: activeTrip.name,
-      description: cruiseDescription,
-      changes,
-      warnings,
-      categories,
-      luggages,
-      itemLuggage,
-      checkedItems
-    };
-    const yamlStr = stringify(data);
-    const blob = new Blob([yamlStr], { type: 'text/yaml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sailing-packlist-export-${new Date().toISOString().slice(0, 10)}.yaml`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = parse(event.target?.result as string);
-        importData(data);
-      } catch (err) {
-        alert('Failed to parse file. Make sure it is a valid YAML export.');
-      }
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-    reader.readAsText(file);
-  };
 
   const hideShowers = PRESETS[activePresetId]?.hideShowers === true;
 
@@ -145,24 +102,17 @@ export const SettingsMenu: React.FC = () => {
           </div>
         </section>
 
-        {/* Data & sharing */}
-        <section className="menu-group">
-          <span className="menu-group-label">Backup</span>
-          <div className="menu-card menu-card-rows menu-list">
-            <button onClick={handleExport} className="menu-list-btn">
-              <span>💾</span> Export to YAML
-            </button>
-            <input type="file" accept=".yaml,.yml" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileImport} />
-            <button onClick={() => fileInputRef.current?.click()} className="menu-list-btn">
-              <span>📂</span> Import from YAML
-            </button>
-            {deferredPrompt && (
+        {/* Export / import live in the packlists menu (the list title) */}
+        {deferredPrompt && (
+          <section className="menu-group">
+            <span className="menu-group-label">App</span>
+            <div className="menu-card menu-card-rows menu-list">
               <button onClick={handleInstallClick} className="menu-list-btn">
                 <span>📱</span> Install App
               </button>
-            )}
-          </div>
-        </section>
+            </div>
+          </section>
+        )}
 
         {/* Action history */}
         <details className="history-disclosure">

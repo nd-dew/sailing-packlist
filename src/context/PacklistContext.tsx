@@ -18,10 +18,11 @@ import {
 import type { SharedPayload } from '../utils/shareUtils';
 import {
   loadInitialTrips, loadTripData, saveTripData, saveTripIndex, removeTripData, newTripId, uniqueTripName,
-  buildPresetTripData, buildEmptyTripData, buildSharedTripData, tripToPresetYaml,
+  buildPresetTripData, buildEmptyTripData, buildSharedTripData, tripToPackFile, packFileToTripData,
   type TripMeta, type TripData
 } from '../utils/tripStore';
 import { isDragActive } from '../hooks/useListDrag';
+import { parsePackFile, PackFileError, type PackFile } from '../utils/packFile';
 
 interface PacklistContextType {
   changes: number;
@@ -75,7 +76,7 @@ interface PacklistContextType {
   renameTrip: (id: string, name: string) => void;
   deleteTrip: (id: string) => void;
   openSharedTrip: (shared: SharedPayload, token: string) => void;
-  exportActiveTripAsPreset: () => { fileName: string; yaml: string };
+  exportActiveTrip: () => { fileName: string; yaml: string };
   resetAll: () => void;
   handleCreateItem: (categoryId: string) => void;
   addItem: (categoryId: string, name: string) => string;
@@ -122,7 +123,7 @@ interface PacklistContextType {
   triggerParticle: (x: number, y: number, type: 'to-green' | 'to-red') => void;
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
-  importData: (data: any) => void;
+  importPackFile: (yamlText: string) => void;
   soundEnabled: boolean;
   setSoundEnabled: (enabled: boolean) => void;
   playPopSound: (type?: 'click' | 'pop') => void;
@@ -741,7 +742,7 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
-  const exportActiveTripAsPreset = () => tripToPresetYaml(activeTrip, {
+  const exportActiveTrip = () => tripToPackFile(activeTrip, {
     categories, warnings, checkedItems, luggages, itemLuggage, changes, description: cruiseDescription
   });
 
@@ -757,21 +758,17 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
-  const importData = (data: any) => {
-    if (!data || data.version !== '1.0' || !data.categories) {
-      alert('Invalid or incompatible packing list data file.');
+  // A packlist file (any format version) becomes a packlist of its own, so nothing gets overwritten
+  const importPackFile = (yamlText: string) => {
+    let file: PackFile;
+    try {
+      file = parsePackFile(yamlText);
+    } catch (err) {
+      alert(err instanceof PackFileError ? err.message : 'This file could not be imported.');
       return;
     }
-    // An import becomes a trip of its own, so nothing gets overwritten
-    addTrip({ name: uniqueTripName(data.name || 'Imported list', trips), presetId: null }, {
-      categories: data.categories || [],
-      warnings: data.warnings || [],
-      checkedItems: data.checkedItems || {},
-      luggages: data.luggages || [],
-      itemLuggage: data.itemLuggage || {},
-      changes: data.changes || 3,
-      description: data.description || '',
-    });
+    addTrip({ name: uniqueTripName(file.name, trips), presetId: null }, packFileToTripData(file));
+    triggerConfirm(`📥 Imported "${file.name}"`, '', () => {});
   };
 
   const getSharePayload = (): SharedPayload => {
@@ -1223,11 +1220,11 @@ export const PacklistProvider: React.FC<{ children: ReactNode }> = ({ children }
       layoutColumns, setLayoutColumns, density, setDensity,
       filter, setFilter, itemViewFilter, setItemViewFilter, activeMenu, setActiveMenu, past, future, undo, redo, commitAction, toggleCheck, toggleParentItem,
       cycleLuggage, getNextLuggageHint, activePresetId, resetAll,
-      trips, activeTrip, switchTrip, createTripFromPreset, createEmptyTrip, renameTrip, deleteTrip, openSharedTrip, exportActiveTripAsPreset, handleCreateItem, handleAddSubItem, addItem, addLooseItem,
+      trips, activeTrip, switchTrip, createTripFromPreset, createEmptyTrip, renameTrip, deleteTrip, openSharedTrip, exportActiveTrip, handleCreateItem, handleAddSubItem, addItem, addLooseItem,
       updateItem, deleteItem, moveItemCategory, moveItemBy, moveCategoryBy, updateCategory, deleteCategory, handleCreateCategory, setCategoryLuggage, packCategory, unpackCategoryItemsAction, updateLuggage, deleteLuggage, reorderLuggage, packLuggageItems, unpackLuggageItems, handleAddLuggage, getMissingCount, deferredPrompt, handleInstallClick,
       confirmToast, triggerConfirm, activeToastId, showPriorityToast, getSubItemCounts,
       handleGlobalTouchStart, handleGlobalTouchMove, handleGlobalTouchEnd, getMenuStyles,
-      particles, triggerParticle, theme, setTheme, importData, getSharePayload,
+      particles, triggerParticle, theme, setTheme, importPackFile, getSharePayload,
       cruiseDescription, setCruiseDescription,
       soundEnabled, setSoundEnabled, playPopSound
       }}>

@@ -16,7 +16,7 @@ const Icon: React.FC<{ d: string }> = ({ d }) => (
 export const TripHeader: React.FC = () => {
   const {
     activePresetId, activeTrip, trips, switchTrip, createTripFromPreset, createEmptyTrip, renameTrip, deleteTrip,
-    cruiseDescription, setCruiseDescription, playPopSound, triggerConfirm, getSharePayload, exportActiveTripAsPreset,
+    cruiseDescription, setCruiseDescription, playPopSound, triggerConfirm, getSharePayload, exportActiveTrip, importPackFile,
     categories, checkedItems
   } = usePacklist();
 
@@ -25,6 +25,15 @@ export const TripHeader: React.FC = () => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const rootRef = useRef<HTMLElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setIsMenuOpen(false);
+    file.text().then(importPackFile);
+  };
 
   const tripName = activeTrip?.name || 'My packlist';
   const notes = cruiseDescription || PRESETS[activePresetId]?.description || '';
@@ -95,7 +104,7 @@ export const TripHeader: React.FC = () => {
   });
 
   const handleExportPreset = () => run(() => {
-    const { fileName, yaml } = exportActiveTripAsPreset();
+    const { fileName, yaml } = exportActiveTrip();
     const url = URL.createObjectURL(new Blob([yaml], { type: 'text/yaml' }));
     const a = document.createElement('a');
     a.href = url;
@@ -112,6 +121,7 @@ export const TripHeader: React.FC = () => {
 
   return (
     <section ref={rootRef} className="trip-header">
+      <input ref={fileInputRef} type="file" accept=".yaml,.yml" hidden onChange={handleImportFile} data-import-file />
       <div className="trip-title-wrap">
         {isRenaming ? (
           <input
@@ -190,7 +200,7 @@ export const TripHeader: React.FC = () => {
                       <button role="menuitem" className="trip-action" onClick={handleShare} title="Copy a link that recreates this packlist">
                         <Icon d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1 M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />Share
                       </button>
-                      <button role="menuitem" className="trip-action" onClick={handleExportPreset} title="Download this packlist as a preset file (YAML)">
+                      <button role="menuitem" className="trip-action" onClick={handleExportPreset} title="Download as a file (with what's packed). Import it later, or use it as a preset">
                         <Icon d="M12 4v11 M7 10l5 5 5-5 M5 20h14" />Export
                       </button>
                       <button role="menuitem" className="trip-action danger" onClick={handleDelete}>
@@ -210,6 +220,15 @@ export const TripHeader: React.FC = () => {
                 <span className="trip-menu-text">
                   <span className="trip-menu-name">Empty packlist</span>
                   <span className="trip-menu-desc">Start from scratch</span>
+                </span>
+              </button>
+              <button role="menuitem" className="trip-menu-option new-option" onClick={() => fileInputRef.current?.click()}>
+                <span className="menu-tile tile-import" aria-hidden="true">
+                  <Icon d="M12 15V4 M7 9l5-5 5 5 M5 20h14" />
+                </span>
+                <span className="trip-menu-text">
+                  <span className="trip-menu-name">Import from file</span>
+                  <span className="trip-menu-desc">A packlist file (.yaml) someone exported</span>
                 </span>
               </button>
               {Object.entries(PRESETS).map(([id, data]) => {

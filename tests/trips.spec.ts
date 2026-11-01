@@ -87,9 +87,9 @@ test.describe('Trips', () => {
     const path = await download.path();
     const fs = await import('fs');
     const yaml = fs.readFileSync(path!, 'utf-8');
+    expect(yaml).toContain('schema: 1');
     expect(yaml).toContain('name: Day Sail, August, Zeeland Fox 22');
-    expect(yaml).toContain('defaultBag:');
-    expect(yaml).not.toContain('checked');
+    expect(yaml).toContain('bag:');
   });
 
   test('a list from before trips existed becomes the first trip', async ({ page }) => {
@@ -108,5 +108,63 @@ test.describe('Trips', () => {
     await expect(page.locator('.trip-title')).toContainText('Cyprus, October, 5 Nights');
     await expect(page.locator('.list-item .item-name', { hasText: 'My old item' })).toBeVisible();
     await expect(page.locator('#stat-green')).toHaveText('1');
+  });
+
+  test('a packlist file imports as a new packlist, with its bags, notes and progress', async ({ page }) => {
+    await openTripMenu(page);
+    await page.locator('[data-import-file]').setInputFiles('tests/fixtures/packlist-schema-1.yaml');
+
+    await expect(page.locator('.trip-title')).toContainText('Weekend on the lake');
+    await expect(page.locator('.confirm-toast')).toContainText('Imported');
+    const rows = page.locator('.list-item');
+    await expect(rows).toHaveCount(3);
+    await expect(rows.nth(0).locator('.luggage-badge')).toHaveAttribute('title', /^Bag: Backpack/);
+    await expect(rows.nth(0).locator('.item-note-hint')).toBeVisible();
+    await expect(rows.nth(1)).toHaveClass(/checked/);
+    await expect(rows.nth(2).locator('.sub-item-stats')).toHaveText('1/2');
+    // the packlist you had is still there
+    await openTripMenu(page);
+    await expect(page.locator('.trip-option')).toHaveCount(2);
+  });
+
+  test('export then import gives the same packlist back', async ({ page }) => {
+    await page.locator('.list-item input[type="checkbox"]').nth(1).check();
+    const names = await page.locator('.list-item .item-name').allTextContents();
+
+    await openTripMenu(page);
+    const downloadPromise = page.waitForEvent('download');
+    await page.locator('.trip-action', { hasText: 'Export' }).click();
+    const path = await (await downloadPromise).path();
+
+    await openTripMenu(page);
+    await page.locator('[data-import-file]').setInputFiles(path!);
+    await expect(page.locator('.trip-title')).toContainText('Zeeland Fox 22 (2)');
+    expect(await page.locator('.list-item .item-name').allTextContents()).toEqual(names);
+    await expect(page.locator('#stat-green')).toHaveText('1');
+  });
+
+  test('files from a newer app version, or that are not packlists, are refused clearly', async ({ page }) => {
+    const messages: string[] = [];
+    page.on('dialog', d => { messages.push(d.message()); d.dismiss(); });
+
+    await openTripMenu(page);
+    await page.locator('[data-import-file]').setInputFiles({
+      name: 'future.yaml', mimeType: 'text/yaml',
+      buffer: Buffer.from('schema: 99\nname: From the future\nluggages: []\ncategories: []\n'),
+    });
+    await expect.poll(() => messages.length).toBe(1);
+    expect(messages[0]).toContain('newer version of the app');
+
+    await openTripMenu(page);
+    await page.locator('[data-import-file]').setInputFiles({
+      name: 'old.yaml', mimeType: 'text/yaml',
+      buffer: Buffer.from('version: "1.0"\ncategories: []\n'),
+    });
+    await expect.poll(() => messages.length).toBe(2);
+    expect(messages[1]).toContain('not a packlist file');
+
+    // nothing was added
+    await openTripMenu(page);
+    await expect(page.locator('.trip-option')).toHaveCount(1);
   });
 });

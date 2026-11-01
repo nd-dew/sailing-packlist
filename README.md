@@ -27,7 +27,7 @@ npm run build
 - [x] **Dynamic Header Stats**: The main "PackList" title transitions into live progress indicators (Packed vs Unpacked) after load.
 - [x] **Quick Filters**: Clicking header stats toggles a filtered view with a subtle glowing edge frame.
 - [x] **Style Checked Items**: Checked items are distinctly styled with green highlights.
-- [x] **Save/Export State to File**: Settings menu allows exporting and importing the entire packing list state to/from a YAML file.
+- [x] **Save/Export State to File**: Export a packlist (with what's packed) to a versioned packlist file, and import it again; presets use the same format.
 - [x] **Sub-Items**: Complex items (like "Tech Kit") can contain nested sub-items that can be individually packed, hidden, and tracked.
 - [x] **Category & Bag Modals**: Aggregate bulk actions (Pack All, Hide All, Assign Bag) are available by tapping category titles or editing bags.
 - [x] **Luggage Management**: Assign items to multiple bags, complete with custom styleable SVG micro-icons (e.g., Duffel, Backpack).

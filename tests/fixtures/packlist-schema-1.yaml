@@ -1,0 +1,32 @@
+# A packlist file in format version 1. Keep it as it is: it makes sure files of this version keep
+# loading after the format changes (they get upgraded on the way in).
+schema: 1
+name: "Weekend on the lake"
+description: "Two days, small boat"
+showers: 2
+luggages:
+  - id: "lug_bag"
+    name: "Backpack"
+    icon: "backpack"
+    color: "#FF851B"
+categories:
+  - id: "wear"
+    title: "👕 Wear"
+    priority: "must-have"
+    items:
+      - id: "lake_jacket"
+        name: "Rain jacket"
+        description: "The light one"
+        bag: "lug_bag"
+      - id: "lake_hat"
+        name: "Hat"
+      - id: "lake_chargers"
+        name: "Chargers"
+        subItems:
+          - id: "lake_charger_phone"
+            name: "Phone charger"
+          - id: "lake_charger_watch"
+            name: "Watch charger"
+packed:
+  - "lake_hat"
+  - "lake_charger_phone"

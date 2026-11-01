@@ -1,7 +1,7 @@
-import { stringify } from 'yaml';
 import type { Category, Luggage, PackItem, Warning } from '../types';
 import type { SharedPayload } from './shareUtils';
 import { PRESETS, getPresetData, getPresetCategories, getInitialLuggageAssignments } from './presetUtils';
+import { listToPackFile, packFileToList, stringifyPackFile, type PackFile } from './packFile';
 
 // A trip is one packing list of your own. Each one keeps its own items, bags and packing progress.
 export interface TripMeta {
@@ -170,36 +170,36 @@ export const uniqueTripName = (base: string, trips: TripMeta[]) => {
 };
 
 const slugify = (text: string) =>
-  text.toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g, '').trim().replace(/[\s-]+/g, '_') || 'my_trip';
+  text.toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g, '').trim().replace(/[\s-]+/g, '_') || 'my_packlist';
 
-// A trip written in the preset file format, ready to drop into src/presets/
-export const tripToPresetYaml = (meta: TripMeta, data: TripData) => {
-  const id = slugify(meta.name);
+// A packlist as a packlist file: loads back as a packlist (with its progress), or works as a preset in src/presets/
+export const tripToPackFile = (meta: TripMeta, data: TripData) => {
   const basePreset = meta.presetId ? PRESETS[meta.presetId] : undefined;
-  const preset = {
-    id,
+  const file = listToPackFile({
     name: meta.name,
-    description: data.description || basePreset?.description || '',
+    description: data.description || basePreset?.description,
     showers: data.changes,
-    hideShowers: basePreset?.hideShowers || undefined,
-    // crew/captain filtering already happened when the trip was created
-    disableRoles: true,
-    warnings: data.warnings.length ? data.warnings : undefined,
+    hideShowers: basePreset?.hideShowers,
+    warnings: data.warnings,
     luggages: data.luggages,
-    categories: data.categories.map(cat => ({
-      id: cat.id,
-      title: cat.title,
-      priority: cat.priority,
-      items: cat.items.map(item => ({
-        id: item.id,
-        name: item.name,
-        qty: item.qty,
-        description: item.description || undefined,
-        // "none" keeps it out of every bag (leaving it out would mean the preset's fallback bag)
-        defaultBag: data.itemLuggage[item.id] ?? 'none',
-        subItems: item.subItems?.length ? item.subItems.map(sub => ({ id: sub.id, name: sub.name })) : undefined,
-      })),
-    })),
+    categories: data.categories,
+    itemLuggage: data.itemLuggage,
+    checkedItems: data.checkedItems,
+  });
+  return { fileName: `${slugify(meta.name)}.yaml`, yaml: stringifyPackFile(file) };
+};
+
+// An imported packlist file as a packlist of your own
+export const packFileToTripData = (file: PackFile): TripData => {
+  const list = packFileToList(file, 'captain');
+  return {
+    // your own list: keep categories even when they're empty
+    categories: list.categories.map(cat => ({ ...cat, isCustom: true })),
+    warnings: list.warnings,
+    checkedItems: list.checkedItems,
+    luggages: list.luggages,
+    itemLuggage: list.itemLuggage,
+    changes: list.showers ?? 3,
+    description: file.description ?? '',
   };
-  return { fileName: `${id}.yaml`, yaml: stringify(preset) };
 };

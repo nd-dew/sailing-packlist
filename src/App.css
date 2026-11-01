@@ -1832,6 +1832,11 @@ button.trip-menu-option:hover,
   font-weight: 700;
 }
 
+.tile-import {
+  background: color-mix(in srgb, var(--muted) 16%, transparent);
+  color: var(--text);
+}
+
 .tile-preset {
   background: color-mix(in srgb, var(--navy) 9%, transparent);
   color: var(--navy);

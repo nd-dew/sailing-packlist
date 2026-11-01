@@ -1,44 +1,26 @@
-import { parse } from 'yaml';
-import type { PackItem, Category } from '../types';
+import { parsePackFile, packFileToList, type PackFile } from './packFile';
 
-// Dynamically import all .yaml files in the presets directory
+// Every .yaml file in src/presets is a preset, named after its file. They are packlist files, read
+// (and upgraded, if written in an older format version) the same way as an imported packlist.
 const rawPresets = import.meta.glob('../presets/*.yaml', { query: '?raw', eager: true });
 
-export const PRESETS: Record<string, any> = {};
+export const PRESETS: Record<string, PackFile> = {};
 
 Object.entries(rawPresets).forEach(([path, moduleExport]) => {
   const id = path.split('/').pop()?.replace('.yaml', '') || path;
-  // Vite 8 raw imports return a module object with a default export when used with eager: true
-  const content = typeof moduleExport === 'string' ? moduleExport : (moduleExport as any).default;
-  PRESETS[id] = parse(content);
+  // Vite raw imports return a module object with a default export when used with eager: true
+  const content = typeof moduleExport === 'string' ? moduleExport : (moduleExport as { default: string }).default;
+  try {
+    PRESETS[id] = parsePackFile(content);
+  } catch (err) {
+    console.error(`Preset ${id} can't be loaded:`, err instanceof Error ? err.message : err);
+  }
 });
 
-export const getPresetData = (cruiseId: string) => PRESETS[cruiseId] || Object.values(PRESETS)[0];
+export const getPresetData = (cruiseId: string): PackFile => PRESETS[cruiseId] || Object.values(PRESETS)[0];
 
-export const getInitialLuggageAssignments = (cruiseId: string) => {
-  const data = getPresetData(cruiseId);
-  const assignments: Record<string, string> = {};
-  if (data && data.categories) {
-    data.categories.forEach((cat: Category) => {
-      cat.items.forEach(item => {
-        if (item.defaultBag === 'none') return; // explicitly in no bag
-        if (item.defaultBag) {
-          assignments[item.id] = item.defaultBag;
-        } else {
-          assignments[item.id] = 'lug_1'; // fallback
-        }
-      });
-    });
-  }
-  return assignments;
-};
+export const getInitialLuggageAssignments = (cruiseId: string) =>
+  packFileToList(getPresetData(cruiseId), 'captain').itemLuggage;
 
-export const getPresetCategories = (cruiseId: string, role: 'crew' | 'captain') => {
-  const data = getPresetData(cruiseId);
-  if (!data || !data.categories) return [];
-  const disableRoles = data.disableRoles === true;
-  return data.categories.map((cat: Category) => ({
-    ...cat,
-    items: (role === 'crew' && !disableRoles) ? cat.items.filter((i: PackItem) => !i.captainOnly) : [...cat.items]
-  }));
-};
+export const getPresetCategories = (cruiseId: string, role: 'crew' | 'captain') =>
+  packFileToList(getPresetData(cruiseId), role).categories;
